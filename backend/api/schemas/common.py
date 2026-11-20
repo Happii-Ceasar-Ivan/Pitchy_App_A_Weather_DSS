@@ -66,6 +66,11 @@ class GuidanceReference(ContractModel):
 # Shared responses documented on every v1 route.
 ERROR_RESPONSES: dict[int | str, dict] = {
     422: {"model": ErrorEnvelope, "description": "Validation error"},
+    429: {"model": ErrorEnvelope, "description": "Rate limited (limits are set in Sprint B6)"},
     500: {"model": ErrorEnvelope, "description": "Unexpected server error"},
     501: {"model": ErrorEnvelope, "description": "Not implemented yet (contract draft)"},
+}
+
+NOT_FOUND_RESPONSE: dict[int | str, dict] = {
+    404: {"model": ErrorEnvelope, "description": "Resource not found"},
 }

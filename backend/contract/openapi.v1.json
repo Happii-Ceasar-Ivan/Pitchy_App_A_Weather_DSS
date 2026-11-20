@@ -1,0 +1,1575 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Pitchy API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts": {
+      "post": {
+        "tags": [
+          "match contexts"
+        ],
+        "summary": "Create Match Context",
+        "description": "Save the match date/time and venue used for relevance and assessment (FR-MAT-001).",
+        "operationId": "create_match_context_api_v1_match_contexts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchContextCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchContext"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (limits are set in Sprint B6)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts/{match_context_id}": {
+      "get": {
+        "tags": [
+          "match contexts"
+        ],
+        "summary": "Get Match Context",
+        "operationId": "get_match_context_api_v1_match_contexts__match_context_id__get",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchContext"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (limits are set in Sprint B6)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts/{match_context_id}/weather-status": {
+      "get": {
+        "tags": [
+          "match contexts"
+        ],
+        "summary": "Get Weather Status",
+        "description": "Per-source freshness and match-time coverage; tells the client if Ingest is needed.",
+        "operationId": "get_weather_status_api_v1_match_contexts__match_context_id__weather_status_get",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (limits are set in Sprint B6)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts/{match_context_id}/ingestions": {
+      "post": {
+        "tags": [
+          "match contexts"
+        ],
+        "summary": "Request Ingestion",
+        "description": "Start manual ingestion, or return the job already running for the same scope.",
+        "operationId": "request_ingestion_api_v1_match_contexts__match_context_id__ingestions_post",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionJob"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (limits are set in Sprint B6)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INGESTION_NOT_NEEDED: valid shared data already covers this match.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts/{match_context_id}/assessment": {
+      "get": {
+        "tags": [
+          "match contexts"
+        ],
+        "summary": "Get Assessment",
+        "description": "Deterministic assessment with inputs, limitations and rule version. Works without AI.",
+        "operationId": "get_assessment_api_v1_match_contexts__match_context_id__assessment_get",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyAssessment"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (limits are set in Sprint B6)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts/{match_context_id}/conversation": {
+      "post": {
+        "tags": [
+          "match contexts"
+        ],
+        "summary": "Ask Question",
+        "description": "Role-adapted explanation of the active assessment and approved guidance.",
+        "operationId": "ask_question_api_v1_match_contexts__match_context_id__conversation_post",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (limits are set in Sprint B6)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingestions/{job_id}": {
+      "get": {
+        "tags": [
+          "ingestion"
+        ],
+        "summary": "Get Ingestion Job",
+        "description": "Poll a job until it succeeds, fails or expires.",
+        "operationId": "get_ingestion_job_api_v1_ingestions__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionJob"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (limits are set in Sprint B6)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConversationRequest": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/ConversationRole"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "question"
+        ],
+        "title": "ConversationRequest"
+      },
+      "ConversationResponse": {
+        "properties": {
+          "match_context_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Context Id"
+          },
+          "assessment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Id",
+            "description": "Assessment the answer explains, if any."
+          },
+          "role": {
+            "$ref": "#/components/schemas/ConversationRole"
+          },
+          "generation": {
+            "type": "string",
+            "enum": [
+              "generated",
+              "unavailable"
+            ],
+            "title": "Generation",
+            "description": "'unavailable' when no AI provider answered (FR-AGT-006)."
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer",
+            "description": "AI-generated explanation. Not an official decision."
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceReference"
+            },
+            "type": "array",
+            "title": "References"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/Limitation"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "responded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Responded At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "match_context_id",
+          "assessment_id",
+          "role",
+          "generation",
+          "answer",
+          "responded_at"
+        ],
+        "title": "ConversationResponse"
+      },
+      "ConversationRole": {
+        "type": "string",
+        "enum": [
+          "coach",
+          "match_official",
+          "referee",
+          "medical_staff",
+          "spectator"
+        ],
+        "title": "ConversationRole",
+        "description": "Conversational context only, not an authenticated account role (P-03)."
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable summary. Never contains internal details."
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id",
+            "description": "Matches the X-Request-ID response header."
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "type": "array",
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "BAD_REQUEST",
+          "VALIDATION_ERROR",
+          "NOT_FOUND",
+          "METHOD_NOT_ALLOWED",
+          "CONFLICT",
+          "INGESTION_NOT_NEEDED",
+          "PAYLOAD_TOO_LARGE",
+          "RATE_LIMITED",
+          "NOT_IMPLEMENTED",
+          "INTERNAL_ERROR"
+        ],
+        "title": "ErrorCode"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field",
+            "description": "Dotted location of the invalid input."
+          },
+          "issue": {
+            "type": "string",
+            "title": "Issue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "issue"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorEnvelope": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope"
+      },
+      "GuidanceReference": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "authority": {
+            "type": "string",
+            "title": "Authority",
+            "description": "Issuing body, e.g. the football authority."
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Version or date of the approved document."
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document_id",
+          "title",
+          "authority",
+          "version"
+        ],
+        "title": "GuidanceReference",
+        "description": "Reference to an approved protocol document (RAG knowledge base)."
+      },
+      "Hazard": {
+        "type": "string",
+        "enum": [
+          "heat",
+          "lightning",
+          "rainfall"
+        ],
+        "title": "Hazard",
+        "description": "Hazards the engine assesses (P-04). Alerts and cyclone signals are official info, below."
+      },
+      "HazardIndicator": {
+        "properties": {
+          "hazard": {
+            "$ref": "#/components/schemas/Hazard"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IndicatorStatus"
+          },
+          "indicator_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indicator Value",
+            "description": "Calculated indicator, e.g. WBGT, if any."
+          },
+          "indicator_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indicator Unit"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification",
+            "description": "Set only by approved deterministic rules."
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis",
+            "description": "Method/rule identifier the classification used."
+          },
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/InputValue"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/Limitation"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "guidance": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceReference"
+            },
+            "type": "array",
+            "title": "Guidance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hazard",
+          "status",
+          "indicator_value",
+          "indicator_unit",
+          "classification",
+          "basis"
+        ],
+        "title": "HazardIndicator"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HealthResponse"
+      },
+      "IndicatorStatus": {
+        "type": "string",
+        "enum": [
+          "available",
+          "limited",
+          "unavailable"
+        ],
+        "title": "IndicatorStatus"
+      },
+      "IngestionFailure": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Safe summary. Never contains secrets or raw responses."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "IngestionFailure"
+      },
+      "IngestionJob": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/IngestionJobState"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Ids"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/IngestionFailure"
+            },
+            "type": "array",
+            "title": "Failures"
+          },
+          "reused_existing_job": {
+            "type": "boolean",
+            "title": "Reused Existing Job",
+            "description": "True when another request already started this job (FR-WTH-004)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "source_ids",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "reused_existing_job"
+        ],
+        "title": "IngestionJob"
+      },
+      "IngestionJobState": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed",
+          "expired"
+        ],
+        "title": "IngestionJobState"
+      },
+      "InputValue": {
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "title": "Parameter",
+            "description": "Parameter code. The list is OPEN (DEC-03)."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "parameter",
+          "value",
+          "unit",
+          "provenance"
+        ],
+        "title": "InputValue",
+        "description": "A weather value the engine used, with its provenance (FR-CLI-004)."
+      },
+      "Limitation": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "examples": [
+              "STALE_INPUT",
+              "MISSING_INPUT",
+              "CONFLICTING_SOURCES"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "Limitation",
+        "description": "A data or method limitation the client must show (FR-SAF-004, FR-AGT-005)."
+      },
+      "MatchContext": {
+        "properties": {
+          "kickoff_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Kickoff At",
+            "description": "Match start, ISO 8601 with UTC offset."
+          },
+          "venue": {
+            "$ref": "#/components/schemas/Venue"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kickoff_at",
+          "venue",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MatchContext"
+      },
+      "MatchContextCreate": {
+        "properties": {
+          "kickoff_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Kickoff At",
+            "description": "Match start, ISO 8601 with UTC offset."
+          },
+          "venue": {
+            "$ref": "#/components/schemas/Venue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kickoff_at",
+          "venue"
+        ],
+        "title": "MatchContextCreate"
+      },
+      "OfficialNotice": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "examples": [
+              "severe_weather_alert",
+              "tropical_cyclone_signal"
+            ]
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "issued_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued At"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "issuer",
+          "title",
+          "issued_at",
+          "valid_until",
+          "provenance"
+        ],
+        "title": "OfficialNotice",
+        "description": "Official alert or cyclone signal, shown as issued; never turned into a classification."
+      },
+      "Provenance": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "forecast_valid_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Valid From"
+          },
+          "forecast_valid_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Valid Until"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_name",
+          "retrieved_at",
+          "forecast_valid_from",
+          "forecast_valid_until",
+          "expires_at"
+        ],
+        "title": "Provenance",
+        "description": "Where and when a value came from (FR-WTH-005). Fields are null when a source omits them."
+      },
+      "SafetyAssessment": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "match_context": {
+            "$ref": "#/components/schemas/MatchContext"
+          },
+          "assessed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Assessed At"
+          },
+          "rule_version": {
+            "type": "string",
+            "title": "Rule Version",
+            "description": "Version of the rule/configuration set (FR-SAF-005)."
+          },
+          "indicators": {
+            "items": {
+              "$ref": "#/components/schemas/HazardIndicator"
+            },
+            "type": "array",
+            "title": "Indicators"
+          },
+          "official_notices": {
+            "items": {
+              "$ref": "#/components/schemas/OfficialNotice"
+            },
+            "type": "array",
+            "title": "Official Notices"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/Limitation"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "match_context",
+          "assessed_at",
+          "rule_version",
+          "indicators"
+        ],
+        "title": "SafetyAssessment"
+      },
+      "SourceStatus": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "state": {
+            "$ref": "#/components/schemas/WeatherDataState"
+          },
+          "covers_match_time": {
+            "type": "boolean",
+            "title": "Covers Match Time",
+            "description": "False if the cached forecast's validity window does not include kickoff."
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Provenance"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when no record exists."
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/Limitation"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_name",
+          "state",
+          "covers_match_time",
+          "provenance"
+        ],
+        "title": "SourceStatus"
+      },
+      "Venue": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "pitch_surface": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitch Surface",
+            "description": "Optional pitch metadata. Allowed values are not decided (P-07)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "Venue"
+      },
+      "WeatherDataState": {
+        "type": "string",
+        "enum": [
+          "current",
+          "stale",
+          "missing",
+          "updating",
+          "unavailable"
+        ],
+        "title": "WeatherDataState"
+      },
+      "WeatherStatus": {
+        "properties": {
+          "match_context_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Context Id"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "ingestion_needed": {
+            "type": "boolean",
+            "title": "Ingestion Needed",
+            "description": "Client shows Ingest only when this is true."
+          },
+          "active_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Job Id",
+            "description": "Set while an ingestion job is running."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "match_context_id",
+          "checked_at",
+          "sources",
+          "ingestion_needed",
+          "active_job_id"
+        ],
+        "title": "WeatherStatus"
+      }
+    }
+  }
+}

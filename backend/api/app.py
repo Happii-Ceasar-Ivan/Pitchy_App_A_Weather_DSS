@@ -11,7 +11,7 @@ from fastapi import FastAPI
 
 from api.errors import register_error_handlers
 from api.middleware.request_id import RequestIdMiddleware
-from api.routes import health
+from api.routes import health, ingestions, match_contexts
 from shared.settings import Settings, get_settings
 
 API_V1_PREFIX = "/api/v1"
@@ -31,7 +31,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     register_error_handlers(app)
-    app.include_router(health.router, prefix=API_V1_PREFIX)
+    for module in (health, match_contexts, ingestions):
+        app.include_router(module.router, prefix=API_V1_PREFIX)
 
     # Outermost, so request IDs cover every response, including last-resort 500s.
     app.add_middleware(RequestIdMiddleware)

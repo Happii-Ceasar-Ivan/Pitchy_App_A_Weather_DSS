@@ -46,6 +46,13 @@ class ApiError(Exception):
         self.details = details or []
 
 
+def not_implemented(sprint: str) -> ApiError:
+    """Placeholder for contract-draft routes whose behaviour lands in a later sprint."""
+    return ApiError(
+        501, ErrorCode.NOT_IMPLEMENTED, f"This endpoint is part of the contract draft ({sprint})."
+    )
+
+
 def error_response(
     status_code: int,
     code: ErrorCode,
