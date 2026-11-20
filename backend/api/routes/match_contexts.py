@@ -1,19 +1,36 @@
 """Match context, weather status, ingestion request, assessment and conversation routes.
 
 Contract draft (Sprint B0-4): every handler returns 501 until its sprint implements it.
-Anonymous-access protection for ingestion and conversation is OPEN (P-06).
+Conversation requires an anonymous session token and is rate limited per session (P-06).
 """
 
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Header, status
 
 from api.errors import not_implemented
 from api.schemas.assessment import SafetyAssessment
-from api.schemas.common import ERROR_RESPONSES, NOT_FOUND_RESPONSE, ErrorEnvelope
+from api.schemas.common import (
+    ERROR_RESPONSES,
+    INVALID_SESSION_RESPONSE,
+    NOT_FOUND_RESPONSE,
+    ErrorEnvelope,
+)
 from api.schemas.conversation import ConversationRequest, ConversationResponse
 from api.schemas.match import MatchContext, MatchContextCreate
+from api.schemas.session import SESSION_TOKEN_HEADER, SESSION_TOKEN_MAX_CHARS
 from api.schemas.weather import IngestionJob, WeatherStatus
+
+SessionToken = Annotated[
+    str,
+    Header(
+        alias=SESSION_TOKEN_HEADER,
+        min_length=1,
+        max_length=SESSION_TOKEN_MAX_CHARS,
+        description="Anonymous session token from POST /sessions.",
+    ),
+]
 
 router = APIRouter(prefix="/match-contexts", tags=["match contexts"], responses=ERROR_RESPONSES)
 
@@ -69,8 +86,14 @@ async def get_assessment(match_context_id: UUID) -> SafetyAssessment:
 @router.post(
     "/{match_context_id}/conversation",
     response_model=ConversationResponse,
-    responses=NOT_FOUND_RESPONSE,
+    responses={**NOT_FOUND_RESPONSE, **INVALID_SESSION_RESPONSE},
 )
-async def ask_question(match_context_id: UUID, body: ConversationRequest) -> ConversationResponse:
-    """Role-adapted explanation of the active assessment and approved guidance."""
+async def ask_question(
+    match_context_id: UUID, body: ConversationRequest, session_token: SessionToken
+) -> ConversationResponse:
+    """Role-adapted explanation of the active assessment and approved guidance.
+
+    Limited per session with a sliding window; the first prompt over the limit starts a cooldown
+    and returns 429 with ``retry_at``. Only prompts sent to an AI provider count.
+    """
     raise not_implemented("Sprint B5")

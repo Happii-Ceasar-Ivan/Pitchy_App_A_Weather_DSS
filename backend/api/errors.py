@@ -2,11 +2,15 @@
 
 Every error response has the shape::
 
-    {"error": {"code": "...", "message": "...", "request_id": "...", "details": [...]}}
+    {"error": {"code": "...", "message": "...", "request_id": "...", "retry_at": null,
+               "details": [...]}}
 
 Messages never include stack traces, secrets, or echoed request values (secure error handling).
+When ``retry_at`` is set, a ``Retry-After`` header (whole seconds, rounded up) is sent too.
 """
 
+import math
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from fastapi import FastAPI, Request
@@ -19,6 +23,7 @@ from api.schemas.common import ErrorBody, ErrorCode, ErrorDetail, ErrorEnvelope
 
 _STATUS_TO_CODE: dict[int, ErrorCode] = {
     400: ErrorCode.BAD_REQUEST,
+    401: ErrorCode.INVALID_SESSION,
     404: ErrorCode.NOT_FOUND,
     405: ErrorCode.METHOD_NOT_ALLOWED,
     409: ErrorCode.CONFLICT,
@@ -38,12 +43,23 @@ class ApiError(Exception):
         code: ErrorCode,
         message: str,
         details: list[ErrorDetail] | None = None,
+        retry_at: datetime | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.code = code
         self.message = message
         self.details = details or []
+        self.retry_at = retry_at
+
+
+def rate_limited(retry_at: datetime) -> ApiError:
+    return ApiError(
+        429,
+        ErrorCode.RATE_LIMITED,
+        "Temporary usage limit reached. Try again after retry_at.",
+        retry_at=retry_at,
+    )
 
 
 def not_implemented(sprint: str) -> ApiError:
@@ -58,20 +74,28 @@ def error_response(
     code: ErrorCode,
     message: str,
     details: list[ErrorDetail] | None = None,
+    retry_at: datetime | None = None,
 ) -> JSONResponse:
     envelope = ErrorEnvelope(
         error=ErrorBody(
             code=code,
             message=message,
             request_id=current_request_id(),
+            retry_at=retry_at,
             details=details or [],
         )
     )
-    return JSONResponse(status_code=status_code, content=envelope.model_dump(mode="json"))
+    headers = {}
+    if retry_at is not None:
+        seconds = math.ceil((retry_at - datetime.now(UTC)).total_seconds())
+        headers["Retry-After"] = str(max(seconds, 0))
+    return JSONResponse(
+        status_code=status_code, content=envelope.model_dump(mode="json"), headers=headers
+    )
 
 
 async def _api_error_handler(_: Request, exc: ApiError) -> JSONResponse:
-    return error_response(exc.status_code, exc.code, exc.message, exc.details)
+    return error_response(exc.status_code, exc.code, exc.message, exc.details, exc.retry_at)
 
 
 async def _http_error_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:

@@ -36,6 +36,75 @@
         }
       }
     },
+    "/api/v1/sessions": {
+      "post": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Create Session",
+        "description": "Issue an anonymous chatbot session token. Call once per install.",
+        "operationId": "create_session_api_v1_sessions_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/match-contexts": {
       "post": {
         "tags": [
@@ -76,7 +145,14 @@
             }
           },
           "429": {
-            "description": "Rate limited (limits are set in Sprint B6)",
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -149,7 +225,14 @@
             }
           },
           "429": {
-            "description": "Rate limited (limits are set in Sprint B6)",
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -233,7 +316,14 @@
             }
           },
           "429": {
-            "description": "Rate limited (limits are set in Sprint B6)",
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -317,7 +407,14 @@
             }
           },
           "429": {
-            "description": "Rate limited (limits are set in Sprint B6)",
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -411,7 +508,14 @@
             }
           },
           "429": {
-            "description": "Rate limited (limits are set in Sprint B6)",
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -459,7 +563,7 @@
           "match contexts"
         ],
         "summary": "Ask Question",
-        "description": "Role-adapted explanation of the active assessment and approved guidance.",
+        "description": "Role-adapted explanation of the active assessment and approved guidance.\n\nLimited per session with a sliding window; the first prompt over the limit starts a cooldown\nand returns 429 with ``retry_at``. Only prompts sent to an AI provider count.",
         "operationId": "ask_question_api_v1_match_contexts__match_context_id__conversation_post",
         "parameters": [
           {
@@ -471,6 +575,19 @@
               "format": "uuid",
               "title": "Match Context Id"
             }
+          },
+          {
+            "name": "X-Session-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "description": "Anonymous session token from POST /sessions.",
+              "title": "X-Session-Token"
+            },
+            "description": "Anonymous session token from POST /sessions."
           }
         ],
         "requestBody": {
@@ -505,7 +622,14 @@
             }
           },
           "429": {
-            "description": "Rate limited (limits are set in Sprint B6)",
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -536,6 +660,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_SESSION: token unknown or not issued.",
             "content": {
               "application/json": {
                 "schema": {
@@ -589,7 +723,14 @@
             }
           },
           "429": {
-            "description": "Rate limited (limits are set in Sprint B6)",
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -764,6 +905,19 @@
             "title": "Request Id",
             "description": "Matches the X-Request-ID response header."
           },
+          "retry_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry At",
+            "description": "When a RATE_LIMITED request may be retried (UTC). Also sent as Retry-After."
+          },
           "details": {
             "items": {
               "$ref": "#/components/schemas/ErrorDetail"
@@ -785,6 +939,7 @@
         "type": "string",
         "enum": [
           "BAD_REQUEST",
+          "INVALID_SESSION",
           "VALIDATION_ERROR",
           "NOT_FOUND",
           "METHOD_NOT_ALLOWED",
@@ -1413,6 +1568,27 @@
           "indicators"
         ],
         "title": "SafetyAssessment"
+      },
+      "SessionCreated": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "Opaque, server-signed. Never log or display it."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token",
+          "created_at"
+        ],
+        "title": "SessionCreated"
       },
       "SourceStatus": {
         "properties": {

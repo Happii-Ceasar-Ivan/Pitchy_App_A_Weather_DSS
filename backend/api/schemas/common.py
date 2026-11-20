@@ -8,7 +8,7 @@ Contract conventions (API v1, draft):
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 
 class ContractModel(BaseModel):
@@ -19,6 +19,7 @@ class ContractModel(BaseModel):
 
 class ErrorCode(StrEnum):
     BAD_REQUEST = "BAD_REQUEST"
+    INVALID_SESSION = "INVALID_SESSION"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     NOT_FOUND = "NOT_FOUND"
     METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
@@ -39,6 +40,10 @@ class ErrorBody(ContractModel):
     code: ErrorCode
     message: str = Field(description="Human-readable summary. Never contains internal details.")
     request_id: str | None = Field(description="Matches the X-Request-ID response header.")
+    retry_at: AwareDatetime | None = Field(
+        default=None,
+        description="When a RATE_LIMITED request may be retried (UTC). Also sent as Retry-After.",
+    )
     details: list[ErrorDetail] = Field(default_factory=list)
 
 
@@ -66,9 +71,17 @@ class GuidanceReference(ContractModel):
 # Shared responses documented on every v1 route.
 ERROR_RESPONSES: dict[int | str, dict] = {
     422: {"model": ErrorEnvelope, "description": "Validation error"},
-    429: {"model": ErrorEnvelope, "description": "Rate limited (limits are set in Sprint B6)"},
+    429: {
+        "model": ErrorEnvelope,
+        "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+        "headers": {"Retry-After": {"schema": {"type": "integer"}}},
+    },
     500: {"model": ErrorEnvelope, "description": "Unexpected server error"},
     501: {"model": ErrorEnvelope, "description": "Not implemented yet (contract draft)"},
+}
+
+INVALID_SESSION_RESPONSE: dict[int | str, dict] = {
+    401: {"model": ErrorEnvelope, "description": "INVALID_SESSION: token unknown or not issued."},
 }
 
 NOT_FOUND_RESPONSE: dict[int | str, dict] = {

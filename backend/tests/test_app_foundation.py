@@ -1,8 +1,10 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import Query
 from fastapi.testclient import TestClient
 
 from api.app import API_V1_PREFIX, create_app
-from api.errors import ApiError
+from api.errors import ApiError, rate_limited
 from api.schemas.common import ErrorCode
 from shared.settings import Settings
 
@@ -17,6 +19,10 @@ def _client(env: str = "test") -> TestClient:
     @app.get(f"{API_V1_PREFIX}/_conflict")
     async def conflict() -> None:
         raise ApiError(409, ErrorCode.CONFLICT, "Ingestion already running.")
+
+    @app.get(f"{API_V1_PREFIX}/_limited")
+    async def limited() -> None:
+        raise rate_limited(datetime.now(UTC) + timedelta(minutes=20))
 
     @app.get(f"{API_V1_PREFIX}/_validate")
     async def validate(n: int = Query()) -> dict[str, int]:
@@ -63,6 +69,22 @@ def test_api_error_envelope() -> None:
     res = _client().get(f"{API_V1_PREFIX}/_conflict")
     assert res.status_code == 409
     assert res.json()["error"]["code"] == "CONFLICT"
+
+
+def test_rate_limited_envelope_has_retry_at_and_header() -> None:
+    res = _client().get(f"{API_V1_PREFIX}/_limited")
+    body = res.json()["error"]
+    assert res.status_code == 429
+    assert body["code"] == "RATE_LIMITED"
+    retry_at = datetime.fromisoformat(body["retry_at"])
+    assert retry_at.tzinfo is not None
+    assert 1190 <= int(res.headers["Retry-After"]) <= 1200
+
+
+def test_non_rate_limit_errors_have_null_retry_at() -> None:
+    res = _client().get(f"{API_V1_PREFIX}/_conflict")
+    assert res.json()["error"]["retry_at"] is None
+    assert "Retry-After" not in res.headers
 
 
 def test_unhandled_error_hides_internals() -> None:

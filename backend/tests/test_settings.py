@@ -28,3 +28,10 @@ def test_reads_env_file_names_and_masks_secrets(env_file) -> None:
 
 def test_empty_value_counts_as_unset(env_file) -> None:
     assert Settings(_env_file=env_file).gemini_api_key is None
+
+
+def test_chat_limit_defaults_and_override(env_file, monkeypatch) -> None:
+    s = Settings(_env_file=env_file)
+    assert (s.chat_max_prompts, s.chat_window_minutes, s.chat_cooldown_minutes) == (10, 10, 20)
+    monkeypatch.setenv("PITCHY_CHAT_MAX_PROMPTS", "5")
+    assert Settings(_env_file=env_file).chat_max_prompts == 5

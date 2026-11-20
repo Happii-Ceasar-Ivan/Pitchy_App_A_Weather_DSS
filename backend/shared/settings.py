@@ -45,6 +45,18 @@ class Settings(BaseSettings):
     qwen_api_key: SecretStr | None = Field(default=None, validation_alias="QWEN_API_KEY")
     llama_api_key: SecretStr | None = Field(default=None, validation_alias="LLAMA_API_KEY")
 
+    # Anonymous chatbot limits (P-06). Usage limits, not safety thresholds.
+    chat_max_prompts: int = Field(default=10, ge=1, validation_alias="PITCHY_CHAT_MAX_PROMPTS")
+    chat_window_minutes: int = Field(
+        default=10, ge=1, validation_alias="PITCHY_CHAT_WINDOW_MINUTES"
+    )
+    chat_cooldown_minutes: int = Field(
+        default=20, ge=1, validation_alias="PITCHY_CHAT_COOLDOWN_MINUTES"
+    )
+    session_token_secret: SecretStr | None = Field(
+        default=None, validation_alias="PITCHY_SESSION_TOKEN_SECRET"
+    )
+
     @property
     def expose_api_docs(self) -> bool:
         """Interactive docs are disabled in production; the committed contract is the reference."""

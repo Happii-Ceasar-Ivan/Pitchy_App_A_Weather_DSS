@@ -76,6 +76,7 @@ async def _send_internal_error(send: Send, request_id: str) -> None:
                 "code": "INTERNAL_ERROR",
                 "message": "An unexpected error occurred.",
                 "request_id": request_id,
+                "retry_at": None,
                 "details": [],
             }
         }

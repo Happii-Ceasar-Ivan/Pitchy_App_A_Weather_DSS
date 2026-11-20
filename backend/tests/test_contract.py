@@ -6,6 +6,7 @@ from scripts.export_openapi import CONTRACT_PATH, render_contract
 from shared.settings import Settings
 
 MATCH_ID = "00000000-0000-4000-8000-000000000001"
+SESSION = {"X-Session-Token": "test-token"}
 
 
 @pytest.fixture
@@ -37,12 +38,13 @@ def test_committed_contract_is_up_to_date() -> None:
         ("get", f"/match-contexts/{MATCH_ID}/assessment", None),
         ("post", f"/match-contexts/{MATCH_ID}/conversation", {"role": "coach", "question": "Hi"}),
         ("get", f"/ingestions/{MATCH_ID}", None),
+        ("post", "/sessions", None),
     ],
 )
 def test_draft_routes_return_not_implemented(
     client: TestClient, method: str, path: str, body: dict | None
 ) -> None:
-    res = client.request(method, API_V1_PREFIX + path, json=body)
+    res = client.request(method, API_V1_PREFIX + path, json=body, headers=SESSION)
     assert res.status_code == 501
     assert res.json()["error"]["code"] == "NOT_IMPLEMENTED"
 
@@ -57,6 +59,14 @@ def test_kickoff_without_utc_offset_is_rejected(client: TestClient) -> None:
 
 def test_unknown_role_and_extra_fields_are_rejected(client: TestClient) -> None:
     url = f"{API_V1_PREFIX}/match-contexts/{MATCH_ID}/conversation"
-    assert client.post(url, json={"role": "admin", "question": "Hi"}).status_code == 422
+    bad_role = {"role": "admin", "question": "Hi"}
+    assert client.post(url, json=bad_role, headers=SESSION).status_code == 422
     extra = {"role": "coach", "question": "Hi", "classification": "safe"}
-    assert client.post(url, json=extra).status_code == 422
+    assert client.post(url, json=extra, headers=SESSION).status_code == 422
+
+
+def test_conversation_requires_session_token(client: TestClient) -> None:
+    url = f"{API_V1_PREFIX}/match-contexts/{MATCH_ID}/conversation"
+    res = client.post(url, json={"role": "coach", "question": "Hi"})
+    assert res.status_code == 422
+    assert res.json()["error"]["details"][0]["field"] == "header.X-Session-Token"
