@@ -1,0 +1,85 @@
+﻿# Environment files and secrets
+.env*
+
+# Android signing credentials
+*.jks
+*.keystore
+key.properties
+*.pem
+
+# Local databases and temporary database files
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlitedb
+*.db
+*.db-*
+*.database
+*.database-*
+
+# Flutter and Dart generated outputs
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/build/
+coverage/
+
+# Android generated outputs
+**/android/.gradle/
+**/android/.cxx/
+**/android/local.properties
+**/android/app/build/
+
+# Windows generated outputs
+**/windows/flutter/ephemeral/
+**/windows/runner/Debug/
+**/windows/runner/Profile/
+**/windows/runner/Release/
+
+# Distributed binaries
+*.apk
+*.exe
+landing_page/public/downloads/
+
+# Temporary and generated artifacts
+*.tmp
+*.temp
+*.log
+.cache/
+tmp/
+temp/
+dist/
+out/
+
+# Local IDE and operating system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local-only project documents (kept out of the public repository)
+/references/
+/Instructions/
+/docs/
+/AGENTS.md
+/PROJECT_STRUCTURE.md
+/apps/flutter_app/lib/
+/config/environments/
+
+# Local AI-assistant tooling (includes the Supabase project ref in .mcp.json)
+/.claude/
+/.mcp.json
+/skills-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.uv-cache/
+backend/.tmp/
