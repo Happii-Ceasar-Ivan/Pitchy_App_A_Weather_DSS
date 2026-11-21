@@ -3,9 +3,9 @@ name: Backend CI
 on:
   push:
     branches: [main]
-    paths: ["backend/**", ".github/workflows/backend-ci.yml"]
+    paths: ["backend/**", "supabase/**", ".github/workflows/backend-ci.yml"]
   pull_request:
-    paths: ["backend/**", ".github/workflows/backend-ci.yml"]
+    paths: ["backend/**", "supabase/**", ".github/workflows/backend-ci.yml"]
 
 # Least privilege: this workflow only reads the code. No secrets are used.
 permissions:
@@ -22,8 +22,22 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # Disposable database for migration/RLS/lock tests. Throwaway credentials, not a secret.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pitchy_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       PITCHY_ENV: test
+      PITCHY_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pitchy_test
     steps:
       - uses: actions/checkout@v4
         with:

@@ -20,7 +20,7 @@ ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=ROOT_ENV_FILE,
-        env_file_encoding="utf-8",
+        env_file_encoding="utf-8-sig",  # tolerates editors that save a BOM
         env_ignore_empty=True,
         extra="ignore",
         populate_by_name=True,
@@ -37,6 +37,7 @@ class Settings(BaseSettings):
         default=None, validation_alias="SUPABASE_SERVICE_ROLE_KEY"
     )
     supabase_db_url: SecretStr | None = Field(default=None, validation_alias="SUPABASE_DB_URL")
+    app_db_url: SecretStr | None = Field(default=None, validation_alias="PITCHY_APP_DB_URL")
 
     ai_provider_primary: str | None = Field(default=None, validation_alias="AI_PROVIDER_PRIMARY")
     ai_provider_fallback: str | None = Field(default=None, validation_alias="AI_PROVIDER_FALLBACK")
