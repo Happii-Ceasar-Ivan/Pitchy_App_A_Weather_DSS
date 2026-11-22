@@ -13,6 +13,7 @@ after what was asked (source, venue, model).
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -58,7 +59,12 @@ class RecordingClient(AllowlistedClient):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--trigger", default="manual", choices=["manual", "scheduled"])
+    # PITCHY_INGEST_TRIGGER lets schedulers set the trigger without passing "--" arguments.
+    parser.add_argument(
+        "--trigger",
+        default=os.environ.get("PITCHY_INGEST_TRIGGER", "manual"),
+        choices=["manual", "scheduled"],
+    )
     parser.add_argument("--record", type=Path, help="save raw JSON responses to this folder")
     args = parser.parse_args()
 
