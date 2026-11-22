@@ -1,0 +1,1356 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-22T17:41:29+00:00",
+  "title": "Design System: Pitchy",
+  "extensions": {
+    "colorMeta": {
+      "shell-navy": {
+        "role": "primary",
+        "displayName": "Line Board Navy",
+        "canonical": "#0F2540",
+        "tonalRamp": [
+          "#050C14",
+          "#1A2635",
+          "#324359",
+          "#4D637F",
+          "#6D84A2",
+          "#93A7C0",
+          "#BBCBDF",
+          "#E5F0FE"
+        ]
+      },
+      "shell-navy-raised": {
+        "role": "primary",
+        "displayName": "Shell Navy Raised",
+        "canonical": "#16304F",
+        "tonalRamp": [
+          "#050C15",
+          "#192636",
+          "#30435B",
+          "#4A6382",
+          "#6A85A6",
+          "#91A7C3",
+          "#B9CBE1",
+          "#E3F0FF"
+        ]
+      },
+      "on-shell": {
+        "role": "neutral",
+        "displayName": "On Shell",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "on-shell-muted": {
+        "role": "neutral",
+        "displayName": "On Shell Muted",
+        "canonical": "#CAD6E4",
+        "tonalRamp": [
+          "#090B0F",
+          "#21262B",
+          "#3C434B",
+          "#59626D",
+          "#79838F",
+          "#9EA6B0",
+          "#C3CAD2",
+          "#EAEFF4"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Work Ground",
+        "canonical": "#F5F7FA",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#242526",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#A4A5A7",
+          "#C8C9CB",
+          "#EEEEF0"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline Grey",
+        "canonical": "#D3DAE3",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#222529",
+          "#3E4248",
+          "#5C6269",
+          "#7D838A",
+          "#A1A5AC",
+          "#C6C9CE",
+          "#ECEFF2"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Navy Ink",
+        "canonical": "#0F2540",
+        "tonalRamp": [
+          "#050C14",
+          "#1A2635",
+          "#324359",
+          "#4D637F",
+          "#6D84A2",
+          "#93A7C0",
+          "#BBCBDF",
+          "#E5F0FE"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Muted Slate Ink",
+        "canonical": "#45556B",
+        "tonalRamp": [
+          "#070B12",
+          "#1E2630",
+          "#384352",
+          "#536277",
+          "#748499",
+          "#99A6B9",
+          "#C0CAD9",
+          "#E8EFF9"
+        ]
+      },
+      "accent-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#1F5FCC",
+        "tonalRamp": [
+          "#000827",
+          "#032155",
+          "#113D87",
+          "#225BBD",
+          "#447FE4",
+          "#74A5F8",
+          "#A3CAFF",
+          "#D4F0FF"
+        ]
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "On Accent",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "dark-shell": {
+        "role": "primary",
+        "displayName": "Night Shell",
+        "canonical": "#07111F",
+        "tonalRamp": [
+          "#080B10",
+          "#1F262E",
+          "#3A434F",
+          "#566273",
+          "#778395",
+          "#9BA6B5",
+          "#C2CAD5",
+          "#E9EFF7"
+        ]
+      },
+      "dark-shell-raised": {
+        "role": "primary",
+        "displayName": "Dark Shell Raised",
+        "canonical": "#0D1B2E",
+        "tonalRamp": [
+          "#070B12",
+          "#1E2631",
+          "#374353",
+          "#536277",
+          "#74849A",
+          "#99A6B9",
+          "#BFCAD9",
+          "#E8EFFA"
+        ]
+      },
+      "dark-on-shell": {
+        "role": "neutral",
+        "displayName": "Dark On Shell",
+        "canonical": "#F2F5F9",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#242527",
+          "#404244",
+          "#5F6164",
+          "#808286",
+          "#A3A5A8",
+          "#C8C9CB",
+          "#EDEEF0"
+        ]
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Dark Ground",
+        "canonical": "#0B1626",
+        "tonalRamp": [
+          "#080B11",
+          "#1F252F",
+          "#394350",
+          "#566274",
+          "#768396",
+          "#9BA6B6",
+          "#C1CAD7",
+          "#E9EFF8"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark Surface",
+        "canonical": "#122238",
+        "tonalRamp": [
+          "#070B13",
+          "#1D2632",
+          "#364355",
+          "#52627A",
+          "#72849D",
+          "#97A6BB",
+          "#BECADB",
+          "#E7EFFB"
+        ]
+      },
+      "dark-hairline": {
+        "role": "neutral",
+        "displayName": "Dark Hairline",
+        "canonical": "#2B3E58",
+        "tonalRamp": [
+          "#060B13",
+          "#1C2633",
+          "#354356",
+          "#50637C",
+          "#70849F",
+          "#96A6BD",
+          "#BDCADC",
+          "#E6EFFC"
+        ]
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Dark Ink",
+        "canonical": "#EAF0F7",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#232528",
+          "#3F4246",
+          "#5D6267",
+          "#7E8389",
+          "#A1A5AA",
+          "#C6C9CD",
+          "#ECEFF1"
+        ]
+      },
+      "dark-ink-muted": {
+        "role": "neutral",
+        "displayName": "Dark Ink Muted",
+        "canonical": "#AAB8CA",
+        "tonalRamp": [
+          "#080B10",
+          "#20262D",
+          "#3A434E",
+          "#576271",
+          "#778493",
+          "#9CA6B3",
+          "#C2CAD4",
+          "#E9EFF6"
+        ]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Dark Accent",
+        "canonical": "#8CB2FF",
+        "tonalRamp": [
+          "#030A1E",
+          "#142345",
+          "#294070",
+          "#415F9E",
+          "#6081C3",
+          "#89A5DC",
+          "#B3CAF5",
+          "#DFEFFF"
+        ]
+      },
+      "pitch-shell": {
+        "role": "primary",
+        "displayName": "Pitch Green Shell",
+        "canonical": "#0E3B2E",
+        "tonalRamp": [
+          "#030E0A",
+          "#152A23",
+          "#2C493F",
+          "#446B5D",
+          "#658C7E",
+          "#8DADA1",
+          "#B7D0C6",
+          "#E2F3EC"
+        ]
+      },
+      "pitch-shell-raised": {
+        "role": "primary",
+        "displayName": "Pitch Shell Raised",
+        "canonical": "#15483A",
+        "tonalRamp": [
+          "#020E0A",
+          "#132A23",
+          "#284A3F",
+          "#406B5D",
+          "#618D7E",
+          "#8AAEA2",
+          "#B5D1C6",
+          "#E0F4EC"
+        ]
+      },
+      "pitch-on-shell-muted": {
+        "role": "neutral",
+        "displayName": "Pitch On Shell Muted",
+        "canonical": "#C6DCD3",
+        "tonalRamp": [
+          "#070D0A",
+          "#1E2724",
+          "#384540",
+          "#54665F",
+          "#758780",
+          "#9AA9A3",
+          "#C0CCC7",
+          "#E8F1ED"
+        ]
+      },
+      "pitch-ground": {
+        "role": "neutral",
+        "displayName": "Pitch Ground",
+        "canonical": "#F2F6F3",
+        "tonalRamp": [
+          "#0A0B0B",
+          "#242524",
+          "#404341",
+          "#5F6260",
+          "#808381",
+          "#A3A6A4",
+          "#C7CAC8",
+          "#EDEFEE"
+        ]
+      },
+      "pitch-hairline": {
+        "role": "neutral",
+        "displayName": "Pitch Hairline",
+        "canonical": "#CFDCD5",
+        "tonalRamp": [
+          "#090C0A",
+          "#212724",
+          "#3C4440",
+          "#5A645F",
+          "#7B8580",
+          "#9EA8A3",
+          "#C4CBC7",
+          "#EBF0ED"
+        ]
+      },
+      "pitch-ink": {
+        "role": "neutral",
+        "displayName": "Pitch Ink",
+        "canonical": "#0C2A21",
+        "tonalRamp": [
+          "#050D0A",
+          "#1A2923",
+          "#324740",
+          "#4D685E",
+          "#6D8A7F",
+          "#94ABA2",
+          "#BCCEC7",
+          "#E5F2ED"
+        ]
+      },
+      "pitch-ink-muted": {
+        "role": "neutral",
+        "displayName": "Pitch Ink Muted",
+        "canonical": "#3F5A50",
+        "tonalRamp": [
+          "#060D0A",
+          "#1B2823",
+          "#344740",
+          "#4F685E",
+          "#6F897F",
+          "#95ABA2",
+          "#BDCEC7",
+          "#E6F2ED"
+        ]
+      },
+      "pitch-accent": {
+        "role": "primary",
+        "displayName": "Pitch Accent",
+        "canonical": "#0E6B52",
+        "tonalRamp": [
+          "#001009",
+          "#032D21",
+          "#134D3C",
+          "#267059",
+          "#4B927A",
+          "#7BB39E",
+          "#AAD4C3",
+          "#D9F6EA"
+        ]
+      },
+      "line-open-meteo": {
+        "role": "secondary",
+        "displayName": "Open-Meteo Teal",
+        "canonical": "#13786A",
+        "tonalRamp": [
+          "#00100C",
+          "#002D26",
+          "#084D44",
+          "#1B7063",
+          "#439285",
+          "#76B3A7",
+          "#A7D4CB",
+          "#D7F6EF"
+        ]
+      },
+      "line-pagasa-atmo": {
+        "role": "secondary",
+        "displayName": "PAGASA ATMO Violet",
+        "canonical": "#5E3FB0",
+        "tonalRamp": [
+          "#0D0424",
+          "#27184F",
+          "#44317E",
+          "#644BB1",
+          "#846ED7",
+          "#A596EE",
+          "#C9BFFF",
+          "#EEE8FF"
+        ]
+      },
+      "line-pagasa-ecmwf": {
+        "role": "secondary",
+        "displayName": "PAGASA ECMWF Blue",
+        "canonical": "#2361D6",
+        "tonalRamp": [
+          "#000729",
+          "#032058",
+          "#113B8B",
+          "#2259C2",
+          "#437DE9",
+          "#73A4FD",
+          "#A3CAFF",
+          "#D4F0FF"
+        ]
+      },
+      "line-dost-asti": {
+        "role": "secondary",
+        "displayName": "DOST-ASTI Slate",
+        "canonical": "#52606F",
+        "tonalRamp": [
+          "#080C10",
+          "#1F262D",
+          "#39434D",
+          "#566370",
+          "#768492",
+          "#9BA6B3",
+          "#C1CAD4",
+          "#E9EFF6"
+        ]
+      },
+      "line-open-meteo-dark": {
+        "role": "secondary",
+        "displayName": "Line Open Meteo Dark",
+        "canonical": "#52C7B4",
+        "tonalRamp": [
+          "#00100C",
+          "#002E27",
+          "#004F44",
+          "#007364",
+          "#269685",
+          "#68B6A8",
+          "#9ED7CB",
+          "#D1F8F0"
+        ]
+      },
+      "line-pagasa-atmo-dark": {
+        "role": "secondary",
+        "displayName": "Line Pagasa Atmo Dark",
+        "canonical": "#B39CF5",
+        "tonalRamp": [
+          "#0D061D",
+          "#281C43",
+          "#46366E",
+          "#67529C",
+          "#8873C0",
+          "#A999DA",
+          "#CCC1F3",
+          "#F0E9FF"
+        ]
+      },
+      "line-pagasa-ecmwf-dark": {
+        "role": "secondary",
+        "displayName": "Line Pagasa Ecmwf Dark",
+        "canonical": "#7FA8F5",
+        "tonalRamp": [
+          "#030A1E",
+          "#122446",
+          "#274071",
+          "#3E5FA0",
+          "#5E81C4",
+          "#87A5DD",
+          "#B2CAF6",
+          "#DEEFFF"
+        ]
+      },
+      "line-dost-asti-dark": {
+        "role": "secondary",
+        "displayName": "Line Dost Asti Dark",
+        "canonical": "#9AA8B8",
+        "tonalRamp": [
+          "#080C10",
+          "#20262D",
+          "#3A434D",
+          "#576270",
+          "#778492",
+          "#9CA6B2",
+          "#C2CAD3",
+          "#E9EFF6"
+        ]
+      },
+      "state-current-fg": {
+        "role": "fixed",
+        "displayName": "State Current Fg",
+        "canonical": "#0B5C43",
+        "tonalRamp": [
+          "#000F08",
+          "#092C20",
+          "#1C4C3A",
+          "#306F57",
+          "#529178",
+          "#80B29C",
+          "#ADD3C2",
+          "#DCF6E9"
+        ],
+        "fixed": true
+      },
+      "state-current-bg": {
+        "role": "fixed",
+        "displayName": "State Current Bg",
+        "canonical": "#E1F3EC",
+        "tonalRamp": [
+          "#080C0B",
+          "#202724",
+          "#3A4541",
+          "#576560",
+          "#778681",
+          "#9CA8A4",
+          "#C2CCC8",
+          "#E9F0EE"
+        ],
+        "fixed": true
+      },
+      "state-stale-fg": {
+        "role": "fixed",
+        "displayName": "State Stale Fg",
+        "canonical": "#6E4300",
+        "tonalRamp": [
+          "#140800",
+          "#352005",
+          "#593B14",
+          "#805826",
+          "#A37948",
+          "#C19E77",
+          "#E0C4A6",
+          "#FFEBD6"
+        ],
+        "fixed": true
+      },
+      "state-stale-bg": {
+        "role": "fixed",
+        "displayName": "State Stale Bg",
+        "canonical": "#FFF0D2",
+        "tonalRamp": [
+          "#0E0B04",
+          "#2A2418",
+          "#4A412F",
+          "#6C6048",
+          "#8D8168",
+          "#AEA48F",
+          "#D0C8B8",
+          "#F4EEE3"
+        ],
+        "fixed": true
+      },
+      "state-updating-fg": {
+        "role": "fixed",
+        "displayName": "State Updating Fg",
+        "canonical": "#1A4FA8",
+        "tonalRamp": [
+          "#000923",
+          "#09234E",
+          "#1B3F7D",
+          "#2E5EAF",
+          "#4F81D5",
+          "#7BA5EC",
+          "#A9CAFF",
+          "#D8F0FF"
+        ],
+        "fixed": true
+      },
+      "state-updating-bg": {
+        "role": "fixed",
+        "displayName": "State Updating Bg",
+        "canonical": "#E3ECFB",
+        "tonalRamp": [
+          "#090B0F",
+          "#22252B",
+          "#3D424B",
+          "#5B626D",
+          "#7B838F",
+          "#9FA5B0",
+          "#C4C9D2",
+          "#EBEFF4"
+        ],
+        "fixed": true
+      },
+      "state-missing-fg": {
+        "role": "fixed",
+        "displayName": "State Missing Fg",
+        "canonical": "#3F4C5E",
+        "tonalRamp": [
+          "#080B11",
+          "#1F262F",
+          "#394350",
+          "#566273",
+          "#768396",
+          "#9BA6B5",
+          "#C1CAD6",
+          "#E9EFF8"
+        ],
+        "fixed": true
+      },
+      "state-missing-bg": {
+        "role": "fixed",
+        "displayName": "State Missing Bg",
+        "canonical": "#ECEFF3",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#242527",
+          "#404244",
+          "#5F6164",
+          "#808286",
+          "#A3A5A8",
+          "#C8C9CB",
+          "#EDEEF0"
+        ],
+        "fixed": true
+      },
+      "state-unavailable-fg": {
+        "role": "fixed",
+        "displayName": "State Unavailable Fg",
+        "canonical": "#2E3440",
+        "tonalRamp": [
+          "#090B0F",
+          "#22252B",
+          "#3D424B",
+          "#5B616E",
+          "#7C828F",
+          "#A0A5B0",
+          "#C5C9D2",
+          "#EBEEF5"
+        ],
+        "fixed": true
+      },
+      "state-unavailable-bg": {
+        "role": "fixed",
+        "displayName": "State Unavailable Bg",
+        "canonical": "#E2E5EA",
+        "tonalRamp": [
+          "#0A0B0C",
+          "#242527",
+          "#404245",
+          "#5F6165",
+          "#808286",
+          "#A3A5A8",
+          "#C7C9CC",
+          "#EDEEF0"
+        ],
+        "fixed": true
+      },
+      "state-current-fg-dark": {
+        "role": "fixed",
+        "displayName": "State Current Fg Dark",
+        "canonical": "#8BE0C0",
+        "tonalRamp": [
+          "#001008",
+          "#002D20",
+          "#0E4E3B",
+          "#217158",
+          "#479378",
+          "#79B49D",
+          "#A8D5C3",
+          "#D8F7EA"
+        ],
+        "fixed": true
+      },
+      "state-current-bg-dark": {
+        "role": "fixed",
+        "displayName": "State Current Bg Dark",
+        "canonical": "#113A2E",
+        "tonalRamp": [
+          "#040E0A",
+          "#162A23",
+          "#2D493F",
+          "#466A5D",
+          "#678C7E",
+          "#8FADA2",
+          "#B8CFC6",
+          "#E3F3ED"
+        ],
+        "fixed": true
+      },
+      "state-stale-fg-dark": {
+        "role": "fixed",
+        "displayName": "State Stale Fg Dark",
+        "canonical": "#FFCF7A",
+        "tonalRamp": [
+          "#150800",
+          "#352000",
+          "#593C00",
+          "#805900",
+          "#A37B2C",
+          "#C1A065",
+          "#DFC599",
+          "#FEECCE"
+        ],
+        "fixed": true
+      },
+      "state-stale-bg-dark": {
+        "role": "fixed",
+        "displayName": "State Stale Bg Dark",
+        "canonical": "#3D2A07",
+        "tonalRamp": [
+          "#100A03",
+          "#2D2313",
+          "#4E3F29",
+          "#715E40",
+          "#937F60",
+          "#B3A289",
+          "#D4C7B3",
+          "#F6EDDF"
+        ],
+        "fixed": true
+      },
+      "state-updating-fg-dark": {
+        "role": "fixed",
+        "displayName": "State Updating Fg Dark",
+        "canonical": "#A9C7FF",
+        "tonalRamp": [
+          "#050B19",
+          "#18253C",
+          "#304264",
+          "#49618E",
+          "#6982B2",
+          "#90A6CD",
+          "#B9CAE9",
+          "#E3EFFF"
+        ],
+        "fixed": true
+      },
+      "state-updating-bg-dark": {
+        "role": "fixed",
+        "displayName": "State Updating Bg Dark",
+        "canonical": "#14284D",
+        "tonalRamp": [
+          "#050B17",
+          "#1A2539",
+          "#32425F",
+          "#4C6187",
+          "#6C83AB",
+          "#93A6C7",
+          "#BBCAE4",
+          "#E4EFFF"
+        ],
+        "fixed": true
+      },
+      "state-missing-fg-dark": {
+        "role": "fixed",
+        "displayName": "State Missing Fg Dark",
+        "canonical": "#C3CDD9",
+        "tonalRamp": [
+          "#090B0E",
+          "#21252A",
+          "#3D434A",
+          "#5A626C",
+          "#7B838D",
+          "#9FA6AE",
+          "#C4CAD0",
+          "#EBEFF4"
+        ],
+        "fixed": true
+      },
+      "state-missing-bg-dark": {
+        "role": "fixed",
+        "displayName": "State Missing Bg Dark",
+        "canonical": "#243246",
+        "tonalRamp": [
+          "#070B12",
+          "#1E2630",
+          "#384352",
+          "#546277",
+          "#758499",
+          "#99A6B8",
+          "#C0CAD8",
+          "#E8EFF9"
+        ],
+        "fixed": true
+      },
+      "state-unavailable-fg-dark": {
+        "role": "fixed",
+        "displayName": "State Unavailable Fg Dark",
+        "canonical": "#E3E7ED",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#232528",
+          "#404246",
+          "#5E6166",
+          "#7F8387",
+          "#A2A5A9",
+          "#C7C9CC",
+          "#EDEEF1"
+        ],
+        "fixed": true
+      },
+      "state-unavailable-bg-dark": {
+        "role": "fixed",
+        "displayName": "State Unavailable Bg Dark",
+        "canonical": "#39424F",
+        "tonalRamp": [
+          "#090B0F",
+          "#21252C",
+          "#3C424C",
+          "#59626F",
+          "#7A8390",
+          "#9EA6B1",
+          "#C3CAD3",
+          "#EAEFF5"
+        ],
+        "fixed": true
+      },
+      "safety-advisory": {
+        "role": "fixed",
+        "displayName": "Advisory Yellow",
+        "canonical": "#F2C200",
+        "tonalRamp": [
+          "#150800",
+          "#362100",
+          "#5B3C00",
+          "#825A00",
+          "#A57C00",
+          "#C3A13A",
+          "#E1C780",
+          "#FFEEBD"
+        ],
+        "fixed": true
+      },
+      "on-safety-advisory": {
+        "role": "fixed",
+        "displayName": "On Safety Advisory",
+        "canonical": "#1A1400",
+        "tonalRamp": [
+          "#0D0B05",
+          "#282519",
+          "#474230",
+          "#67614A",
+          "#89836A",
+          "#AAA591",
+          "#CDC9B9",
+          "#F1EFE3"
+        ],
+        "fixed": true
+      },
+      "safety-warning": {
+        "role": "fixed",
+        "displayName": "Warning Orange",
+        "canonical": "#E8710A",
+        "tonalRamp": [
+          "#1F0100",
+          "#470F00",
+          "#732500",
+          "#A33C00",
+          "#CA6000",
+          "#E48C56",
+          "#FDB78F",
+          "#FFE3C7"
+        ],
+        "fixed": true
+      },
+      "on-safety-warning": {
+        "role": "fixed",
+        "displayName": "On Safety Warning",
+        "canonical": "#1A0B00",
+        "tonalRamp": [
+          "#0F0A05",
+          "#2C231A",
+          "#4D3F33",
+          "#6F5E4D",
+          "#917F6D",
+          "#B2A293",
+          "#D3C7BB",
+          "#F6EDE5"
+        ],
+        "fixed": true
+      },
+      "safety-danger": {
+        "role": "fixed",
+        "displayName": "Danger Red",
+        "canonical": "#C62828",
+        "tonalRamp": [
+          "#220000",
+          "#4D0003",
+          "#7D0F12",
+          "#B02323",
+          "#D84C45",
+          "#F17F74",
+          "#FFAEA3",
+          "#FFDCD4"
+        ],
+        "fixed": true
+      },
+      "on-safety-danger": {
+        "role": "fixed",
+        "displayName": "On Safety Danger",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ],
+        "fixed": true
+      },
+      "request-error": {
+        "role": "fixed",
+        "displayName": "Request Error",
+        "canonical": "#9F1D1D",
+        "tonalRamp": [
+          "#1F0000",
+          "#480A09",
+          "#751E1B",
+          "#A6342E",
+          "#CD584F",
+          "#E7867B",
+          "#FFB2A9",
+          "#FFDFD8"
+        ],
+        "fixed": true
+      },
+      "on-request-error": {
+        "role": "fixed",
+        "displayName": "On Request Error",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ],
+        "fixed": true
+      },
+      "swatch-navy": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Navy",
+        "canonical": "#0F2540",
+        "tonalRamp": [
+          "#050C14",
+          "#1A2635",
+          "#324359",
+          "#4D637F",
+          "#6D84A2",
+          "#93A7C0",
+          "#BBCBDF",
+          "#E5F0FE"
+        ]
+      },
+      "swatch-pitch-green": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Pitch Green",
+        "canonical": "#0E3B2E",
+        "tonalRamp": [
+          "#030E0A",
+          "#152A23",
+          "#2C493F",
+          "#446B5D",
+          "#658C7E",
+          "#8DADA1",
+          "#B7D0C6",
+          "#E2F3EC"
+        ]
+      },
+      "swatch-teal": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Teal",
+        "canonical": "#0E5E55",
+        "tonalRamp": [
+          "#000F0C",
+          "#082B27",
+          "#1A4B45",
+          "#2E6E65",
+          "#519086",
+          "#7FB0A8",
+          "#ADD2CC",
+          "#DBF5F0"
+        ]
+      },
+      "swatch-royal-blue": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Royal Blue",
+        "canonical": "#1C4FB0",
+        "tonalRamp": [
+          "#000825",
+          "#092251",
+          "#1A3E81",
+          "#2D5CB5",
+          "#4E7FDB",
+          "#7AA5F1",
+          "#A8CAFF",
+          "#D8F0FF"
+        ]
+      },
+      "swatch-violet": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Violet",
+        "canonical": "#4E3497",
+        "tonalRamp": [
+          "#0C0521",
+          "#261B4B",
+          "#433479",
+          "#624FAA",
+          "#8371D0",
+          "#A498E7",
+          "#C8C0FE",
+          "#EDE9FF"
+        ]
+      },
+      "swatch-plum": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Plum",
+        "canonical": "#6A2C63",
+        "tonalRamp": [
+          "#150413",
+          "#371833",
+          "#5B2F56",
+          "#83497B",
+          "#A76A9E",
+          "#C592BD",
+          "#E3BADC",
+          "#FFE4FC"
+        ]
+      },
+      "swatch-slate": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Slate",
+        "canonical": "#33404F",
+        "tonalRamp": [
+          "#080C10",
+          "#1F262D",
+          "#39434E",
+          "#566371",
+          "#768493",
+          "#9BA6B3",
+          "#C1CAD4",
+          "#E9EFF6"
+        ]
+      },
+      "swatch-charcoal": {
+        "role": "custom-swatch",
+        "displayName": "Swatch Charcoal",
+        "canonical": "#1F2328",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#232528",
+          "#3F4246",
+          "#5D6267",
+          "#7E8388",
+          "#A2A5AA",
+          "#C6C9CD",
+          "#ECEFF1"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Reserved; set in theme, unused on built surfaces."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Weather card values."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Top-bar screen name."
+      },
+      "title-small": {
+        "displayName": "Title small",
+        "purpose": "Source names on the rail."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Detail rows and banners."
+      },
+      "body-small": {
+        "displayName": "Body small",
+        "purpose": "Ages, slot times, detail labels (ink-muted)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Card quantity labels, rail header, buttons."
+      },
+      "label-small": {
+        "displayName": "Label small",
+        "purpose": "Dense state pills and validity ticks."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "card-expand",
+        "value": "220ms cubic-bezier(0.33, 1, 0.68, 1)",
+        "purpose": "Weather card expand/collapse size animation (Curves.easeOutCubic)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "rail",
+        "value": "600px",
+        "purpose": "Navigation rail replaces bottom bar."
+      },
+      {
+        "name": "grid-4",
+        "value": "720px",
+        "purpose": "Card grid goes from 2 to 4 columns (content width)."
+      },
+      {
+        "name": "content-max",
+        "value": "960px",
+        "purpose": "Centred content measure on wide windows."
+      }
+    ],
+    "strokes": [
+      {
+        "name": "hairline",
+        "value": "1px",
+        "purpose": "All borders and dividers."
+      },
+      {
+        "name": "stale-stamp",
+        "value": "1.5px dashed, 4px on / 3px off",
+        "purpose": "Stale pill and Stale card outline."
+      },
+      {
+        "name": "rail-line",
+        "value": "2px",
+        "purpose": "Source rail connector."
+      },
+      {
+        "name": "rail-stop",
+        "value": "8px radius, 3px ring",
+        "purpose": "Source stop; filled when Current."
+      },
+      {
+        "name": "validity",
+        "value": "4px track, 6px bar, 2px kickoff tick",
+        "purpose": "Forecast validity to true time scale."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Top Bar",
+      "kind": "nav",
+      "refersTo": "top-bar",
+      "description": "Every screen: placeholder logo left of the screen name on the shell colour.",
+      "html": "<header class=\"ds-topbar\"><span class=\"ds-logo\" aria-label=\"Pitchy (placeholder logo)\">P</span><span class=\"ds-topbar-title\">Dashboard</span></header>",
+      "css": ".ds-topbar{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;background:#0F2540;color:#FFFFFF;font-family:Roboto, system-ui, sans-serif;} .ds-logo{width:32px;height:32px;border-radius:8px;background:#FFFFFF;color:#0F2540;display:grid;place-items:center;font-weight:700;font-size:20px;} .ds-topbar-title{font-size:22px;line-height:28px;font-weight:700;}"
+    },
+    {
+      "name": "State Pill: Current",
+      "kind": "chip",
+      "refersTo": "state-pill-current",
+      "description": "Fixed state colour, icon and uppercase word.",
+      "html": "<span class=\"ds-pill ds-pill-current\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z\"/></svg>CURRENT</span>",
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Roboto, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;font-variant-numeric:tabular-nums;} .ds-pill-current{background:#E1F3EC;color:#0B5C43;}"
+    },
+    {
+      "name": "State Pill: Stale",
+      "kind": "chip",
+      "refersTo": "state-pill-stale",
+      "description": "Stale is stamped with a dashed outline so it reads without colour.",
+      "html": "<span class=\"ds-pill ds-pill-stale\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.95 8.95 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z\"/></svg>STALE</span>",
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Roboto, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;} .ds-pill-stale{background:#FFF0D2;color:#6E4300;outline:1.5px dashed #6E4300;outline-offset:-1px;}"
+    },
+    {
+      "name": "State Pill: Unavailable",
+      "kind": "chip",
+      "refersTo": "state-pill-unavailable",
+      "description": "Unavailable keeps its place on the board with icon and word.",
+      "html": "<span class=\"ds-pill ds-pill-unavailable\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M19.35 10.04A7.49 7.49 0 0 0 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46A5.497 5.497 0 0 1 17.5 11v.5H19a2.996 2.996 0 0 1 1.17 5.76l1.45 1.45A4.97 4.97 0 0 0 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2L21 20.73 4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z\"/></svg>UNAVAILABLE</span>",
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Roboto, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;} .ds-pill-unavailable{background:#E2E5EA;color:#2E3440;}"
+    },
+    {
+      "name": "Weather Value Card",
+      "kind": "card",
+      "refersTo": "weather-card",
+      "description": "Collapsed card: label, large tabular value, unit, slot time with source line dot.",
+      "html": "<button class=\"ds-wcard\" aria-expanded=\"false\"><span class=\"ds-wcard-label\">Air temperature</span><span class=\"ds-wcard-value\">32.4<span class=\"ds-wcard-unit\"> °C</span></span><span class=\"ds-wcard-slot\"><span class=\"ds-dot\" style=\"background:#13786A\"></span>4 AM–5 AM PHT</span></button>",
+      "css": ".ds-wcard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:180px;padding:14px;background:#FFFFFF;color:#0F2540;border:1px solid #D3DAE3;border-radius:12px;font-family:Roboto, system-ui, sans-serif;font-variant-numeric:tabular-nums;text-align:left;cursor:pointer;transition:background 0.15s;} .ds-wcard:hover{background:#F5F7FA;} .ds-wcard:focus-visible{outline:2px solid #1F5FCC;outline-offset:2px;} .ds-wcard-label{font-size:14px;font-weight:700;color:#45556B;} .ds-wcard-value{font-size:28px;line-height:36px;font-weight:700;} .ds-wcard-unit{font-size:16px;font-weight:700;} .ds-wcard-slot{display:flex;align-items:center;gap:6px;font-size:12px;color:#45556B;} .ds-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}"
+    },
+    {
+      "name": "Source Rail Line",
+      "kind": "custom",
+      "refersTo": "source-rail",
+      "description": "Signature: a source as a line with a stop, state pill, detail and validity bar.",
+      "html": "<div class=\"ds-rail\"><div class=\"ds-rail-head\">Sources · checked 1:37 AM PHT</div><div class=\"ds-rail-row\"><span class=\"ds-stop\" style=\"--line:#13786A;background:#13786A\"></span><div class=\"ds-rail-body\"><div class=\"ds-rail-top\"><strong>Open-Meteo</strong><span class=\"ds-pill-d\">CURRENT</span></div><div class=\"ds-rail-detail\">Current until 3:37 AM PHT</div><div class=\"ds-vbar\"><span style=\"left:0;right:0;background:#13786A\"></span><i style=\"left:25%\"></i></div></div></div><div class=\"ds-rail-row\"><span class=\"ds-stop\" style=\"--line:#5E3FB0\"></span><div class=\"ds-rail-body\"><div class=\"ds-rail-top\"><strong>PAGASA ATMO</strong><span class=\"ds-pill-d ds-stale\">STALE</span></div><div class=\"ds-rail-detail\">Fetched Sun 22 Nov, 4:37 PM PHT · 9 h ago</div></div></div></div>",
+      "css": ".ds-rail{width:340px;padding:14px 16px 8px;background:#FFFFFF;border:1px solid #D3DAE3;border-radius:12px;font-family:Roboto, system-ui, sans-serif;color:#0F2540;font-variant-numeric:tabular-nums;} .ds-rail-head{font-size:14px;font-weight:700;color:#45556B;margin-bottom:6px;} .ds-rail-row{display:flex;gap:10px;padding:10px 0;} .ds-stop{flex:none;width:12px;height:12px;margin:3px 4px 0;border-radius:50%;border:3px solid var(--line);background:#FFFFFF;} .ds-rail-body{flex:1;} .ds-rail-top{display:flex;justify-content:space-between;align-items:center;font-size:14px;} .ds-rail-detail{font-size:12px;color:#45556B;margin-top:2px;} .ds-pill-d{font-size:11px;font-weight:700;padding:2px 6px;border-radius:999px;background:#E1F3EC;color:#0B5C43;} .ds-pill-d.ds-stale{background:#FFF0D2;color:#6E4300;outline:1.5px dashed #6E4300;outline-offset:-1px;} .ds-vbar{position:relative;height:10px;margin-top:8px;} .ds-vbar::before{content:'';position:absolute;left:0;right:0;top:3px;height:4px;border-radius:2px;background:#D3DAE3;} .ds-vbar span{position:absolute;top:2px;height:6px;border-radius:3px;} .ds-vbar i{position:absolute;top:0;width:2px;height:10px;background:#0F2540;}"
+    },
+    {
+      "name": "Filled Button",
+      "kind": "button",
+      "refersTo": "button-filled",
+      "description": "Primary action on the accent, 48px minimum height.",
+      "html": "<button class=\"ds-btn-filled\">Save match</button>",
+      "css": ".ds-btn-filled{min-height:48px;min-width:64px;padding:0 24px;border:none;border-radius:999px;background:#1F5FCC;color:#FFFFFF;font-family:Roboto, system-ui, sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;cursor:pointer;transition:filter 0.15s;} .ds-btn-filled:hover{filter:brightness(1.08);} .ds-btn-filled:focus-visible{outline:2px solid #1F5FCC;outline-offset:2px;} .ds-btn-filled:active{filter:brightness(0.92);}"
+    },
+    {
+      "name": "Outlined Button",
+      "kind": "button",
+      "refersTo": "button-outlined",
+      "description": "Secondary action with a hairline border, e.g. Try again.",
+      "html": "<button class=\"ds-btn-outlined\">Try again</button>",
+      "css": ".ds-btn-outlined{min-height:48px;min-width:64px;padding:0 24px;border:1px solid #D3DAE3;border-radius:999px;background:transparent;color:#1F5FCC;font-family:Roboto, system-ui, sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;} .ds-btn-outlined:hover{background:rgba(31,95,204,0.08);} .ds-btn-outlined:focus-visible{background:rgba(31,95,204,0.24);outline:none;}"
+    },
+    {
+      "name": "Saved Copy Banner",
+      "kind": "custom",
+      "refersTo": "notice-banner-saved-copy",
+      "description": "Offline saved copy in Stale colours; never claims to be live.",
+      "html": "<div class=\"ds-banner\" role=\"status\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M19.35 10.04A7.49 7.49 0 0 0 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46A5.497 5.497 0 0 1 17.5 11v.5H19a2.996 2.996 0 0 1 1.17 5.76l1.45 1.45A4.97 4.97 0 0 0 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2L21 20.73 4.27 4 3 5.27z\"/></svg><span>Saved copy from 3:05 PM PHT, not live. Pitchy can’t reach its server.</span></div>",
+      "css": ".ds-banner{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#FFF0D2;color:#6E4300;font-family:Roboto, system-ui, sans-serif;font-size:14px;line-height:20px;font-weight:700;}"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "nav-bar",
+      "description": "Phones below 600px: Dashboard, PitChyAT, Settings.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-on\" href=\"#\"><span class=\"ds-ind\"></span>Dashboard</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-ind\"></span>PitChyAT</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-ind\"></span>Settings</a></nav>",
+      "css": ".ds-nav{display:flex;justify-content:space-around;height:80px;align-items:center;background:#FFFFFF;border-top:1px solid #D3DAE3;font-family:Roboto, system-ui, sans-serif;} .ds-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#45556B;font-size:12px;font-weight:500;text-decoration:none;} .ds-ind{width:64px;height:32px;border-radius:16px;} .ds-nav-item.ds-on{color:#0F2540;font-weight:700;} .ds-nav-item.ds-on .ds-ind{background:#DAE4F6;} .ds-nav-item:hover .ds-ind{background:#EEF2F9;} .ds-nav-item:focus-visible{outline:2px solid #1F5FCC;outline-offset:2px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Line Board",
+    "overview": "Pitchy reads like a Metro Manila train line board. Each weather source is a line with its own fixed colour; its state is the stop, and its \"current until\" time reads like the next departure. A deep navy shell (top bar, navigation rail) frames a near-white work ground where flat, hairline-bordered cards carry the data. The board is built to be scanned at a glance, one-handed, in sun and glare: big tabular figures, an icon and a word on every state, and nothing that fades away when it gets old. Stale data stays on the board and gets a dashed stamp.\n\nThe components are standard Material 3 on purpose. The world comes in through the palette, the type weights, the density and one signature component, the source rail. Android and Windows get the same look because Roboto is bundled with the app and there are no per-platform styles. Colour is split into two layers that never mix. The themed layer (shell, ground, ink, accent) changes with Light, Dark, Pitch Green or Custom. The fixed layer (data-state colours and the safety ramp) means the same thing in every theme.\n\nThe system rejects the usual weather-app look of a hero temperature over a grid of identical tonal cards. Values sit in a small 2x2 grid (4 columns on wide windows) under the source rail. Each value is one tap from its proof: the source, fetch and validity times, and the spread across sources.",
+    "keyCharacteristics": [
+      "Navy shell around a cool near-white ground. The board is flat, with no shadows.",
+      "One fixed, cool line colour per weather source, used for its rail dot, validity bar and the dot on its value card.",
+      "Every data state is a pill with an icon and an uppercase word. Stale also gets a dashed outline.",
+      "Tabular figures everywhere. Roboto is bundled at 400, 500 and 700.",
+      "Fixed safety and state colours sit outside every theme.",
+      "All times are labelled PHT."
+    ],
+    "rules": [
+      {
+        "name": "The Two Layers Rule",
+        "body": "Themes change only shell, ground, surface, hairline, ink and accent. Data-state colours and the safety ramp are fixed in every theme and never take a custom colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Custom Two Rule",
+        "body": "Custom changes only the shell and the accent, and both come from the eight fixed swatches. Every swatch passes 4.5:1 against white, and none is red, orange or yellow, so a themed colour can never pass for a safety colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cool Lines Rule",
+        "body": "Source line colours are cool hues only. The safety ramp (yellow, orange, red) is never used as a line colour or as decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Icon and Word Rule",
+        "body": "No state is shown by colour alone. Every state shows an icon and a word, and Stale also gets a dashed outline, so it still reads in greyscale.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Everywhere Rule",
+        "body": "Every text style carries tabular figures. Numbers never set in proportional figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The PHT Label Rule",
+        "body": "Every displayed time is Philippine Time with \"PHT\" shown, whatever the device's time zone. A fetch time from another PHT day names the day. The label is only dropped next to a tick whose window end already shows PHT.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Board Rule",
+        "body": "No shadows. Surfaces are separated by tone and one hairline border, never by elevation.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Hairline Rule",
+        "body": "Every rule, border and divider is 1px in the hairline colour. The only other outline is the Stale stamp: a 1.5px dash (4px on, 3px off) in the Stale foreground colour.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do take every colour from the palette extensions (PitchyPalette, StateColors, SafetyColors), never from literal colours in widgets.",
+      "Do show every data state as a pill with its icon and word, and keep Stale data on screen with its dashed stamp.",
+      "Do give each new weather source one fixed, cool line colour (light and dark variants) and use it only for that source's dot, rail stop and validity bar.",
+      "Do label every time PHT, and name the day when it isn't today in PHT.",
+      "Do keep tap targets at least 48px, and keep cards flat with a 1px hairline border and a 12px radius.",
+      "Do keep the Pitchy logo left of the screen name in every top bar."
+    ],
+    "donts": [
+      "Don't theme, tint or let users customise the state colours or the safety ramp. Custom changes only the shell and the accent, picked from the eight swatches.",
+      "Don't use yellow, orange or red as a source line colour, a swatch or decoration.",
+      "Don't show any state by colour alone.",
+      "Don't add shadows or elevation to cards, bars or the rail.",
+      "Don't show stale, missing or unavailable data in a way that could read as Current, and don't hide it.",
+      "Don't set figures without tabular spacing.",
+      "Don't treat the placeholder logo as final artwork."
+    ]
+  }
+}
