@@ -34,6 +34,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     for module in (health, sessions, match_contexts, ingestions):
         app.include_router(module.router, prefix=API_V1_PREFIX)
 
+    if settings.env == "development" and settings.enable_dev_routes:
+        from api.routes import dev  # local demo routes; never in test/production or the contract
+
+        app.include_router(dev.router, prefix=API_V1_PREFIX)
+
     # Outermost, so request IDs cover every response, including last-resort 500s.
     app.add_middleware(RequestIdMiddleware)
     return app

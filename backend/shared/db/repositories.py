@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from typing import Protocol
 from uuid import UUID
 
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 
 from shared.db.pool import ConnectionFactory
 from shared.db.records import (
@@ -41,6 +41,7 @@ class LocationRepository(Protocol):
     def get_or_create(
         self, scope_key: str, latitude: float, longitude: float, name: str | None
     ) -> Location: ...
+    def list_all(self) -> list[Location]: ...
 
 
 class MatchContextRepository(Protocol):
@@ -93,6 +94,10 @@ class ForecastRepository(Protocol):
     def values_covering(
         self, location_id: UUID, at: datetime, parameters: Sequence[str] | None = None
     ) -> list[ForecastValueRecord]: ...
+    def last_requested_at(
+        self, source_ids: Sequence[str], location_id: UUID
+    ) -> datetime | None: ...
+    def recent_fetches(self, limit: int = 20) -> list[dict]: ...
 
 
 class AnonymousSessionRepository(Protocol):
@@ -138,6 +143,11 @@ class PgLocationRepository(_Repo):
                 " returning *",
                 (scope_key, latitude, longitude, name),
             ).fetchone()
+
+    def list_all(self) -> list[Location]:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(Location))
+            return cur.execute("select * from public.locations order by scope_key").fetchall()
 
 
 class PgMatchContextRepository(_Repo):
@@ -322,6 +332,45 @@ class PgForecastRepository(_Repo):
                 " and (%s::text[] is null or parameter = any(%s::text[]))"
                 " order by retrieved_at desc, source_id, parameter",
                 (location_id, at, at, parameters, parameters),
+            ).fetchall()
+
+    def values_between(
+        self, location_id: UUID, start: datetime, end: datetime, source_id: str
+    ) -> list[ForecastValueRecord]:
+        """Values from the latest successful fetch of one source, valid within [start, end)."""
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(ForecastValueRecord))
+            return cur.execute(
+                "select v.* from public.forecast_values v"
+                " where v.fetch_id = (select f.id from public.source_fetches f"
+                "   where f.source_id = %s and f.location_id = %s and f.status = 'succeeded'"
+                "   order by f.requested_at desc limit 1)"
+                " and v.forecast_valid_until > %s and v.forecast_valid_from < %s"
+                " order by v.parameter, v.forecast_valid_from",
+                (source_id, location_id, start, end),
+            ).fetchall()
+
+    def last_requested_at(self, source_ids: Sequence[str], location_id: UUID) -> datetime | None:
+        """Most recent request (successful or not) to any of these sources for a location."""
+        with self._connect() as conn:
+            return conn.execute(
+                "select max(requested_at) from public.source_fetches"
+                " where source_id = any(%s) and location_id = %s",
+                (list(source_ids), location_id),
+            ).fetchone()[0]
+
+    def recent_fetches(self, limit: int = 20) -> list[dict]:
+        """Latest source calls with counts, for status views. No raw payloads."""
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=dict_row)
+            return cur.execute(
+                "select f.id, f.source_id, l.scope_key as venue, f.status, f.error_code,"
+                " f.error_summary, f.requested_at, f.completed_at, f.source_issued_at,"
+                " (select count(*) from public.forecast_values v where v.fetch_id = f.id)"
+                " as value_count"
+                " from public.source_fetches f join public.locations l on l.id = f.location_id"
+                " order by f.requested_at desc limit %s",
+                (limit,),
             ).fetchall()
 
 

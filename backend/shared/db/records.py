@@ -25,6 +25,8 @@ class Location:
     scope_key: str
     created_at: datetime
     updated_at: datetime
+    psgc_code: str | None = None
+    province_psgc_code: str | None = None
 
 
 @dataclass(frozen=True)

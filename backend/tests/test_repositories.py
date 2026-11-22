@@ -27,11 +27,11 @@ def location(connect):
     return PgLocationRepository(connect).get_or_create("grid:14.60:121.00", 14.6, 121.0, "Venue")
 
 
-def test_sources_seeded_and_none_enabled(connect) -> None:
+def test_sources_and_enabled_list(connect) -> None:
     repo = PgWeatherSourceRepository(connect)
-    assert repo.get("pagasa").name == "PAGASA"
+    assert repo.get("pagasa_atmo").access_method == "panahon_point_forecast"
     assert repo.get("unknown") is None
-    assert repo.list_enabled() == []
+    assert [s.id for s in repo.list_enabled()] == ["open_meteo", "pagasa_atmo", "pagasa_ecmwf"]
 
 
 def test_location_get_or_create_is_idempotent(connect, location) -> None:

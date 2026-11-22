@@ -46,6 +46,15 @@ class Settings(BaseSettings):
     qwen_api_key: SecretStr | None = Field(default=None, validation_alias="QWEN_API_KEY")
     llama_api_key: SecretStr | None = Field(default=None, validation_alias="LLAMA_API_KEY")
 
+    # Development-only demo routes (/api/v1/dev/...). Need PITCHY_ENV=development AND this flag,
+    # and still answer only requests from this computer.
+    enable_dev_routes: bool = Field(default=False, validation_alias="PITCHY_ENABLE_DEV_ROUTES")
+
+    # Sent to weather sources. Generic by default; set it to identify the project if wanted.
+    http_user_agent: str = Field(
+        default="weather-dss-client/0.1", validation_alias="PITCHY_HTTP_USER_AGENT"
+    )
+
     # Anonymous chatbot limits (P-06). Usage limits, not safety thresholds.
     chat_max_prompts: int = Field(default=10, ge=1, validation_alias="PITCHY_CHAT_MAX_PROMPTS")
     chat_window_minutes: int = Field(

@@ -1,9 +1,10 @@
 ﻿# Approved Source Allowlist
 
-This directory is reserved for explicitly approved weather-source domains used by future request protections (SSRF prevention). Only domains approved by the team are listed. No user-supplied URLs are fetched.
+Explicitly approved weather-source hosts, enforced in code by `hosts.py` (SSRF prevention). Adapters can only make requests through `AllowlistedClient`, which refuses any other host, requires HTTPS and does not follow redirects. No user-supplied URLs are fetched.
 
-| Domain | Source | Approved |
+| Host | Source | Approved |
 | --- | --- | --- |
-| `www.panahon.gov.ph` | PAGASA point-forecast API | Team, 2026-11-21 |
+| `api.open-meteo.com` | Open-Meteo Forecast API | Team, 2026-11-22 (DEC-01) |
+| `www.panahon.gov.ph` | PAGASA point forecast, alerts, cyclone track (interim fallback) | Team, 2026-11-21 (DEC-02) |
 
-Open-Meteo and DOST-ASTI domains will be added once their feeds are decided.
+DOST-ASTI will be added once its feed is decided.
