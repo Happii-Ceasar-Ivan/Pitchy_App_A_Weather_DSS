@@ -539,6 +539,19 @@ class PgAlertRepository(_Repo):
             ).fetchall()
 
 
+class PgRetentionRepository(_Repo):
+    """DEC-11 rotation through ``public.purge_old_weather_data`` (the backend role has no
+    DELETE privilege of its own). Returns how many rows of each kind were deleted."""
+
+    def purge(self, keep_forecasts: timedelta, keep_jobs: timedelta) -> dict[str, int]:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=dict_row)
+            return cur.execute(
+                "select * from public.purge_old_weather_data(%s, %s)",
+                (keep_forecasts, keep_jobs),
+            ).fetchone()
+
+
 class PgAnonymousSessionRepository(_Repo):
     """Storage only. The sliding-window/cooldown check is done atomically in Sprint B6."""
 

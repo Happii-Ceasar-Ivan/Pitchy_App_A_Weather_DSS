@@ -76,6 +76,14 @@ class Settings(BaseSettings):
         default=15, gt=0, validation_alias="PITCHY_RETRY_AFTER_FAILURE_MINUTES"
     )  # manual Ingest waits this long after a failed attempt (DEC-04 option C)
 
+    # Retention (DEC-11, team decision 2026-11-22). Run by the ingest job after each run.
+    retention_forecast_days: float = Field(
+        default=14, ge=1, validation_alias="PITCHY_RETENTION_FORECAST_DAYS"
+    )  # forecast values and source fetches
+    retention_job_days: float = Field(
+        default=30, ge=1, validation_alias="PITCHY_RETENTION_JOB_DAYS"
+    )  # finished ingestion jobs, alert checks and their alerts
+
     # Anonymous chatbot limits (P-06). Usage limits, not safety thresholds.
     chat_max_prompts: int = Field(default=10, ge=1, validation_alias="PITCHY_CHAT_MAX_PROMPTS")
     chat_window_minutes: int = Field(

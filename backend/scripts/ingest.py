@@ -7,7 +7,8 @@ Run from ``backend/``::
     uv run python scripts/ingest.py --record DIR          # also save raw responses (test samples)
 
 Uses the least-privilege ``PITCHY_APP_DB_URL``. Respects the shared lock and PAGASA's 4-hour
-rule, then checks PAGASA's official alerts (at most hourly) into the database.
+rule, then checks PAGASA's official alerts (at most hourly) into the database, then rotates
+weather data older than the retention period (DEC-11).
 ``--record`` never saves the PAGASA homepage or any token: only JSON API responses, named
 after what was asked (source, venue, model).
 """
@@ -36,6 +37,7 @@ from shared.db.repositories import (  # noqa: E402
     PgForecastRepository,
     PgIngestionJobRepository,
     PgLocationRepository,
+    PgRetentionRepository,
     PgWeatherSourceRepository,
 )
 from shared.settings import Settings  # noqa: E402
@@ -129,6 +131,17 @@ def _run(args, settings: Settings, connect) -> int:
         timedelta(minutes=settings.fresh_alerts_minutes),
     )
     print(f"  {'pagasa alerts':13} {'nationwide':15} {alerts.status:15} {alerts.error_code or ''}")
+
+    # Retention (DEC-11): rotate old weather data. A failure here never fails the ingest run.
+    try:
+        deleted = PgRetentionRepository(connect).purge(
+            timedelta(days=settings.retention_forecast_days),
+            timedelta(days=settings.retention_job_days),
+        )
+        print("  retention     " + ", ".join(f"{k.removesuffix('_deleted')}={v}"
+                                             for k, v in deleted.items()))  # fmt: skip
+    except Exception as exc:  # noqa: BLE001 - reported, then the run still succeeds
+        print(f"  retention     failed ({type(exc).__name__})", file=sys.stderr)
     return 0
 
 
