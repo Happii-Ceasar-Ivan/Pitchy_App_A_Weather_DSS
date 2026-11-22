@@ -68,6 +68,15 @@ Thumbs.db
 /PROJECT_STRUCTURE.md
 /config/environments/
 
+# Flutter app: files that could hold secrets or local config by accident
+/apps/flutter_app/**/secrets.dart
+/apps/flutter_app/**/*.secret.dart
+/apps/flutter_app/**/env.g.dart
+/apps/flutter_app/**/dart_defines*.json
+# Windows code-signing certificates
+*.pfx
+*.p12
+
 # Local AI-assistant tooling (includes the Supabase project ref in .mcp.json)
 /.claude/
 /.mcp.json
