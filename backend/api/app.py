@@ -20,6 +20,9 @@ API_V1_PREFIX = "/api/v1"
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     logging.basicConfig(level=settings.log_level)
+    # httpx logs full request URLs at INFO; source URLs can carry tokens (PAGASA). Never log them.
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
     docs = settings.expose_api_docs
     app = FastAPI(

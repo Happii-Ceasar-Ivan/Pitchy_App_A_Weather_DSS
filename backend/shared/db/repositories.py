@@ -284,19 +284,23 @@ class PgForecastRepository(_Repo):
                 (source_id, location_id, ingestion_job_id, source_issued_at,
                  raw_content_type, raw_payload, raw_payload_sha256),
             ).fetchone()  # fmt: skip
-            with conn.cursor() as cur:
-                cur.executemany(
-                    "insert into public.forecast_values (fetch_id, source_id, location_id,"
-                    " parameter, value, unit, value_state, retrieved_at, forecast_valid_from,"
-                    " forecast_valid_until, expires_at)"
-                    " values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    [
-                        (fetch_id, source_id, location_id, v.parameter, v.value, v.unit,
-                         v.value_state, retrieved_at, v.forecast_valid_from,
-                         v.forecast_valid_until, v.expires_at)
-                        for v in values
-                    ],
-                )  # fmt: skip
+            # One statement for every value: column arrays expanded with unnest(), so the whole
+            # fetch is a single round trip. (COPY is faster still but is refused under RLS for
+            # non-owner roles such as pitchy_app.)
+            conn.execute(
+                "insert into public.forecast_values (fetch_id, source_id, location_id,"
+                " parameter, value, unit, value_state, retrieved_at, forecast_valid_from,"
+                " forecast_valid_until, expires_at)"
+                " select %s, %s, %s, x.p, x.v, x.u, x.s, %s, x.f, x.t, x.e"
+                " from unnest(%s::text[], %s::float8[], %s::text[], %s::text[],"
+                "             %s::timestamptz[], %s::timestamptz[], %s::timestamptz[])"
+                "      as x(p, v, u, s, f, t, e)",
+                (fetch_id, source_id, location_id, retrieved_at,
+                 [v.parameter for v in values], [v.value for v in values],
+                 [v.unit for v in values], [v.value_state for v in values],
+                 [v.forecast_valid_from for v in values],
+                 [v.forecast_valid_until for v in values], [v.expires_at for v in values]),
+            )  # fmt: skip
             return fetch_id
 
     def record_failed_fetch(

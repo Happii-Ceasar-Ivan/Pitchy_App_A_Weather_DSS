@@ -20,11 +20,10 @@ from urllib.parse import urlsplit
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
-import psycopg  # noqa: E402
-
 from services.weather_ingestion import registry  # noqa: E402
 from services.weather_ingestion.jobs.runner import run_ingestion  # noqa: E402
 from services.weather_ingestion.sources.allowlist.hosts import AllowlistedClient  # noqa: E402
+from shared.db.pool import DatabaseNotConfiguredError, create_pool  # noqa: E402
 from shared.db.repositories import (  # noqa: E402
     PgForecastRepository,
     PgIngestionJobRepository,
@@ -64,14 +63,19 @@ def main() -> int:
     args = parser.parse_args()
 
     settings = Settings()
-    if settings.app_db_url is None:
-        print("PITCHY_APP_DB_URL is not set (run scripts/create_db_login.py).", file=sys.stderr)
+    try:
+        pool = create_pool(settings, min_size=2, max_size=8)
+    except DatabaseNotConfiguredError as exc:
+        print(exc, file=sys.stderr)
         return 2
-    url = settings.app_db_url.get_secret_value()
+    pool.open(wait=True, timeout=30)
+    try:
+        return _run(args, settings, pool.connection)
+    finally:
+        pool.close()
 
-    def connect():
-        return psycopg.connect(url, prepare_threshold=None, connect_timeout=15)
 
+def _run(args, settings: Settings, connect) -> int:
     groups = registry.adapter_groups(settings)
     if args.record:
         from dataclasses import replace
@@ -96,7 +100,8 @@ def main() -> int:
         PgForecastRepository(connect),
         trigger=args.trigger,
     )
-    print(f"Ingestion ({report.trigger}) {report.started_at:%Y-%m-%d %H:%M:%S}Z")
+    seconds = (report.finished_at - report.started_at).total_seconds()
+    print(f"Ingestion ({report.trigger}) {report.started_at:%Y-%m-%d %H:%M:%S}Z, {seconds:.1f}s")
     for r in report.results:
         detail = f"{r.values_stored} values" if r.status == "stored" else (r.error_code or "")
         print(f"  {r.source_id:13} {r.venue:15} {r.status:15} {detail}  {r.message or ''}")

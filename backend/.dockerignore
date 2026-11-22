@@ -1,0 +1,13 @@
+# Keep the image small and free of local secrets/caches.
+.venv/
+.uv-cache/
+.tmp/
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/
+**/*.pyc
+.env*
+tests/
+contract/
+Dockerfile
+.dockerignore

@@ -49,7 +49,7 @@ def _connect():
     with _pool_lock:
         if _pool is None:
             try:
-                _pool = create_pool(get_settings(), max_size=4)
+                _pool = create_pool(get_settings(), min_size=2, max_size=8)
             except DatabaseNotConfiguredError as exc:
                 raise ApiError(503, ErrorCode.INTERNAL_ERROR, str(exc)) from None
             _pool.open(wait=True, timeout=30)

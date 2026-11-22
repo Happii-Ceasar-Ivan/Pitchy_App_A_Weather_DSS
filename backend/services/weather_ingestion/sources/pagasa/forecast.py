@@ -10,6 +10,8 @@ so each value is valid until the next step.
 """
 
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta, timezone
 
 from services.weather_ingestion.sources.allowlist.hosts import AllowlistedClient
@@ -107,37 +109,41 @@ class PagasaForecastAdapter:
     def __init__(self, client: AllowlistedClient) -> None:
         self._client = client
         self._session: PagasaSession | None = None
+        self._lock = threading.Lock()
 
     def session(self) -> PagasaSession:
-        if self._session is None:
-            self._session = open_session(self._client)
-        return self._session
+        """One homepage visit per run, even when venues are fetched in parallel."""
+        with self._lock:
+            if self._session is None:
+                self._session = open_session(self._client)
+            return self._session
+
+    def _fetch_model(self, session: PagasaSession, venue: Venue, model: str) -> FetchOutcome:
+        init = session.runs.get(model)
+        try:
+            require(init is not None, f"panahon.gov.ph lists no current {model} run")
+            response = self._client.get(
+                FORECAST_URL,
+                params={
+                    "lat": repr(venue.latitude),
+                    "lon": repr(venue.longitude),
+                    "model": model,
+                    "init": init.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "token": session.token,
+                },
+            )
+            try:
+                payload = response.json()
+            except ValueError:
+                raise SourceResponseChangedError("PAGASA did not return JSON") from None
+            return parse(payload, venue, model, init)
+        except SourceError as error:
+            return FetchFailure(source_id(model), venue, error)
 
     def fetch(self, venue: Venue) -> list[FetchOutcome]:
         session = self.session()  # SourceError here means no model can be fetched
-        outcomes: list[FetchOutcome] = []
-        for model in MODELS:
-            init = session.runs.get(model)
-            try:
-                require(init is not None, f"panahon.gov.ph lists no current {model} run")
-                response = self._client.get(
-                    FORECAST_URL,
-                    params={
-                        "lat": repr(venue.latitude),
-                        "lon": repr(venue.longitude),
-                        "model": model,
-                        "init": init.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                        "token": session.token,
-                    },
-                )
-                try:
-                    payload = response.json()
-                except ValueError:
-                    raise SourceResponseChangedError("PAGASA did not return JSON") from None
-                outcomes.append(parse(payload, venue, model, init))
-            except SourceError as error:
-                outcomes.append(FetchFailure(source_id(model), venue, error))
-        return outcomes
+        with ThreadPoolExecutor(max_workers=len(MODELS)) as pool:
+            return list(pool.map(lambda m: self._fetch_model(session, venue, m), MODELS))
 
     def close(self) -> None:
         """Ends the run: cookies and token are discarded with the client."""

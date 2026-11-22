@@ -8,7 +8,9 @@ about safety (B4). This only fetches, normalizes and stores, recording failures 
 """
 
 import logging
+import threading
 from collections.abc import Callable, Sequence
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
@@ -54,6 +56,106 @@ class IngestionReport:
     results: list[SourceResult] = field(default_factory=list)
 
 
+class _LazyAdapter:
+    """Creates a group's adapter on first use, once, even when venues run in parallel."""
+
+    def __init__(self, make: Callable[[], object]) -> None:
+        self._make, self._adapter, self._lock = make, None, threading.Lock()
+
+    def get(self):
+        with self._lock:
+            if self._adapter is None:
+                self._adapter = self._make()
+            return self._adapter
+
+    def close(self) -> None:
+        close = getattr(self._adapter, "close", None)
+        if callable(close):
+            close()
+
+
+def _ingest_one(
+    group: AdapterGroup,
+    adapter: _LazyAdapter,
+    venue: Venue,
+    active: tuple[str, ...],
+    jobs: IngestionJobRepository,
+    forecasts: ForecastRepository,
+    lease: timedelta,
+    now: Callable[[], datetime],
+) -> list[SourceResult]:
+    """One source group for one venue: 4-hour rule, lock, fetch, store, release."""
+    if group.min_interval is not None:
+        last = forecasts.last_requested_at(active, venue.location_id)
+        if last is not None and now() - last < group.min_interval:
+            next_allowed = (last + group.min_interval).isoformat(timespec="minutes")
+            return [
+                SourceResult(s, venue.scope_key, "skipped_recent",
+                             message=f"Requested at {last.isoformat(timespec='minutes')}"
+                                     f"; next allowed {next_allowed}.")
+                for s in active
+            ]  # fmt: skip
+
+    lock = jobs.acquire(f"{group.name}:{venue.scope_key}", active[0], venue.location_id, lease)
+    if not lock.acquired:
+        return [
+            SourceResult(s, venue.scope_key, "in_progress", job_id=str(lock.job.id)) for s in active
+        ]
+
+    job_id, results = lock.job.id, []
+    stored_any, first_error = False, None
+    try:
+        outcomes = adapter.get().fetch(venue)
+    except SourceError as error:
+        outcomes = [FetchFailure(s, venue, error) for s in active]
+    except Exception:  # a bug, not a source problem: record safely and carry on
+        logger.exception("Adapter %s crashed for %s", group.name, venue.scope_key)
+        crash = SourceError("Unexpected adapter error.", "INTERNAL_ERROR")
+        outcomes = [FetchFailure(s, venue, crash) for s in active]
+
+    for outcome in outcomes:
+        if outcome.source_id not in active:
+            continue
+        if isinstance(outcome, SourceFetch):
+            forecasts.record_fetch(
+                outcome.source_id,
+                venue.location_id,
+                job_id,
+                outcome.values,
+                source_issued_at=outcome.source_issued_at,
+                raw_content_type=outcome.raw_content_type,
+                raw_payload=outcome.raw_payload,
+                raw_payload_sha256=outcome.raw_payload_sha256,
+            )
+            stored_any = True
+            results.append(
+                SourceResult(outcome.source_id, venue.scope_key, "stored",
+                             values_stored=len(outcome.values), job_id=str(job_id),
+                             message=" ".join(outcome.notes) or None)
+            )  # fmt: skip
+        else:
+            error = outcome.error
+            first_error = first_error or error
+            forecasts.record_failed_fetch(
+                outcome.source_id, venue.location_id, job_id, error.code, error.message
+            )
+            logger.warning("%s failed for %s: %s", outcome.source_id, venue.scope_key, error.code)
+            results.append(
+                SourceResult(outcome.source_id, venue.scope_key, "failed",
+                             error_code=error.code, message=error.message, job_id=str(job_id))
+            )  # fmt: skip
+
+    finished = jobs.finish(
+        job_id,
+        succeeded=stored_any,
+        failure_code=None if stored_any else (first_error.code if first_error else None),
+        failure_message=None if stored_any or not first_error else first_error.message,
+    )
+    if not finished:
+        logger.warning("Job %s lost its lease before finishing", job_id)
+    return results
+
+
 def run_ingestion(
     groups: Sequence[AdapterGroup],
     venues: Sequence[Venue],
@@ -64,96 +166,29 @@ def run_ingestion(
     trigger: str = "manual",
     lease: timedelta = DEFAULT_LEASE,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
+    max_workers: int = 8,
 ) -> IngestionReport:
-    report = IngestionReport(trigger=trigger, started_at=now())
-    for group in groups:
-        active = tuple(s for s in group.source_ids if s in enabled_sources)
-        if not active:
-            report.results += [
-                SourceResult(s, v.scope_key, "disabled") for s in group.source_ids for v in venues
-            ]
-            continue
-        adapter = None
-        for venue in venues:
-            if group.min_interval is not None:
-                last = forecasts.last_requested_at(active, venue.location_id)
-                if last is not None and now() - last < group.min_interval:
-                    next_allowed = (last + group.min_interval).isoformat(timespec="minutes")
-                    report.results += [
-                        SourceResult(s, venue.scope_key, "skipped_recent",
-                                     message=f"Requested at {last.isoformat(timespec='minutes')}"
-                                             f"; next allowed {next_allowed}.")
-                        for s in active
-                    ]  # fmt: skip
-                    continue
-
-            lock = jobs.acquire(
-                f"{group.name}:{venue.scope_key}", active[0], venue.location_id, lease
-            )
-            if not lock.acquired:
-                report.results += [
-                    SourceResult(s, venue.scope_key, "in_progress", job_id=str(lock.job.id))
-                    for s in active
-                ]
+    """Every (source group, venue) runs in parallel; the report keeps group/venue order."""
+    report = IngestionReport(trigger=trigger, started_at=datetime.now(UTC))
+    slots: list[list[SourceResult] | Future] = []
+    adapters: list[_LazyAdapter] = []
+    with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="ingest") as pool:
+        for group in groups:
+            active = tuple(s for s in group.source_ids if s in enabled_sources)
+            if not active:
+                slots.append([SourceResult(s, v.scope_key, "disabled")
+                              for s in group.source_ids for v in venues])  # fmt: skip
                 continue
-
-            job_id = lock.job.id
-            stored_any, first_error = False, None
-            try:
-                adapter = adapter or group.make_adapter()
-                outcomes = adapter.fetch(venue)
-            except SourceError as error:
-                outcomes = [FetchFailure(s, venue, error) for s in active]
-            except Exception:  # a bug, not a source problem: record safely and carry on
-                logger.exception("Adapter %s crashed for %s", group.name, venue.scope_key)
-                crash = SourceError("Unexpected adapter error.", "INTERNAL_ERROR")
-                outcomes = [FetchFailure(s, venue, crash) for s in active]
-
-            for outcome in outcomes:
-                if outcome.source_id not in active:
-                    continue
-                if isinstance(outcome, SourceFetch):
-                    forecasts.record_fetch(
-                        outcome.source_id,
-                        venue.location_id,
-                        job_id,
-                        outcome.values,
-                        source_issued_at=outcome.source_issued_at,
-                        raw_content_type=outcome.raw_content_type,
-                        raw_payload=outcome.raw_payload,
-                        raw_payload_sha256=outcome.raw_payload_sha256,
-                    )
-                    stored_any = True
-                    report.results.append(
-                        SourceResult(outcome.source_id, venue.scope_key, "stored",
-                                     values_stored=len(outcome.values), job_id=str(job_id),
-                                     message=" ".join(outcome.notes) or None)
-                    )  # fmt: skip
-                else:
-                    error = outcome.error
-                    first_error = first_error or error
-                    forecasts.record_failed_fetch(
-                        outcome.source_id, venue.location_id, job_id, error.code, error.message
-                    )
-                    logger.warning(
-                        "%s failed for %s: %s", outcome.source_id, venue.scope_key, error.code
-                    )
-                    report.results.append(
-                        SourceResult(outcome.source_id, venue.scope_key, "failed",
-                                     error_code=error.code, message=error.message,
-                                     job_id=str(job_id))
-                    )  # fmt: skip
-
-            finish_job = jobs.finish(
-                job_id,
-                succeeded=stored_any,
-                failure_code=None if stored_any else (first_error.code if first_error else None),
-                failure_message=None if stored_any or not first_error else first_error.message,
-            )
-            if not finish_job:
-                logger.warning("Job %s lost its lease before finishing", job_id)
-        close = getattr(adapter, "close", None)
-        if callable(close):
-            close()
-    report.finished_at = now()
+            adapter = _LazyAdapter(group.make_adapter)
+            adapters.append(adapter)
+            for venue in venues:
+                slots.append(
+                    pool.submit(_ingest_one, group, adapter, venue, active, jobs, forecasts,
+                                lease, now)
+                )  # fmt: skip
+        for slot in slots:
+            report.results += slot.result() if isinstance(slot, Future) else slot
+    for adapter in adapters:
+        adapter.close()
+    report.finished_at = datetime.now(UTC)
     return report
