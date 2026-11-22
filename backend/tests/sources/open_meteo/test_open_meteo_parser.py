@@ -8,6 +8,7 @@ import pytest
 from services.weather_ingestion.sources.base import SourceResponseChangedError, Venue
 from services.weather_ingestion.sources.open_meteo.adapter import (
     HOURLY_UNITS,
+    PRECEDING_HOUR,
     parse,
     request_params,
 )
@@ -44,7 +45,23 @@ def test_values_match_the_source_exactly(payload) -> None:
         if v.forecast_valid_from == datetime(2026, 11, 22, 6, tzinfo=UTC)
     }
     assert by_name["temperature_2m"] == payload["hourly"]["temperature_2m"][i]
-    assert by_name["shortwave_radiation"] == payload["hourly"]["shortwave_radiation"][i]
+    # Preceding-hour variables: the value stamped 07:00 is the one valid from 06:00.
+    assert by_name["shortwave_radiation"] == payload["hourly"]["shortwave_radiation"][i + 1]
+    assert by_name["precipitation"] == payload["hourly"]["precipitation"][i + 1]
+
+
+def test_preceding_hour_variables_cover_the_hour_before_their_timestamp(payload) -> None:
+    stamp = datetime(2026, 11, 22, 6, tzinfo=UTC)
+    i = payload["hourly"]["time"].index("2026-11-22T06:00")
+    for v in parse(payload, VENUE).values:
+        if v.forecast_valid_until != stamp or v.parameter not in PRECEDING_HOUR:
+            continue
+        assert v.forecast_valid_from == stamp - timedelta(hours=1)
+        assert v.value == payload["hourly"][v.parameter][i]
+    instant = {v.parameter for v in parse(payload, VENUE).values
+               if v.forecast_valid_from == stamp}  # fmt: skip
+    assert instant == set(HOURLY_UNITS)  # every variable still has a value for 06:00-07:00
+    assert {"temperature_2m", "cape", "wind_speed_10m"}.isdisjoint(PRECEDING_HOUR)
 
 
 def test_null_becomes_missing_not_a_guess(payload) -> None:

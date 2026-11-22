@@ -16,16 +16,22 @@ from typing import Protocol
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
+from psycopg.types.json import Jsonb
 
 from shared.db.pool import ConnectionFactory
 from shared.db.records import (
+    AlertCheckRecord,
     AnonymousSessionRecord,
+    FetchAttempt,
+    FetchCoverage,
+    FetchFailureRecord,
     ForecastValueRecord,
     IngestionJobRecord,
     Location,
     LockResult,
     MatchContextRecord,
     NewForecastValue,
+    StoredAlertRecord,
     WeatherSource,
 )
 
@@ -42,6 +48,8 @@ class LocationRepository(Protocol):
         self, scope_key: str, latitude: float, longitude: float, name: str | None
     ) -> Location: ...
     def list_all(self) -> list[Location]: ...
+    def get(self, location_id: UUID) -> Location | None: ...
+    def get_by_scope_key(self, scope_key: str) -> Location | None: ...
 
 
 class MatchContextRepository(Protocol):
@@ -57,7 +65,7 @@ class MatchContextRepository(Protocol):
 
 class IngestionJobRepository(Protocol):
     def acquire(
-        self, scope_key: str, source_id: str, location_id: UUID, lease: timedelta
+        self, scope_key: str, source_id: str, location_id: UUID | None, lease: timedelta
     ) -> LockResult: ...
     def renew_lease(self, job_id: UUID, lease: timedelta) -> bool: ...
     def finish(
@@ -68,6 +76,7 @@ class IngestionJobRepository(Protocol):
         failure_message: str | None = None,
     ) -> bool: ...
     def get(self, job_id: UUID) -> IngestionJobRecord | None: ...
+    def active_for_scopes(self, scope_keys: Sequence[str]) -> list[IngestionJobRecord]: ...
 
 
 class ForecastRepository(Protocol):
@@ -98,6 +107,11 @@ class ForecastRepository(Protocol):
         self, source_ids: Sequence[str], location_id: UUID
     ) -> datetime | None: ...
     def recent_fetches(self, limit: int = 20) -> list[dict]: ...
+    def recent_coverage(
+        self, source_id: str, location_id: UUID, start: datetime, end: datetime, limit: int = 10
+    ) -> list[FetchCoverage]: ...
+    def latest_attempt(self, source_id: str, location_id: UUID) -> FetchAttempt | None: ...
+    def failures_for_job(self, job_id: UUID) -> list[FetchFailureRecord]: ...
 
 
 class AnonymousSessionRepository(Protocol):
@@ -149,6 +163,20 @@ class PgLocationRepository(_Repo):
             cur = conn.cursor(row_factory=class_row(Location))
             return cur.execute("select * from public.locations order by scope_key").fetchall()
 
+    def get(self, location_id: UUID) -> Location | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(Location))
+            return cur.execute(
+                "select * from public.locations where id = %s", (location_id,)
+            ).fetchone()
+
+    def get_by_scope_key(self, scope_key: str) -> Location | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(Location))
+            return cur.execute(
+                "select * from public.locations where scope_key = %s", (scope_key,)
+            ).fetchone()
+
 
 class PgMatchContextRepository(_Repo):
     def create(
@@ -181,7 +209,7 @@ class PgIngestionJobRepository(_Repo):
     _ACQUIRE_ATTEMPTS = 3
 
     def acquire(
-        self, scope_key: str, source_id: str, location_id: UUID, lease: timedelta
+        self, scope_key: str, source_id: str, location_id: UUID | None, lease: timedelta
     ) -> LockResult:
         for _ in range(self._ACQUIRE_ATTEMPTS):
             with self._connect() as conn, conn.transaction():
@@ -258,6 +286,17 @@ class PgIngestionJobRepository(_Repo):
             return cur.execute(
                 "select * from public.ingestion_jobs where id = %s", (job_id,)
             ).fetchone()
+
+    def active_for_scopes(self, scope_keys: Sequence[str]) -> list[IngestionJobRecord]:
+        """Jobs holding a lock right now. A job whose lease ran out is not active."""
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(IngestionJobRecord))
+            return cur.execute(
+                "select * from public.ingestion_jobs where scope_key = any(%s)"
+                " and state in ('queued', 'running') and lease_expires_at > now()"
+                " order by scope_key",
+                (list(scope_keys),),
+            ).fetchall()
 
 
 class PgForecastRepository(_Repo):
@@ -375,6 +414,128 @@ class PgForecastRepository(_Repo):
                 " from public.source_fetches f join public.locations l on l.id = f.location_id"
                 " order by f.requested_at desc limit %s",
                 (limit,),
+            ).fetchall()
+
+    def recent_coverage(
+        self, source_id: str, location_id: UUID, start: datetime, end: datetime, limit: int = 10
+    ) -> list[FetchCoverage]:
+        """The latest successful fetches (newest first), each with the distinct validity
+        windows of its usable ('ok') values that overlap [start, end)."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                "with recent as (select id, completed_at, source_issued_at, requested_at"
+                "   from public.source_fetches"
+                "   where source_id = %s and location_id = %s and status = 'succeeded'"
+                "   order by requested_at desc limit %s)"
+                " select r.id, r.completed_at, r.source_issued_at, w.f, w.t from recent r"
+                " left join lateral (select distinct v.forecast_valid_from f,"
+                "   v.forecast_valid_until t from public.forecast_values v"
+                "   where v.fetch_id = r.id and v.value_state = 'ok'"
+                "   and v.forecast_valid_until > %s and v.forecast_valid_from < %s) w on true"
+                " order by r.requested_at desc, w.f, w.t",
+                (source_id, location_id, limit, start, end),
+            ).fetchall()
+        result: list[FetchCoverage] = []
+        for fetch_id, retrieved_at, issued_at, valid_from, valid_until in rows:
+            if not result or result[-1].fetch_id != fetch_id:
+                result.append(FetchCoverage(fetch_id, retrieved_at, issued_at, ()))
+            if valid_from is not None:
+                last = result[-1]
+                result[-1] = FetchCoverage(
+                    last.fetch_id, last.retrieved_at, last.source_issued_at,
+                    (*last.windows, (valid_from, valid_until)),
+                )  # fmt: skip
+        return result
+
+    def latest_attempt(self, source_id: str, location_id: UUID) -> FetchAttempt | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(FetchAttempt))
+            return cur.execute(
+                "select id, status, requested_at, error_code, error_summary"
+                " from public.source_fetches where source_id = %s and location_id = %s"
+                " order by requested_at desc limit 1",
+                (source_id, location_id),
+            ).fetchone()
+
+    def values_of_fetch(
+        self, fetch_id: UUID, start: datetime, end: datetime
+    ) -> list[ForecastValueRecord]:
+        """Every value of one fetch whose validity window overlaps [start, end)."""
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(ForecastValueRecord))
+            return cur.execute(
+                "select * from public.forecast_values where fetch_id = %s"
+                " and forecast_valid_until > %s and forecast_valid_from < %s"
+                " order by parameter, forecast_valid_from",
+                (fetch_id, start, end),
+            ).fetchall()
+
+    def failures_for_job(self, job_id: UUID) -> list[FetchFailureRecord]:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(FetchFailureRecord))
+            return cur.execute(
+                "select source_id, error_code, error_summary from public.source_fetches"
+                " where ingestion_job_id = %s and status = 'failed' order by source_id",
+                (job_id,),
+            ).fetchall()
+
+
+class PgAlertRepository(_Repo):
+    """Nationwide official alert checks (FR-SAF-007). Text is plain text from the parser."""
+
+    def last_check(self) -> AlertCheckRecord | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(AlertCheckRecord))
+            return cur.execute(
+                "select * from public.alert_checks order by checked_at desc limit 1"
+            ).fetchone()
+
+    def last_successful_check(self) -> AlertCheckRecord | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(AlertCheckRecord))
+            return cur.execute(
+                "select * from public.alert_checks where status = 'succeeded'"
+                " order by checked_at desc limit 1"
+            ).fetchone()
+
+    def record_check(
+        self, job_id: UUID | None, alerts: Sequence[dict], active_cyclones: int
+    ) -> UUID:
+        """Store one successful check and all alerts it returned, atomically.
+
+        Each alert dict has the ``official_alerts`` columns (identifier .. matched_venues)."""
+        with self._connect() as conn, conn.transaction():
+            check_id = conn.execute(
+                "insert into public.alert_checks (ingestion_job_id, status, active_cyclones,"
+                " alert_count) values (%s, 'succeeded', %s, %s) returning id",
+                (job_id, active_cyclones, len(alerts)),
+            ).fetchone()[0]
+            for a in alerts:
+                conn.execute(
+                    "insert into public.official_alerts (check_id, identifier, issuer, event,"
+                    " subtype, headline, message, issued_at, valid_until, areas,"
+                    " matched_venues) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (check_id, a["identifier"], a["issuer"], a["event"], a["subtype"],
+                     a["headline"], a["message"], a["issued_at"], a["valid_until"],
+                     Jsonb(a["areas"]), list(a["matched_venues"])),
+                )  # fmt: skip
+            return check_id
+
+    def record_failed_check(self, job_id: UUID | None, error_code: str, summary: str) -> UUID:
+        with self._connect() as conn:
+            return conn.execute(
+                "insert into public.alert_checks (ingestion_job_id, status, error_code,"
+                " error_summary) values (%s, 'failed', %s, %s) returning id",
+                (job_id, error_code, summary),
+            ).fetchone()[0]
+
+    def alerts_of_check(self, check_id: UUID) -> list[StoredAlertRecord]:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(StoredAlertRecord))
+            return cur.execute(
+                "select * from public.official_alerts where check_id = %s"
+                " order by issued_at desc nulls last, identifier",
+                (check_id,),
             ).fetchall()
 
 

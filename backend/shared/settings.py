@@ -55,6 +55,27 @@ class Settings(BaseSettings):
         default="weather-dss-client/0.1", validation_alias="PITCHY_HTTP_USER_AGENT"
     )
 
+    # Data-quality rules (DEC-04, team decision 2026-11-22). Not safety thresholds.
+    match_coverage_hours: float = Field(
+        default=2, gt=0, validation_alias="PITCHY_MATCH_COVERAGE_HOURS"
+    )  # forecasts must cover kickoff .. kickoff + this
+    fresh_open_meteo_hours: float = Field(
+        default=7, gt=0, validation_alias="PITCHY_FRESH_OPEN_METEO_HOURS"
+    )  # by retrieval time (Open-Meteo does not report its model run)
+    fresh_pagasa_atmo_hours: float = Field(
+        default=12, gt=0, validation_alias="PITCHY_FRESH_PAGASA_ATMO_HOURS"
+    )  # by model run (init)
+    fresh_pagasa_ecmwf_hours: float = Field(
+        default=24, gt=0, validation_alias="PITCHY_FRESH_PAGASA_ECMWF_HOURS"
+    )  # by model run (init)
+    fresh_alerts_minutes: float = Field(
+        default=60, gt=0, validation_alias="PITCHY_FRESH_ALERTS_MINUTES"
+    )  # by last check; also the most often alerts are fetched (DEC-02)
+
+    retry_after_failure_minutes: float = Field(
+        default=15, gt=0, validation_alias="PITCHY_RETRY_AFTER_FAILURE_MINUTES"
+    )  # manual Ingest waits this long after a failed attempt (DEC-04 option C)
+
     # Anonymous chatbot limits (P-06). Usage limits, not safety thresholds.
     chat_max_prompts: int = Field(default=10, ge=1, validation_alias="PITCHY_CHAT_MAX_PROMPTS")
     chat_window_minutes: int = Field(

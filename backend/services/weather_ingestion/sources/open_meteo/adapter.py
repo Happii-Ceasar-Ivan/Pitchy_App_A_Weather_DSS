@@ -33,6 +33,18 @@ HOURLY_UNITS: dict[str, str] = {
 }
 STEP = timedelta(hours=1)
 
+# Open-Meteo docs ("Hourly Parameter Definition", valid time): these describe the hour BEFORE
+# their timestamp (sum / mean / max / probability of the preceding hour), so a value stamped T
+# is valid for [T - 1 h, T). All other variables are instant values at T, kept as [T, T + 1 h).
+PRECEDING_HOUR = frozenset({
+    "precipitation",              # preceding hour sum
+    "precipitation_probability",  # preceding hour probability
+    "wind_gusts_10m",             # preceding hour max
+    "shortwave_radiation",        # preceding hour mean
+    "direct_normal_irradiance",   # preceding hour mean
+    "diffuse_radiation",          # preceding hour mean
+})  # fmt: skip
+
 
 def request_params(venue: Venue) -> dict[str, str]:
     return {
@@ -67,7 +79,9 @@ def parse(payload: dict, venue: Venue) -> SourceFetch:
         series = hourly.get(name)
         require(isinstance(series, list) and len(series) == len(starts), f"Missing series {name}")
         require(units.get(name) == unit, f"Unit for {name} changed to {units.get(name)!r}")
-        for start, value in zip(starts, series, strict=True):
+        shift = STEP if name in PRECEDING_HOUR else timedelta(0)
+        for stamp, value in zip(starts, series, strict=True):
+            start = stamp - shift
             ok = isinstance(value, int | float) and not isinstance(value, bool)
             values.append(
                 NewForecastValue(

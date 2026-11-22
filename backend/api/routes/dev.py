@@ -13,13 +13,15 @@ from fastapi import APIRouter, Depends, Query, Request
 from api.errors import ApiError
 from api.schemas.common import ErrorCode
 from services.weather_ingestion import registry
+from services.weather_ingestion.jobs.alerts import (
+    alerts_state,
+    pagasa_alert_fetcher,
+    refresh_alerts,
+)
 from services.weather_ingestion.jobs.runner import run_ingestion
-from services.weather_ingestion.sources.allowlist.hosts import AllowlistedClient
-from services.weather_ingestion.sources.base import SourceError
-from services.weather_ingestion.sources.pagasa.alerts import fetch_active_cyclones, fetch_alerts
-from services.weather_ingestion.sources.pagasa.session import open_session
 from shared.db.pool import DatabaseNotConfiguredError, create_pool
 from shared.db.repositories import (
+    PgAlertRepository,
     PgForecastRepository,
     PgIngestionJobRepository,
     PgLocationRepository,
@@ -28,7 +30,6 @@ from shared.db.repositories import (
 from shared.settings import get_settings
 
 LOCAL_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
-ALERT_MIN_INTERVAL = timedelta(hours=1)  # DEC-02: alerts at most hourly
 
 
 def local_only(request: Request) -> None:
@@ -68,7 +69,8 @@ def venues() -> list[dict]:
     return [
         {"scope_key": v.scope_key, "name": v.name, "latitude": v.latitude,
          "longitude": v.longitude, "psgc_code": v.psgc_code,
-         "province_psgc_code": v.province_psgc_code}
+         "province_psgc_code": v.province_psgc_code,
+         "submunicipality_psgc_code": v.submunicipality_psgc_code}
         for v in PgLocationRepository(_connect).list_all()
     ]  # fmt: skip
 
@@ -126,38 +128,28 @@ def forecast(
     }
 
 
-_alert_cache: dict = {"checked_at": None, "alerts": [], "cyclones": None, "error": None}
-_alert_lock = threading.Lock()
-
-
 @router.get("/venues/{scope_key}/alerts", summary="5. Official PAGASA alerts for a venue")
 def alerts(scope_key: str) -> dict:
-    """Refreshes from PAGASA only if the last check was over an hour ago (the "on open" rule);
-    otherwise answers from the last check. Alerts are official information, shown as issued."""
+    """Same path as the public alerts route: checks PAGASA only if the last check was over an
+    hour ago (the "on open" rule), stores it in the database, and answers from there."""
     venue = _venue(scope_key)
-    codes = {c for c in (venue.psgc_code, venue.province_psgc_code) if c}
-    with _alert_lock:
-        last = _alert_cache["checked_at"]
-        if last is None or datetime.now(UTC) - last >= ALERT_MIN_INTERVAL:
-            try:
-                with AllowlistedClient(get_settings().http_user_agent) as client:
-                    session = open_session(client)
-                    _alert_cache.update(
-                        alerts=fetch_alerts(client, session),
-                        cyclones=fetch_active_cyclones(client, session),
-                        error=None,
-                    )
-            except SourceError as exc:
-                _alert_cache["error"] = {"code": exc.code, "message": exc.message}
-            _alert_cache["checked_at"] = datetime.now(UTC)
-        cache = dict(_alert_cache)
-    matching = [a for a in cache["alerts"] if a.covers(codes)]
+    settings = get_settings()
+    interval = timedelta(minutes=settings.fresh_alerts_minutes)
+    repo, jobs = PgAlertRepository(_connect), PgIngestionJobRepository(_connect)
+    locations = PgLocationRepository(_connect).list_all()
+    fetch = pagasa_alert_fetcher(settings.http_user_agent)
+    refresh = refresh_alerts(fetch, locations, jobs, repo, interval)
+    state = alerts_state(repo, jobs, interval, datetime.now(UTC))
+    success = repo.last_successful_check()
+    stored = repo.alerts_of_check(success.id) if success else []
     return {
         "venue": venue.name,
-        "last_checked_at": cache["checked_at"],
-        "refresh_error": cache["error"],
-        "active_tropical_cyclones": cache["cyclones"],
-        "alerts_nationwide": len(cache["alerts"]),
+        "refresh": refresh.status,
+        "state": state.state,
+        "last_checked_at": state.last_success_at,
+        "last_error_code": state.last_error_code,
+        "active_tropical_cyclones": success.active_cyclones if success else None,
+        "alerts_nationwide": len(stored),
         "alerts_for_this_venue": [
             {
                 "issuer": a.issuer,
@@ -167,12 +159,14 @@ def alerts(scope_key: str) -> dict:
                 "issued_at": a.issued_at,
                 "valid_until": a.valid_until,
                 "matched_areas": [
-                    f"{m.municipality or m.province} ({m.level}, {m.relation})"
-                    for m in a.matching_areas(codes)
+                    f"{m['municipality'] or m['province']} ({m['level']}, {m['relation']})"
+                    for m in a.areas
+                    if m["code"] in venue.alert_codes
                 ],
                 "message": a.message,
             }
-            for a in matching
+            for a in stored
+            if venue.scope_key in a.matched_venues
         ],  # fmt: skip
         "label": "Official PAGASA information, shown as issued. Not a Pitchy classification.",
     }

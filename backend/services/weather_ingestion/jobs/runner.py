@@ -13,6 +13,7 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from services.weather_ingestion.sources.base import (
     FetchFailure,
@@ -20,6 +21,7 @@ from services.weather_ingestion.sources.base import (
     SourceFetch,
     Venue,
 )
+from shared.db.records import LockResult
 from shared.db.repositories import ForecastRepository, IngestionJobRepository
 
 logger = logging.getLogger("pitchy.ingestion")
@@ -56,7 +58,7 @@ class IngestionReport:
     results: list[SourceResult] = field(default_factory=list)
 
 
-class _LazyAdapter:
+class LazyAdapter:
     """Creates a group's adapter on first use, once, even when venues run in parallel."""
 
     def __init__(self, make: Callable[[], object]) -> None:
@@ -74,35 +76,64 @@ class _LazyAdapter:
             close()
 
 
-def _ingest_one(
+def lock_scope(group_name: str, venue_scope_key: str) -> str:
+    """The lock / job scope for one source group at one venue, e.g. ``pagasa:rizal_memorial``."""
+    return f"{group_name}:{venue_scope_key}"
+
+
+def _skipped_recent(group, venue, active, forecasts, now) -> list[SourceResult] | None:
+    """PAGASA's 4-hour rule (FR-WTH-008): results to report if the group must wait."""
+    if group.min_interval is None:
+        return None
+    last = forecasts.last_requested_at(active, venue.location_id)
+    if last is None or now() - last >= group.min_interval:
+        return None
+    next_allowed = (last + group.min_interval).isoformat(timespec="minutes")
+    return [
+        SourceResult(s, venue.scope_key, "skipped_recent",
+                     message=f"Requested at {last.isoformat(timespec='minutes')}"
+                             f"; next allowed {next_allowed}.")
+        for s in active
+    ]  # fmt: skip
+
+
+def acquire_group(
     group: AdapterGroup,
-    adapter: _LazyAdapter,
     venue: Venue,
     active: tuple[str, ...],
     jobs: IngestionJobRepository,
     forecasts: ForecastRepository,
     lease: timedelta,
     now: Callable[[], datetime],
+) -> LockResult | list[SourceResult]:
+    """Check the 4-hour rule, then take the group's lock. Returns the lock, or skip results."""
+    skipped = _skipped_recent(group, venue, active, forecasts, now)
+    if skipped is not None:
+        return skipped
+    return jobs.acquire(lock_scope(group.name, venue.scope_key), active[0], venue.location_id,
+                        lease)  # fmt: skip
+
+
+def execute_group(
+    group: AdapterGroup,
+    adapter: LazyAdapter,
+    venue: Venue,
+    active: tuple[str, ...],
+    job_id: UUID,
+    jobs: IngestionJobRepository,
+    forecasts: ForecastRepository,
+    now: Callable[[], datetime],
 ) -> list[SourceResult]:
-    """One source group for one venue: 4-hour rule, lock, fetch, store, release."""
-    if group.min_interval is not None:
-        last = forecasts.last_requested_at(active, venue.location_id)
-        if last is not None and now() - last < group.min_interval:
-            next_allowed = (last + group.min_interval).isoformat(timespec="minutes")
-            return [
-                SourceResult(s, venue.scope_key, "skipped_recent",
-                             message=f"Requested at {last.isoformat(timespec='minutes')}"
-                                     f"; next allowed {next_allowed}.")
-                for s in active
-            ]  # fmt: skip
+    """Fetch, store and release a lock this worker holds. Always finishes the job."""
+    # Re-check under the lock: another run may have fetched PAGASA since the first check.
+    skipped = _skipped_recent(group, venue, active, forecasts, now)
+    if skipped is not None:
+        jobs.finish(job_id, succeeded=False, failure_code="SKIPPED_RECENT",
+                    failure_message="Requested less than the minimum interval ago; the shared"
+                                    " cache is reused.")  # fmt: skip
+        return skipped
 
-    lock = jobs.acquire(f"{group.name}:{venue.scope_key}", active[0], venue.location_id, lease)
-    if not lock.acquired:
-        return [
-            SourceResult(s, venue.scope_key, "in_progress", job_id=str(lock.job.id)) for s in active
-        ]
-
-    job_id, results = lock.job.id, []
+    results = []
     stored_any, first_error = False, None
     try:
         outcomes = adapter.get().fetch(venue)
@@ -148,12 +179,35 @@ def _ingest_one(
     finished = jobs.finish(
         job_id,
         succeeded=stored_any,
-        failure_code=None if stored_any else (first_error.code if first_error else None),
-        failure_message=None if stored_any or not first_error else first_error.message,
-    )
+        failure_code=None if stored_any else (first_error.code if first_error else "NO_DATA"),
+        failure_message=None if stored_any else (
+            first_error.message if first_error else "The source returned nothing to store."
+        ),
+    )  # fmt: skip
     if not finished:
         logger.warning("Job %s lost its lease before finishing", job_id)
     return results
+
+
+def _ingest_one(
+    group: AdapterGroup,
+    adapter: LazyAdapter,
+    venue: Venue,
+    active: tuple[str, ...],
+    jobs: IngestionJobRepository,
+    forecasts: ForecastRepository,
+    lease: timedelta,
+    now: Callable[[], datetime],
+) -> list[SourceResult]:
+    """One source group for one venue: 4-hour rule, lock, fetch, store, release."""
+    lock = acquire_group(group, venue, active, jobs, forecasts, lease, now)
+    if isinstance(lock, list):
+        return lock
+    if not lock.acquired:
+        return [
+            SourceResult(s, venue.scope_key, "in_progress", job_id=str(lock.job.id)) for s in active
+        ]
+    return execute_group(group, adapter, venue, active, lock.job.id, jobs, forecasts, now)
 
 
 def run_ingestion(
@@ -171,7 +225,7 @@ def run_ingestion(
     """Every (source group, venue) runs in parallel; the report keeps group/venue order."""
     report = IngestionReport(trigger=trigger, started_at=datetime.now(UTC))
     slots: list[list[SourceResult] | Future] = []
-    adapters: list[_LazyAdapter] = []
+    adapters: list[LazyAdapter] = []
     with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="ingest") as pool:
         for group in groups:
             active = tuple(s for s in group.source_ids if s in enabled_sources)
@@ -179,7 +233,7 @@ def run_ingestion(
                 slots.append([SourceResult(s, v.scope_key, "disabled")
                               for s in group.source_ids for v in venues])  # fmt: skip
                 continue
-            adapter = _LazyAdapter(group.make_adapter)
+            adapter = LazyAdapter(group.make_adapter)
             adapters.append(adapter)
             for venue in venues:
                 slots.append(

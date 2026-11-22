@@ -1,7 +1,8 @@
 """Match context contract (FR-MAT-001, FR-MAT-003).
 
-Venue selection and time-zone handling are OPEN (P-07). The draft takes coordinates plus an
-optional display name; venue search/geocoding is not part of this contract yet.
+The venue is picked from ``GET /venues`` and sent as its scope key (P-07, team decision
+2026-11-22). The backend uses that venue's stored coordinates; clients never send coordinates.
+How local time is displayed is still OPEN; the API stores and returns UTC with an offset.
 """
 
 from uuid import UUID
@@ -9,12 +10,16 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field
 
 from api.schemas.common import ContractModel
+from api.schemas.venue import VENUE_KEY_PATTERN, VenueInfo
 
 
-class Venue(ContractModel):
-    name: str | None = Field(default=None, max_length=200)
-    latitude: float = Field(ge=-90, le=90)
-    longitude: float = Field(ge=-180, le=180)
+class MatchContextCreate(ContractModel):
+    kickoff_at: AwareDatetime = Field(description="Match start, ISO 8601 with UTC offset.")
+    venue: str = Field(
+        pattern=VENUE_KEY_PATTERN,
+        examples=["rizal_memorial"],
+        description="A `scope_key` from GET /venues. Unknown keys are rejected (422).",
+    )
     pitch_surface: str | None = Field(
         default=None,
         max_length=50,
@@ -22,12 +27,10 @@ class Venue(ContractModel):
     )
 
 
-class MatchContextCreate(ContractModel):
-    kickoff_at: AwareDatetime = Field(description="Match start, ISO 8601 with UTC offset.")
-    venue: Venue
-
-
-class MatchContext(MatchContextCreate):
+class MatchContext(ContractModel):
     id: UUID
+    kickoff_at: AwareDatetime
+    venue: VenueInfo
+    pitch_surface: str | None
     created_at: AwareDatetime
     updated_at: AwareDatetime

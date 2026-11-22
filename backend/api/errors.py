@@ -9,17 +9,22 @@ Messages never include stack traces, secrets, or echoed request values (secure e
 When ``retry_at`` is set, a ``Retry-After`` header (whole seconds, rounded up) is sent too.
 """
 
+import logging
 import math
 from datetime import UTC, datetime
 from http import HTTPStatus
 
+import psycopg
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from psycopg_pool import PoolTimeout
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.middleware.request_id import current_request_id
 from api.schemas.common import ErrorBody, ErrorCode, ErrorDetail, ErrorEnvelope
+
+logger = logging.getLogger("pitchy.api")
 
 _STATUS_TO_CODE: dict[int, ErrorCode] = {
     400: ErrorCode.BAD_REQUEST,
@@ -31,6 +36,7 @@ _STATUS_TO_CODE: dict[int, ErrorCode] = {
     422: ErrorCode.VALIDATION_ERROR,
     429: ErrorCode.RATE_LIMITED,
     501: ErrorCode.NOT_IMPLEMENTED,
+    503: ErrorCode.SERVICE_UNAVAILABLE,
 }
 
 
@@ -117,7 +123,16 @@ async def _validation_error_handler(_: Request, exc: RequestValidationError) -> 
     )
 
 
+async def _database_error_handler(_: Request, exc: Exception) -> JSONResponse:
+    logger.warning("Database unavailable: %s", type(exc).__name__)  # no URL or credentials
+    return error_response(
+        503, ErrorCode.SERVICE_UNAVAILABLE, "The database is not reachable right now."
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ApiError, _api_error_handler)
     app.add_exception_handler(StarletteHTTPException, _http_error_handler)
     app.add_exception_handler(RequestValidationError, _validation_error_handler)
+    app.add_exception_handler(PoolTimeout, _database_error_handler)
+    app.add_exception_handler(psycopg.OperationalError, _database_error_handler)

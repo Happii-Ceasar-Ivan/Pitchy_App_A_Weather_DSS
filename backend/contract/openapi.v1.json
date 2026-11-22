@@ -36,6 +36,85 @@
         }
       }
     },
+    "/api/v1/venues": {
+      "get": {
+        "tags": [
+          "venues"
+        ],
+        "summary": "List Venues",
+        "description": "The stadiums a match can be planned at. Clients send a `scope_key`, never coordinates.",
+        "operationId": "list_venues_api_v1_venues_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenueList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sessions": {
       "post": {
         "tags": [
@@ -101,6 +180,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -111,7 +200,7 @@
           "match contexts"
         ],
         "summary": "Create Match Context",
-        "description": "Save the match date/time and venue used for relevance and assessment (FR-MAT-001).",
+        "description": "Save the match date/time and the chosen venue (FR-MAT-001, P-07).",
         "operationId": "create_match_context_api_v1_match_contexts_post",
         "requestBody": {
           "content": {
@@ -173,6 +262,16 @@
           },
           "501": {
             "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
             "content": {
               "application/json": {
                 "schema": {
@@ -261,6 +360,16 @@
               }
             }
           },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -280,7 +389,7 @@
           "match contexts"
         ],
         "summary": "Get Weather Status",
-        "description": "Per-source freshness and match-time coverage; tells the client if Ingest is needed.",
+        "description": "Per-source freshness and match-time coverage (DEC-04); tells the client if Ingest is\nneeded. Reads the shared cache only: it never fetches from a source.",
         "operationId": "get_weather_status_api_v1_match_contexts__match_context_id__weather_status_get",
         "parameters": [
           {
@@ -352,6 +461,16 @@
               }
             }
           },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -365,14 +484,14 @@
         }
       }
     },
-    "/api/v1/match-contexts/{match_context_id}/ingestions": {
-      "post": {
+    "/api/v1/match-contexts/{match_context_id}/weather": {
+      "get": {
         "tags": [
           "match contexts"
         ],
-        "summary": "Request Ingestion",
-        "description": "Start manual ingestion, or return the job already running for the same scope.",
-        "operationId": "request_ingestion_api_v1_match_contexts__match_context_id__ingestions_post",
+        "summary": "Get Consolidated Weather",
+        "description": "Consolidated hourly values (P-09): best current source per value, labelled fallback,\nrange across comparable sources. Uses each source's cached fetch; never fetches.",
+        "operationId": "get_consolidated_weather_api_v1_match_contexts__match_context_id__weather_get",
         "parameters": [
           {
             "name": "match_context_id",
@@ -383,15 +502,35 @@
               "format": "uuid",
               "title": "Match Context Id"
             }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 24,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Hours from kickoff. Default: the coverage window.",
+              "title": "Hours"
+            },
+            "description": "Hours from kickoff. Default: the coverage window."
           }
         ],
         "responses": {
-          "202": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IngestionJob"
+                  "$ref": "#/components/schemas/ConsolidatedWeather"
                 }
               }
             }
@@ -443,6 +582,117 @@
               }
             }
           },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts/{match_context_id}/ingestions": {
+      "post": {
+        "tags": [
+          "match contexts"
+        ],
+        "summary": "Request Ingestion",
+        "description": "Start ingestion for the match's venue: one job per source group that needs data.\n\nA group already being ingested (by anyone, or the schedule) is returned with\n``reused_existing_job: true`` instead of starting again. Poll each job with\nGET /ingestions/{id}, or poll weather-status. 429 with ``retry_at`` when the only sources\nneeding data must wait: PAGASA's 4-hour gap (FR-WTH-008) or the cooldown after a failed\nattempt (DEC-04).",
+        "operationId": "request_ingestion_api_v1_match_contexts__match_context_id__ingestions_post",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRequestResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -454,7 +704,7 @@
             }
           },
           "409": {
-            "description": "INGESTION_NOT_NEEDED: valid shared data already covers this match.",
+            "description": "INGESTION_NOT_NEEDED: current shared data already covers this match.",
             "content": {
               "application/json": {
                 "schema": {
@@ -536,6 +786,16 @@
           },
           "501": {
             "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
             "content": {
               "application/json": {
                 "schema": {
@@ -658,6 +918,16 @@
               }
             }
           },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -681,13 +951,114 @@
         }
       }
     },
+    "/api/v1/match-contexts/{match_context_id}/alerts": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Get Alerts",
+        "description": "PAGASA alerts covering the match's venue, as issued. If the last nationwide check is over\nan hour old, PAGASA is checked first (at most hourly, one shared lock).",
+        "operationId": "get_alerts_api_v1_match_contexts__match_context_id__alerts_get",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenueAlerts"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ingestions/{job_id}": {
       "get": {
         "tags": [
           "ingestion"
         ],
         "summary": "Get Ingestion Job",
-        "description": "Poll a job until it succeeds, fails or expires.",
+        "description": "Poll a job until it succeeds, fails or expires. A job that stops renewing its lease is\nreported ``expired`` once another request takes over its scope.",
         "operationId": "get_ingestion_job_api_v1_ingestions__job_id__get",
         "parameters": [
           {
@@ -759,6 +1130,16 @@
               }
             }
           },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -775,6 +1156,320 @@
   },
   "components": {
     "schemas": {
+      "AlertArea": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Municipality or province name, as issued."
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "9-digit PSGC code."
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "province"
+            ],
+            "title": "Level"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation",
+            "description": "PAGASA's own wording, e.g. affecting, watch."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "code",
+          "level",
+          "relation"
+        ],
+        "title": "AlertArea"
+      },
+      "AlertsStatus": {
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/WeatherDataState"
+          },
+          "last_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Checked At",
+            "description": "Last successful check."
+          },
+          "current_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Until"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code",
+            "description": "Set when the latest attempt failed."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "last_checked_at",
+          "current_until"
+        ],
+        "title": "AlertsStatus",
+        "description": "Freshness of the nationwide PAGASA alerts check (DEC-04: current while checked < 1 h\nago). Alerts refresh on their own (schedule, and on open via GET .../alerts); they never\nmake ``ingestion_needed`` true."
+      },
+      "Attribution": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_id",
+          "text",
+          "url"
+        ],
+        "title": "Attribution"
+      },
+      "ConsolidatedQuantity": {
+        "properties": {
+          "quantity": {
+            "type": "string",
+            "title": "Quantity",
+            "examples": [
+              "rain"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "priority": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Priority",
+            "description": "Source ids, first available wins (P-09)."
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/ConsolidatedSlot"
+            },
+            "type": "array",
+            "title": "Slots"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "quantity",
+          "label",
+          "unit",
+          "priority",
+          "slots"
+        ],
+        "title": "ConsolidatedQuantity"
+      },
+      "ConsolidatedSlot": {
+        "properties": {
+          "valid_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid Until"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value",
+            "description": "Null when no source has a value for this hour."
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id",
+            "description": "Source of the chosen value."
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeatherDataState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`current`, or `stale` when no current source had a value (show as stale)."
+          },
+          "fallback_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Label",
+            "description": "Set when a lower-priority source was used, e.g. 'Rain: PAGASA ECMWF; PAGASA ATMO stale'."
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          },
+          "range": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValueRangeOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only for comparable quantities with 2+ current sources. For directions: the smallest clockwise arc from `min` to `max`."
+          },
+          "by_source": {
+            "items": {
+              "$ref": "#/components/schemas/SourceValueOut"
+            },
+            "type": "array",
+            "title": "By Source",
+            "description": "Every source's own value (FR-CLI-004)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "valid_from",
+          "valid_until",
+          "value",
+          "source_id",
+          "state",
+          "fallback_label",
+          "range",
+          "by_source"
+        ],
+        "title": "ConsolidatedSlot"
+      },
+      "ConsolidatedWeather": {
+        "properties": {
+          "match_context_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Context Id"
+          },
+          "venue": {
+            "type": "string",
+            "title": "Venue"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          },
+          "window": {
+            "$ref": "#/components/schemas/CoverageWindow",
+            "description": "Hourly slots, UTC."
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "quantities": {
+            "items": {
+              "$ref": "#/components/schemas/ConsolidatedQuantity"
+            },
+            "type": "array",
+            "title": "Quantities"
+          },
+          "attributions": {
+            "items": {
+              "$ref": "#/components/schemas/Attribution"
+            },
+            "type": "array",
+            "title": "Attributions",
+            "description": "Must be shown wherever this data appears (Open-Meteo licence)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "match_context_id",
+          "venue",
+          "checked_at",
+          "window",
+          "sources",
+          "quantities",
+          "attributions"
+        ],
+        "title": "ConsolidatedWeather",
+        "description": "Best source per value with labelled fallback and a range across sources (P-09).\nNever averaged across sources. Per-source states and provenance: `sources`."
+      },
       "ConversationRequest": {
         "properties": {
           "role": {
@@ -883,6 +1578,28 @@
         "title": "ConversationRole",
         "description": "Conversational context only, not an authenticated account role (P-03)."
       },
+      "CoverageWindow": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "CoverageWindow",
+        "description": "Forecasts must cover this window to count (DEC-04: kickoff to kickoff + 2 h)."
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -948,6 +1665,7 @@
           "PAYLOAD_TOO_LARGE",
           "RATE_LIMITED",
           "NOT_IMPLEMENTED",
+          "SERVICE_UNAVAILABLE",
           "INTERNAL_ERROR"
         ],
         "title": "ErrorCode"
@@ -1157,6 +1875,18 @@
       },
       "IngestionFailure": {
         "properties": {
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id",
+            "description": "Null for a job-level failure."
+          },
           "code": {
             "type": "string",
             "title": "Code"
@@ -1184,6 +1914,11 @@
           },
           "state": {
             "$ref": "#/components/schemas/IngestionJobState"
+          },
+          "venue": {
+            "type": "string",
+            "title": "Venue",
+            "description": "Venue scope key."
           },
           "source_ids": {
             "items": {
@@ -1231,7 +1966,7 @@
           "reused_existing_job": {
             "type": "boolean",
             "title": "Reused Existing Job",
-            "description": "True when another request already started this job (FR-WTH-004)."
+            "description": "True when another request or the schedule already started this job (FR-WTH-004). Always false on GET /ingestions/{id}."
           }
         },
         "additionalProperties": false,
@@ -1239,13 +1974,15 @@
         "required": [
           "id",
           "state",
+          "venue",
           "source_ids",
           "created_at",
           "started_at",
           "finished_at",
           "reused_existing_job"
         ],
-        "title": "IngestionJob"
+        "title": "IngestionJob",
+        "description": "One source group at one venue (e.g. PAGASA ATMO + ECMWF). Holds that scope's lock."
       },
       "IngestionJobState": {
         "type": "string",
@@ -1257,6 +1994,31 @@
           "expired"
         ],
         "title": "IngestionJobState"
+      },
+      "IngestionRequestResult": {
+        "properties": {
+          "match_context_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Context Id"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/IngestionJob"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Jobs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "match_context_id",
+          "jobs"
+        ],
+        "title": "IngestionRequestResult",
+        "description": "Answer to a manual Ingest: one job per source group that needed data."
       },
       "InputValue": {
         "properties": {
@@ -1329,19 +2091,29 @@
       },
       "MatchContext": {
         "properties": {
-          "kickoff_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Kickoff At",
-            "description": "Match start, ISO 8601 with UTC offset."
-          },
-          "venue": {
-            "$ref": "#/components/schemas/Venue"
-          },
           "id": {
             "type": "string",
             "format": "uuid",
             "title": "Id"
+          },
+          "kickoff_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Kickoff At"
+          },
+          "venue": {
+            "$ref": "#/components/schemas/VenueInfo"
+          },
+          "pitch_surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitch Surface"
           },
           "created_at": {
             "type": "string",
@@ -1357,9 +2129,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "id",
           "kickoff_at",
           "venue",
-          "id",
+          "pitch_surface",
           "created_at",
           "updated_at"
         ],
@@ -1374,7 +2147,26 @@
             "description": "Match start, ISO 8601 with UTC offset."
           },
           "venue": {
-            "$ref": "#/components/schemas/Venue"
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,63}$",
+            "title": "Venue",
+            "description": "A `scope_key` from GET /venues. Unknown keys are rejected (422).",
+            "examples": [
+              "rizal_memorial"
+            ]
+          },
+          "pitch_surface": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitch Surface",
+            "description": "Optional pitch metadata. Allowed values are not decided (P-07)."
           }
         },
         "additionalProperties": false,
@@ -1384,6 +2176,77 @@
           "venue"
         ],
         "title": "MatchContextCreate"
+      },
+      "OfficialAlertOut": {
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "title": "Issuer"
+          },
+          "event": {
+            "type": "string",
+            "title": "Event"
+          },
+          "subtype": {
+            "type": "string",
+            "title": "Subtype"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline",
+            "description": "Plain text. Never render as HTML."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Plain text. Never render as HTML."
+          },
+          "issued_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued At"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "matched_areas": {
+            "items": {
+              "$ref": "#/components/schemas/AlertArea"
+            },
+            "type": "array",
+            "title": "Matched Areas",
+            "description": "The areas that include this venue."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "issuer",
+          "event",
+          "subtype",
+          "headline",
+          "message",
+          "issued_at",
+          "valid_until",
+          "matched_areas"
+        ],
+        "title": "OfficialAlertOut"
       },
       "OfficialNotice": {
         "properties": {
@@ -1465,6 +2328,19 @@
               }
             ],
             "title": "Retrieved At"
+          },
+          "source_issued_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Issued At",
+            "description": "Model run time, when the source reports it (PAGASA `init`)."
           },
           "forecast_valid_from": {
             "anyOf": [
@@ -1606,7 +2482,20 @@
           "covers_match_time": {
             "type": "boolean",
             "title": "Covers Match Time",
-            "description": "False if the cached forecast's validity window does not include kickoff."
+            "description": "True when stored forecasts cover the whole coverage window without a gap."
+          },
+          "current_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Until",
+            "description": "When the data used stops being current (DEC-04). Null when nothing is used."
           },
           "provenance": {
             "anyOf": [
@@ -1617,7 +2506,7 @@
                 "type": "null"
               }
             ],
-            "description": "Null when no record exists."
+            "description": "The fetch whose data is used; its valid times are those covering the match. Null when nothing covers the match."
           },
           "limitations": {
             "items": {
@@ -1638,53 +2527,178 @@
         ],
         "title": "SourceStatus"
       },
-      "Venue": {
+      "SourceValueOut": {
         "properties": {
-          "name": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "state": {
+            "$ref": "#/components/schemas/WeatherDataState",
+            "description": "`current` or `stale`."
+          },
+          "note": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 200
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Note",
+            "examples": [
+              "Height not stated."
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_id",
+          "value",
+          "state"
+        ],
+        "title": "SourceValueOut"
+      },
+      "ValueRangeOut": {
+        "properties": {
+          "min": {
+            "type": "number",
+            "title": "Min"
+          },
+          "max": {
+            "type": "number",
+            "title": "Max"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 2.0,
+            "title": "Count"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "min",
+          "max",
+          "count",
+          "source_ids"
+        ],
+        "title": "ValueRangeOut",
+        "description": "Spread across current, comparable sources. Not an agreement label (no tolerances yet)."
+      },
+      "VenueAlerts": {
+        "properties": {
+          "venue": {
+            "type": "string",
+            "title": "Venue"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertsStatus"
+          },
+          "active_tropical_cyclones": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Tropical Cyclones",
+            "description": "Count from PAGASA's cyclone track at the last successful check."
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/OfficialAlertOut"
+            },
+            "type": "array",
+            "title": "Alerts",
+            "description": "Alerts covering this venue and not past valid_until."
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "default": "Official PAGASA information, shown as issued. Not a Pitchy classification."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "venue",
+          "status",
+          "active_tropical_cyclones",
+          "alerts"
+        ],
+        "title": "VenueAlerts"
+      },
+      "VenueInfo": {
+        "properties": {
+          "scope_key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,63}$",
+            "title": "Scope Key",
+            "description": "Stable venue key. Send it as `venue` when creating a match context.",
+            "examples": [
+              "rizal_memorial"
+            ]
+          },
+          "name": {
+            "type": "string",
             "title": "Name"
           },
           "latitude": {
             "type": "number",
             "maximum": 90.0,
             "minimum": -90.0,
-            "title": "Latitude"
+            "title": "Latitude",
+            "description": "Coordinates used for every source."
           },
           "longitude": {
             "type": "number",
             "maximum": 180.0,
             "minimum": -180.0,
             "title": "Longitude"
-          },
-          "pitch_surface": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 50
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pitch Surface",
-            "description": "Optional pitch metadata. Allowed values are not decided (P-07)."
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "scope_key",
+          "name",
           "latitude",
           "longitude"
         ],
-        "title": "Venue"
+        "title": "VenueInfo"
+      },
+      "VenueList": {
+        "properties": {
+          "venues": {
+            "items": {
+              "$ref": "#/components/schemas/VenueInfo"
+            },
+            "type": "array",
+            "title": "Venues"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "venues"
+        ],
+        "title": "VenueList"
       },
       "WeatherDataState": {
         "type": "string",
@@ -1704,10 +2718,18 @@
             "format": "uuid",
             "title": "Match Context Id"
           },
+          "venue": {
+            "type": "string",
+            "title": "Venue",
+            "description": "The match's venue scope key."
+          },
           "checked_at": {
             "type": "string",
             "format": "date-time",
             "title": "Checked At"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageWindow"
           },
           "sources": {
             "items": {
@@ -1719,30 +2741,45 @@
           "ingestion_needed": {
             "type": "boolean",
             "title": "Ingestion Needed",
-            "description": "Client shows Ingest only when this is true."
+            "description": "Any enabled source stale, missing or unavailable and not updating (DEC-04). The client shows Ingest only when this is true."
           },
-          "active_job_id": {
+          "active_job_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Active Job Ids",
+            "description": "Ingestion jobs running for this venue now; poll GET /ingestions/{id}."
+          },
+          "next_ingestion_at": {
             "anyOf": [
               {
                 "type": "string",
-                "format": "uuid"
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Active Job Id",
-            "description": "Set while an ingestion job is running."
+            "title": "Next Ingestion At",
+            "description": "Set when a source needing data must wait: PAGASA's 4-hour gap (FR-WTH-008) or the cooldown after a failed attempt (DEC-04). Ingest before then cannot refresh it."
+          },
+          "alerts": {
+            "$ref": "#/components/schemas/AlertsStatus"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "match_context_id",
+          "venue",
           "checked_at",
+          "coverage",
           "sources",
           "ingestion_needed",
-          "active_job_id"
+          "active_job_ids",
+          "alerts"
         ],
         "title": "WeatherStatus"
       }

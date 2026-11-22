@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.app import API_V1_PREFIX, create_app
+from api.deps import get_connect
 from scripts.export_openapi import CONTRACT_PATH, render_contract
 from shared.settings import Settings
 
@@ -9,9 +10,15 @@ MATCH_ID = "00000000-0000-4000-8000-000000000001"
 SESSION = {"X-Session-Token": "test-token"}
 
 
+def _no_database():
+    raise AssertionError("contract tests must not reach a database")
+
+
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(create_app(Settings(env="test")))
+    app = create_app(Settings(env="test"))
+    app.dependency_overrides[get_connect] = lambda: _no_database
+    return TestClient(app)
 
 
 def test_committed_contract_is_up_to_date() -> None:
@@ -24,20 +31,8 @@ def test_committed_contract_is_up_to_date() -> None:
 @pytest.mark.parametrize(
     ("method", "path", "body"),
     [
-        (
-            "post",
-            "/match-contexts",
-            {
-                "kickoff_at": "2026-12-01T15:00:00+08:00",
-                "venue": {"latitude": 14.6, "longitude": 121.0},
-            },
-        ),
-        ("get", f"/match-contexts/{MATCH_ID}", None),
-        ("get", f"/match-contexts/{MATCH_ID}/weather-status", None),
-        ("post", f"/match-contexts/{MATCH_ID}/ingestions", None),
         ("get", f"/match-contexts/{MATCH_ID}/assessment", None),
         ("post", f"/match-contexts/{MATCH_ID}/conversation", {"role": "coach", "question": "Hi"}),
-        ("get", f"/ingestions/{MATCH_ID}", None),
         ("post", "/sessions", None),
     ],
 )
@@ -52,9 +47,24 @@ def test_draft_routes_return_not_implemented(
 def test_kickoff_without_utc_offset_is_rejected(client: TestClient) -> None:
     res = client.post(
         f"{API_V1_PREFIX}/match-contexts",
-        json={"kickoff_at": "2026-12-01T15:00:00", "venue": {"latitude": 14.6, "longitude": 121.0}},
+        json={"kickoff_at": "2026-12-01T15:00:00", "venue": "rizal_memorial"},
     )
     assert res.status_code == 422
+
+
+def test_coordinates_are_not_accepted_as_a_venue(client: TestClient) -> None:
+    res = client.post(
+        f"{API_V1_PREFIX}/match-contexts",
+        json={"kickoff_at": "2026-12-01T15:00:00+08:00",
+              "venue": {"latitude": 14.6, "longitude": 121.0}},
+    )  # fmt: skip
+    assert res.status_code == 422
+
+
+def test_test_environment_never_opens_the_configured_database() -> None:
+    res = TestClient(create_app(Settings(env="test"))).get(f"{API_V1_PREFIX}/venues")
+    assert res.status_code == 503
+    assert res.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
 
 
 def test_unknown_role_and_extra_fields_are_rejected(client: TestClient) -> None:

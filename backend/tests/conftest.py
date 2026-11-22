@@ -9,12 +9,33 @@ from urllib.parse import urlsplit, urlunsplit
 
 import psycopg
 import pytest
+from psycopg.conninfo import conninfo_to_dict
+from psycopg.rows import dict_row
 
 from scripts.migrate import apply_pending, apply_seed, discover
 
 TEST_URL = os.environ.get("PITCHY_TEST_DATABASE_URL")
 APP_TEST_LOGIN = "pitchy_backend_test"
 APP_TEST_PASSWORD = "local-test-only"  # noqa: S105 - throwaway local test login
+
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+@pytest.fixture(autouse=True)
+def _no_remote_pools(monkeypatch):
+    """Tests must never open a pool to a real database (e.g. Supabase from the root .env)."""
+    import psycopg_pool
+
+    original = psycopg_pool.ConnectionPool.__init__
+
+    def guarded(self, conninfo="", *args, **kwargs):
+        host = conninfo_to_dict(conninfo).get("host")
+        if host not in LOCAL_HOSTS:
+            raise RuntimeError(f"Test tried to open a pool to a non-local host ({host}).")
+        original(self, conninfo, *args, **kwargs)
+
+    monkeypatch.setattr(psycopg_pool.ConnectionPool, "__init__", guarded)
+
 
 requires_db = pytest.mark.skipif(not TEST_URL, reason="PITCHY_TEST_DATABASE_URL not set")
 
@@ -28,7 +49,7 @@ def _with_user(url: str, user: str, password: str) -> str:
 @pytest.fixture(scope="session")
 def db_url() -> str:
     host = urlsplit(TEST_URL).hostname
-    if host not in {"localhost", "127.0.0.1", "::1"}:
+    if host not in LOCAL_HOSTS:
         pytest.fail(f"Refusing to reset a non-local database ({host}).")
     with psycopg.connect(TEST_URL, autocommit=True) as conn:
         conn.execute("drop schema if exists supabase_migrations cascade")
@@ -55,7 +76,28 @@ def db_url() -> str:
             )
         )
         conn.execute(f'grant pitchy_app to "{APP_TEST_LOGIN}"')
+        _SEEDED_LOCATIONS[:] = (
+            conn.cursor(row_factory=dict_row)
+            .execute("select * from public.locations order by scope_key")
+            .fetchall()
+        )
     return TEST_URL
+
+
+# Venues come from migrations (P-07). Tests truncate locations, so they are put back each time.
+_SEEDED_LOCATIONS: list[dict] = []
+
+
+def _restore_seeded_locations(conn: psycopg.Connection) -> None:
+    for row in _SEEDED_LOCATIONS:
+        columns = list(row)
+        conn.execute(
+            psycopg.sql.SQL("insert into public.locations ({}) values ({})").format(
+                psycopg.sql.SQL(", ").join(map(psycopg.sql.Identifier, columns)),
+                psycopg.sql.SQL(", ").join(psycopg.sql.Placeholder() * len(columns)),
+            ),
+            [row[c] for c in columns],
+        )
 
 
 @pytest.fixture(scope="session")
@@ -68,8 +110,10 @@ def app_db_url(db_url: str) -> str:
 def conn(db_url: str):
     with psycopg.connect(db_url, autocommit=True) as c:
         c.execute(
-            "truncate public.ingestion_jobs, public.locations, public.anonymous_sessions cascade"
+            "truncate public.ingestion_jobs, public.locations, public.anonymous_sessions,"
+            " public.alert_checks cascade"
         )
+        _restore_seeded_locations(c)
         yield c
 
 

@@ -13,8 +13,15 @@ from services.weather_ingestion.sources.pagasa.alerts import (
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "cap_alerts_2026-11-22.json"
-RIZAL = {"133900000", "130000000"}  # City of Manila, Metro Manila
-CLARK = {"036900000"}  # Tarlac
+RIZAL = {"133910000", "133900000", "130000000"}  # Malate, City of Manila, Metro Manila
+CLARK = {"036904000", "036900000"}  # Capas, Tarlac
+
+
+def _payload(*areas: dict) -> dict:
+    item = {"event": "THUNDERSTORM", "subtype": "thunderstorm advisory", "headline": "h",
+            "message": "m", "published_by": "PRSD", "issued_date": "2026-11-22 10:00:00",
+            "valid_date": "2026-11-22 12:00:00", "provinces": list(areas)}  # fmt: skip
+    return {"success": True, "data": {"alert_data": [item]}}
 
 
 @pytest.fixture
@@ -52,6 +59,26 @@ def test_alert_text_is_plain_text_only() -> None:
     assert plain_text(raw_note["headline"]) == ""
     assert plain_text("<b>Heavy</b> rain &amp; wind\n\n now") == "Heavy rain & wind now"
     assert "<" not in plain_text('<img src=x onerror="alert(1)">Thunderstorm')
+
+
+def test_municipality_alert_naming_capas_matches_clark_only() -> None:
+    (alert,) = parse_alerts(_payload({"municipality": "Capas", "province": "Tarlac",
+                                      "psgc_code": "36904000", "type": "affecting"}))  # fmt: skip
+    assert alert.covers(CLARK) and not alert.covers(RIZAL)
+    (area,) = alert.matching_areas(CLARK)
+    assert (area.code, area.level) == ("036904000", "municipality")
+
+
+def test_neighbouring_municipality_does_not_match_clark() -> None:
+    (alert,) = parse_alerts(_payload({"municipality": "Bamban", "province": "Tarlac",
+                                      "psgc_code": "036902000", "type": "affecting"}))  # fmt: skip
+    assert not alert.covers(CLARK)
+
+
+def test_submunicipality_alert_naming_malate_matches_rizal() -> None:
+    (alert,) = parse_alerts(_payload({"municipality": "Malate", "province": "Metro Manila",
+                                      "psgc_code": "133910000", "type": "affecting"}))  # fmt: skip
+    assert alert.covers(RIZAL) and not alert.covers(CLARK)
 
 
 def test_failed_or_changed_alert_payloads_are_rejected() -> None:

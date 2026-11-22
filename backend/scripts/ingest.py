@@ -7,7 +7,8 @@ Run from ``backend/``::
     uv run python scripts/ingest.py --record DIR          # also save raw responses (test samples)
 
 Uses the least-privilege ``PITCHY_APP_DB_URL``. Respects the shared lock and PAGASA's 4-hour
-rule. ``--record`` never saves the PAGASA homepage or any token: only JSON API responses, named
+rule, then checks PAGASA's official alerts (at most hourly) into the database.
+``--record`` never saves the PAGASA homepage or any token: only JSON API responses, named
 after what was asked (source, venue, model).
 """
 
@@ -15,6 +16,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -22,10 +24,15 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
 from services.weather_ingestion import registry  # noqa: E402
+from services.weather_ingestion.jobs.alerts import (  # noqa: E402
+    pagasa_alert_fetcher,
+    refresh_alerts,
+)
 from services.weather_ingestion.jobs.runner import run_ingestion  # noqa: E402
 from services.weather_ingestion.sources.allowlist.hosts import AllowlistedClient  # noqa: E402
 from shared.db.pool import DatabaseNotConfiguredError, create_pool  # noqa: E402
 from shared.db.repositories import (  # noqa: E402
+    PgAlertRepository,
     PgForecastRepository,
     PgIngestionJobRepository,
     PgLocationRepository,
@@ -96,7 +103,8 @@ def _run(args, settings: Settings, connect) -> int:
                   "pagasa": lambda: PagasaForecastAdapter(rec())}  # fmt: skip
         groups = [replace(g, make_adapter=makers.get(g.name, g.make_adapter)) for g in groups]
 
-    venues = [registry.venue_from_location(loc) for loc in PgLocationRepository(connect).list_all()]
+    locations = PgLocationRepository(connect).list_all()
+    venues = [registry.venue_from_location(loc) for loc in locations]
     enabled = {s.id for s in PgWeatherSourceRepository(connect).list_enabled()}
     report = run_ingestion(
         groups,
@@ -111,6 +119,16 @@ def _run(args, settings: Settings, connect) -> int:
     for r in report.results:
         detail = f"{r.values_stored} values" if r.status == "stored" else (r.error_code or "")
         print(f"  {r.source_id:13} {r.venue:15} {r.status:15} {detail}  {r.message or ''}")
+
+    # Official alerts: one nationwide check, at most hourly (DEC-02), same lock table.
+    alerts = refresh_alerts(
+        pagasa_alert_fetcher(settings.http_user_agent),
+        locations,
+        PgIngestionJobRepository(connect),
+        PgAlertRepository(connect),
+        timedelta(minutes=settings.fresh_alerts_minutes),
+    )
+    print(f"  {'pagasa alerts':13} {'nationwide':15} {alerts.status:15} {alerts.error_code or ''}")
     return 0
 
 

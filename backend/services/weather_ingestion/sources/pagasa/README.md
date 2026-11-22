@@ -19,9 +19,9 @@ A new run always starts with a new visit, so rotating tokens and new model runs 
 
 | PAGASA field | Parameter code | Unit | Notes |
 | --- | --- | --- | --- |
-| `heat_index` | `heat_index` | °C (site legend; not stated in the response) | PAGASA's heat index. **Not WBGT.** |
+| `heat_index` | `heat_index` | °C (not stated in the response; confirmed by the team, cross-checked with Open-Meteo) | PAGASA's heat index. **Not WBGT.** |
 | `accumulated_rain_1h` | `accumulated_rain_1h` | from `rain_unit`: ATMO `mm/h`, ECMWF `mm` | Exact meaning on ECMWF's 3 h/6 h steps still to confirm. Not mapped to Open-Meteo `precipitation` for that reason. |
-| `wind_speed` | `wind_speed` | m/s (site legend) | Height not stated, so not mapped to `wind_speed_10m`. |
+| `wind_speed` | `wind_speed` | m/s (not stated in the response; confirmed by the team) | Height not stated, so not mapped to `wind_speed_10m`. |
 | `wind_direction` | `wind_direction` | ° | |
 | `icon` | not stored as a value | text | Kept in the raw payload. |
 
@@ -34,7 +34,7 @@ A new run always starts with a new visit, so rotating tokens and new model runs 
 
 - `GET /api/v1/cap-alerts?token=`: nationwide official alerts. `NOTE` items are skipped, as on the site.
   - Times are PHT and converted to UTC.
-  - Affected areas are listed with PSGC codes, so venues are matched by their municipality's PSGC code.
+  - Affected areas are listed with PSGC codes (municipality `psgc_code` or province `geocode`), so venues are matched by code. Each venue has up to three codes (`Location.alert_codes`): sub-municipality (Rizal Memorial: Malate `133910000`), city/municipality (City of Manila `133900000`; Capas `036904000`) and province (Metro Manila `130000000`; Tarlac `036900000`). Confirmed by the team from the PSA list (P-07).
 - **All alert text is reduced to plain text** (tags and scripts stripped). An observed `NOTE` headline contained a `<script>` tag. Never render alert text as HTML.
 - `GET /api/v1/cyclone-track?token=`: `[]` when no cyclone is active. The active-cyclone format will be captured at the first real cyclone.
 - Refresh: with every 6-hour run, and on open if last checked over 1 hour ago. At most hourly (DEC-02).

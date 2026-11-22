@@ -28,6 +28,7 @@ class ErrorCode(StrEnum):
     PAYLOAD_TOO_LARGE = "PAYLOAD_TOO_LARGE"
     RATE_LIMITED = "RATE_LIMITED"
     NOT_IMPLEMENTED = "NOT_IMPLEMENTED"
+    SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
     INTERNAL_ERROR = "INTERNAL_ERROR"
 
 
@@ -78,6 +79,10 @@ ERROR_RESPONSES: dict[int | str, dict] = {
     },
     500: {"model": ErrorEnvelope, "description": "Unexpected server error"},
     501: {"model": ErrorEnvelope, "description": "Not implemented yet (contract draft)"},
+    503: {
+        "model": ErrorEnvelope,
+        "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+    },
 }
 
 INVALID_SESSION_RESPONSE: dict[int | str, dict] = {

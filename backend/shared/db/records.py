@@ -27,6 +27,13 @@ class Location:
     updated_at: datetime
     psgc_code: str | None = None
     province_psgc_code: str | None = None
+    submunicipality_psgc_code: str | None = None
+
+    @property
+    def alert_codes(self) -> set[str]:
+        """Every PSGC code an official alert may use for this venue (FR-SAF-007)."""
+        codes = (self.submunicipality_psgc_code, self.psgc_code, self.province_psgc_code)
+        return {c for c in codes if c}
 
 
 @dataclass(frozen=True)
@@ -102,3 +109,61 @@ class AnonymousSessionRecord:
     last_request_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+@dataclass(frozen=True)
+class FetchCoverage:
+    """One successful fetch and the validity windows of its usable values near a match."""
+
+    fetch_id: UUID
+    retrieved_at: datetime
+    source_issued_at: datetime | None
+    windows: tuple[tuple[datetime, datetime], ...]  # (valid_from, valid_until), sorted
+
+
+@dataclass(frozen=True)
+class FetchAttempt:
+    """The latest call to a source for a location, successful or not."""
+
+    id: UUID
+    status: str  # 'succeeded' | 'failed'
+    requested_at: datetime
+    error_code: str | None
+    error_summary: str | None
+
+
+@dataclass(frozen=True)
+class FetchFailureRecord:
+    source_id: str
+    error_code: str | None
+    error_summary: str | None
+
+
+@dataclass(frozen=True)
+class AlertCheckRecord:
+    id: UUID
+    ingestion_job_id: UUID | None
+    checked_at: datetime
+    status: str
+    error_code: str | None
+    error_summary: str | None
+    active_cyclones: int | None
+    alert_count: int | None
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class StoredAlertRecord:
+    id: UUID
+    check_id: UUID
+    identifier: str
+    issuer: str
+    event: str
+    subtype: str
+    headline: str
+    message: str
+    issued_at: datetime | None
+    valid_until: datetime | None
+    areas: list[dict]
+    matched_venues: list[str]
+    created_at: datetime

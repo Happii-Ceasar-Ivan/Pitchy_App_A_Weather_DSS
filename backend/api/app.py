@@ -6,12 +6,14 @@ Run locally from ``backend/``::
 """
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from api.deps import close_pool
 from api.errors import register_error_handlers
 from api.middleware.request_id import RequestIdMiddleware
-from api.routes import health, ingestions, match_contexts, sessions
+from api.routes import alerts, health, ingestions, match_contexts, sessions, venues
 from shared.settings import Settings, get_settings
 
 API_V1_PREFIX = "/api/v1"
@@ -24,8 +26,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     for noisy in ("httpx", "httpcore"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        shutdown = getattr(app.state, "on_shutdown", None)
+        if shutdown is not None:
+            shutdown()
+        close_pool(app.state)
+
     docs = settings.expose_api_docs
     app = FastAPI(
+        lifespan=lifespan,
         title="Pitchy API",
         version="0.1.0",
         docs_url=f"{API_V1_PREFIX}/docs" if docs else None,
@@ -33,8 +44,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url=f"{API_V1_PREFIX}/openapi.json" if docs else None,
     )
 
+    app.state.settings = settings
     register_error_handlers(app)
-    for module in (health, sessions, match_contexts, ingestions):
+    for module in (health, venues, sessions, match_contexts, alerts, ingestions):
         app.include_router(module.router, prefix=API_V1_PREFIX)
 
     if settings.env == "development" and settings.enable_dev_routes:

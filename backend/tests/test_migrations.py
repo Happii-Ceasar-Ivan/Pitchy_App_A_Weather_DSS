@@ -14,7 +14,7 @@ from tests.conftest import requires_db
 TABLES = {
     "weather_sources", "locations", "match_contexts", "ingestion_jobs", "source_fetches",
     "forecast_values", "safety_assessments", "assessment_inputs", "protocol_documents",
-    "protocol_chunks", "anonymous_sessions",
+    "protocol_chunks", "anonymous_sessions", "alert_checks", "official_alerts",
 }  # fmt: skip
 
 pytestmark = requires_db
@@ -191,3 +191,30 @@ def test_assessment_inputs_cannot_be_deleted(conn: psycopg.Connection) -> None:
     )
     with pytest.raises(errors.ForeignKeyViolation):
         conn.execute("delete from public.forecast_values where id = %s", (value,))
+
+
+def test_venues_have_their_alert_codes(connect) -> None:
+    from shared.db.repositories import PgLocationRepository
+
+    venues = {v.scope_key: v for v in PgLocationRepository(connect).list_all()}
+    assert venues["rizal_memorial"].alert_codes == {"133910000", "133900000", "130000000"}
+    assert venues["new_clark_city"].alert_codes == {"036904000", "036900000"}
+
+
+def test_submunicipality_code_must_be_nine_digits(conn: psycopg.Connection) -> None:
+    with pytest.raises(errors.CheckViolation):
+        conn.execute(
+            "update public.locations set submunicipality_psgc_code = '1380610000'"
+            " where scope_key = 'rizal_memorial'"
+        )
+
+
+def test_only_the_alerts_job_may_have_no_venue(conn: psycopg.Connection) -> None:
+    insert = (
+        "insert into public.ingestion_jobs (scope_key, source_id, location_id, state,"
+        " started_at, lease_expires_at) values (%s, 'pagasa', null, 'running', now(),"
+        " now() + interval '5 minutes')"
+    )
+    conn.execute(insert, ("pagasa_alerts",))
+    with pytest.raises(errors.CheckViolation):
+        conn.execute(insert, ("pagasa:somewhere",))
