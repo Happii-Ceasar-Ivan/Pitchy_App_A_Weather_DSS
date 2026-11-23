@@ -5,6 +5,7 @@ otherwise. The reset DROPS the public schema, so it refuses any host other than 
 """
 
 import os
+from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import psycopg
@@ -19,6 +20,13 @@ APP_TEST_LOGIN = "pitchy_backend_test"
 APP_TEST_PASSWORD = "local-test-only"  # noqa: S105 - throwaway local test login
 
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def pytest_configure(config) -> None:
+    """--basetemp (pyproject: .tmp/pytest, on D:) needs its parent folder; CI starts without it."""
+    basetemp = config.option.basetemp
+    if basetemp:
+        Path(basetemp).resolve().parent.mkdir(parents=True, exist_ok=True)
 
 
 @pytest.fixture(autouse=True)
