@@ -27,6 +27,7 @@ from shared.db.records import (
     FetchFailureRecord,
     ForecastValueRecord,
     IngestionJobRecord,
+    LightningCheckRecord,
     Location,
     LockResult,
     MatchContextRecord,
@@ -537,6 +538,55 @@ class PgAlertRepository(_Repo):
                 " order by issued_at desc nulls last, identifier",
                 (check_id,),
             ).fetchall()
+
+
+class PgLightningRepository(_Repo):
+    """Live lightning checks per venue (DEC-06). Flashes as returned, plus computed distance."""
+
+    def last_check(self, location_id: UUID) -> LightningCheckRecord | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(LightningCheckRecord))
+            return cur.execute(
+                "select * from public.lightning_checks where location_id = %s"
+                " order by checked_at desc limit 1",
+                (location_id,),
+            ).fetchone()
+
+    def last_successful_check(self, location_id: UUID) -> LightningCheckRecord | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=class_row(LightningCheckRecord))
+            return cur.execute(
+                "select * from public.lightning_checks where location_id = %s"
+                " and status = 'succeeded' order by checked_at desc limit 1",
+                (location_id,),
+            ).fetchone()
+
+    def record_check(self, location_id: UUID, job_id: UUID | None, reading) -> UUID:
+        flashes = [
+            {"detected_at": f.detected_at.isoformat(), "latitude": f.latitude,
+             "longitude": f.longitude, "distance_km": f.distance_km}
+            for f in reading.flashes
+        ]  # fmt: skip
+        with self._connect() as conn:
+            return conn.execute(
+                "insert into public.lightning_checks (location_id, ingestion_job_id, status,"
+                " radius_km, flash_count, nearest_km, latest_flash_at, flashes, raw_payload,"
+                " raw_payload_sha256) values (%s, %s, 'succeeded', %s, %s, %s, %s, %s, %s, %s)"
+                " returning id",
+                (location_id, job_id, reading.radius_km, len(reading.flashes),
+                 reading.nearest_km, reading.latest_at, Jsonb(flashes), reading.raw_payload,
+                 reading.raw_payload_sha256),
+            ).fetchone()[0]  # fmt: skip
+
+    def record_failed_check(
+        self, location_id: UUID, job_id: UUID | None, error_code: str, summary: str
+    ) -> UUID:
+        with self._connect() as conn:
+            return conn.execute(
+                "insert into public.lightning_checks (location_id, ingestion_job_id, status,"
+                " error_code, error_summary) values (%s, %s, 'failed', %s, %s) returning id",
+                (location_id, job_id, error_code, summary),
+            ).fetchone()[0]
 
 
 class PgRetentionRepository(_Repo):

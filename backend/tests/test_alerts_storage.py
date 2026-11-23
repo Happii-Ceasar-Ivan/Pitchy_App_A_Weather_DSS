@@ -26,12 +26,15 @@ FIXTURE = Path(__file__).parent / "sources" / "pagasa" / "fixtures" / "cap_alert
 SOON = datetime.now(UTC) + 3 * HOUR
 
 
+def _pht(moment: datetime) -> str:
+    return (moment.astimezone(UTC) + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+
+
 def _capas_alert(valid_until: datetime, headline="Thunderstorm <b>advisory</b>") -> dict:
-    pht = valid_until.astimezone(UTC) + timedelta(hours=8)
     return {
         "event": "THUNDERSTORM", "subtype": "thunderstorm advisory", "headline": headline,
         "message": "Heavy rain expected.", "published_by": "PRSD", "identifier": "capas-1",
-        "issued_date": "2026-11-22 10:00:00", "valid_date": pht.strftime("%Y-%m-%d %H:%M:%S"),
+        "issued_date": "2026-11-22 10:00:00", "valid_date": _pht(valid_until),
         "provinces": [{"municipality": "Capas", "province": "Tarlac", "psgc_code": "36904000",
                        "type": "affecting"}],
     }  # fmt: skip
@@ -46,6 +49,8 @@ class FakeFetcher:
         if self.error:
             raise self.error
         payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        for item in payload["data"]["alert_data"]:  # keep the real fixture valid on any date
+            item["valid_date"] = _pht(SOON)
         payload["data"]["alert_data"] += self.items or []
         return parse_alerts(payload), 0
 

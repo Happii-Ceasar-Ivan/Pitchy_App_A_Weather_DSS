@@ -72,3 +72,10 @@ def get_alert_fetcher(request: Request):
     from services.weather_ingestion.jobs.alerts import pagasa_alert_fetcher
 
     return pagasa_alert_fetcher(request.app.state.settings.http_user_agent)
+
+
+def get_lightning_fetcher(request: Request):
+    """The Xweather lightning fetcher (allowlisted client, keys from settings). Tests override."""
+    from services.weather_ingestion.jobs.lightning import xweather_fetcher
+
+    return xweather_fetcher(request.app.state.settings)

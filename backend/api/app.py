@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from api.deps import close_pool
 from api.errors import register_error_handlers
 from api.middleware.request_id import RequestIdMiddleware
-from api.routes import alerts, health, ingestions, match_contexts, sessions, venues
+from api.routes import alerts, health, ingestions, lightning, match_contexts, sessions, venues
 from shared.settings import Settings, get_settings
 
 API_V1_PREFIX = "/api/v1"
@@ -46,7 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.state.settings = settings
     register_error_handlers(app)
-    for module in (health, venues, sessions, match_contexts, alerts, ingestions):
+    for module in (health, venues, sessions, match_contexts, alerts, lightning, ingestions):
         app.include_router(module.router, prefix=API_V1_PREFIX)
 
     if settings.env == "development" and settings.enable_dev_routes:
