@@ -110,6 +110,8 @@ List<Json> _sourceStatuses(MockScenario s, DateTime now, DateTime kickoff) {
         };
         final hasData =
             state == 'current' || state == 'stale' || (state == 'updating' && id == 'open_meteo');
+        // The stale fetch is older, so its forecast ends before the match window does.
+        final validUntil = state == 'stale' ? kickoff.add(const Duration(hours: 1)) : windowEnd;
         final retrieved = state == 'stale'
             ? now.subtract(const Duration(hours: 9))
             : now.subtract(const Duration(minutes: 40));
@@ -117,7 +119,7 @@ List<Json> _sourceStatuses(MockScenario s, DateTime now, DateTime kickoff) {
           'source_id': id,
           'source_name': name,
           'state': state,
-          'covers_match_time': hasData,
+          'covers_match_time': hasData && state != 'stale',
           'current_until': state == 'current' ? _t(now.add(const Duration(hours: 2))) : null,
           'provenance': hasData
               ? _provenance(
@@ -125,7 +127,7 @@ List<Json> _sourceStatuses(MockScenario s, DateTime now, DateTime kickoff) {
                   name,
                   retrieved,
                   kickoff.subtract(const Duration(hours: 1)),
-                  windowEnd,
+                  validUntil,
                   issued: id.startsWith('pagasa')
                       ? retrieved.subtract(const Duration(hours: 2))
                       : null,

@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'data_state_badge.dart';
+import 'skeletons.dart';
 import 'weather_value_card.dart' show shortSourceName;
 
 /// The Line Board's signature: every weather source is a line on the board with
@@ -110,8 +111,6 @@ class _SourceLine extends StatelessWidget {
       WeatherDataState.unavailable =>
         source.limitations.isNotEmpty ? source.limitations.first.message : 'Source unavailable',
     };
-    final hasData = p != null;
-    if (hasData && !source.coversMatchTime) return '$base · doesn’t cover the whole match';
     return base;
   }
 
@@ -125,7 +124,9 @@ class _SourceLine extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: '${source.sourceName}: ${context.stateColors.of(source.state).label}. ${_detail()}',
+      label:
+          '${source.sourceName}: ${context.stateColors.of(source.state).label}. ${_detail()}'
+          '${p != null && !source.coversMatchTime ? '. Doesn’t cover the whole match.' : ''}',
       excludeSemantics: true,
       child: IntrinsicHeight(
         child: Row(
@@ -166,17 +167,27 @@ class _SourceLine extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(_detail(), style: text.bodySmall),
-                    if (p?.forecastValidFrom != null && p?.forecastValidUntil != null) ...[
-                      const SizedBox(height: 8),
-                      ValidityBar(
-                        window: coverage,
-                        validFrom: p!.forecastValidFrom!,
-                        validUntil: p.forecastValidUntil!,
-                        kickoff: kickoff,
-                        color: line,
+                    // One line, so every row keeps the skeleton's shape; the
+                    // full text is in the tooltip and the screen-reader label.
+                    Tooltip(
+                      message: _detail(),
+                      child: Text(
+                        _detail(),
+                        style: text.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
+                    ),
+                    const SizedBox(height: 8),
+                    ValidityBar(
+                      window: coverage,
+                      validFrom: p?.forecastValidFrom,
+                      validUntil: p?.forecastValidUntil,
+                      kickoff: kickoff,
+                      color: line,
+                      current: filled,
+                      coversMatch: source.coversMatchTime,
+                    ),
                   ],
                 ),
               ),
@@ -244,13 +255,25 @@ class ValidityBar extends StatelessWidget {
     required this.validUntil,
     required this.kickoff,
     required this.color,
+    this.current = true,
+    this.coversMatch = true,
   });
 
   final CoverageWindow window;
-  final DateTime validFrom;
-  final DateTime validUntil;
+
+  /// Null when the source has no forecast for this match: the track is drawn
+  /// empty, so every rail row keeps one shape.
+  final DateTime? validFrom;
+  final DateTime? validUntil;
   final DateTime kickoff;
   final Color color;
+
+  /// Non-current data is drawn dashed, never as a solid current line.
+  final bool current;
+
+  /// From the backend (`covers_match_time`); when false the end label says
+  /// where the forecast stops.
+  final bool coversMatch;
 
   double _fraction(DateTime t) {
     final total = window.end.difference(window.start).inSeconds;
@@ -262,10 +285,18 @@ class ValidityBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final text = Theme.of(context).textTheme.labelSmall?.copyWith(color: palette.inkMuted);
+    final from = validFrom, until = validUntil;
+    final endLabel = from == null || until == null
+        ? 'No forecast for this match'
+        : coversMatch
+        ? 'to ${formatPhtTime(window.end)}'
+        : 'ends ${formatPhtTime(until)}';
     return Semantics(
-      label:
-          'Forecast valid ${formatPhtTime(validFrom)} to ${formatPhtTime(validUntil)}. '
-          'Match window ${formatPhtTime(window.start)} to ${formatPhtTime(window.end)}.',
+      label: from == null || until == null
+          ? 'No forecast for this match window.'
+          : 'Forecast valid ${formatPhtTime(from)} to ${formatPhtTime(until)}'
+                '${coversMatch ? '' : ', not the whole match'}. '
+                'Match window ${formatPhtTime(window.start)} to ${formatPhtTime(window.end)}.',
       excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -279,6 +310,7 @@ class ValidityBar extends StatelessWidget {
                 validUntil: validUntil,
                 kickoff: kickoff,
                 color: color,
+                dashed: !current,
                 track: palette.hairline,
                 tick: palette.ink,
               ),
@@ -294,7 +326,7 @@ class ValidityBar extends StatelessWidget {
               if (_fraction(kickoff) < 0.6)
                 Align(
                   alignment: Alignment.centerRight,
-                  child: Text('to ${formatPhtTime(window.end)}', style: text),
+                  child: Text(endLabel, style: text),
                 ),
               Align(
                 alignment: FractionalOffset(_fraction(kickoff), 0),
@@ -318,15 +350,17 @@ class _ValidityPainter extends CustomPainter {
     required this.validUntil,
     required this.kickoff,
     required this.color,
+    required this.dashed,
     required this.track,
     required this.tick,
   });
 
   final CoverageWindow window;
-  final DateTime validFrom;
-  final DateTime validUntil;
+  final DateTime? validFrom;
+  final DateTime? validUntil;
   final DateTime kickoff;
   final Color color;
+  final bool dashed;
   final Color track;
   final Color tick;
 
@@ -345,13 +379,26 @@ class _ValidityPainter extends CustomPainter {
       RRect.fromRectAndRadius(Rect.fromLTWH(0, y - 2, size.width, 4), r),
       Paint()..color = track,
     );
-    final a = _x(validFrom, size.width);
-    final b = _x(validUntil, size.width);
-    if (b > a) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTRB(a, y - 3, b, y + 3), r),
-        Paint()..color = color,
-      );
+    final from = validFrom, until = validUntil;
+    if (from != null && until != null) {
+      final a = _x(from, size.width);
+      final b = _x(until, size.width);
+      if (b > a && !dashed) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(Rect.fromLTRB(a, y - 3, b, y + 3), r),
+          Paint()..color = color,
+        );
+      } else if (b > a) {
+        // Non-current data: dashes in the full line colour (readable, and the
+        // same "stamped" language as the dashed STALE pill).
+        final paint = Paint()..color = color;
+        for (var x = a; x < b; x += 9) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(Rect.fromLTRB(x, y - 3, (x + 5).clamp(a, b), y + 3), r),
+            paint,
+          );
+        }
+      }
     }
     final k = _x(kickoff, size.width);
     canvas.drawLine(
@@ -365,5 +412,93 @@ class _ValidityPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ValidityPainter old) =>
-      old.validFrom != validFrom || old.validUntil != validUntil || old.color != color;
+      old.validFrom != validFrom ||
+      old.validUntil != validUntil ||
+      old.color != color ||
+      old.dashed != dashed;
+}
+
+/// The source rail while loading: the same card, paddings and line heights as
+/// [SourceRail], so the real rows land where the skeleton rows were (P-17).
+class SourceRailSkeleton extends StatelessWidget {
+  const SourceRailSkeleton({super.key, this.lines = 3});
+
+  /// Three sources are enabled on the backend today (Open-Meteo, PAGASA ATMO,
+  /// PAGASA ECMWF).
+  final int lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final palette = context.palette;
+    return SkeletonPulse(
+      label: 'Loading weather sources',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SkeletonLine(style: text.labelLarge, width: 190),
+              const SizedBox(height: 6),
+              for (var i = 0; i < lines; i++)
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        child: CustomPaint(
+                          painter: _RailPainter(
+                            color: palette.hairline,
+                            rail: palette.hairline,
+                            filled: true,
+                            isFirst: i == 0,
+                            isLast: i == lines - 1,
+                            surface: palette.surface,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: SkeletonLine(style: text.titleSmall, widthFactor: 0.55),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SkeletonBox(
+                                    width: 76,
+                                    height: DataStateBadge.denseHeight(context),
+                                    radius: AppTheme.radiusPill,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              SkeletonLine(style: text.bodySmall, widthFactor: 0.7),
+                              const SizedBox(height: 8),
+                              const SizedBox(
+                                height: 10,
+                                child: Center(child: SkeletonBox(height: 4)),
+                              ),
+                              const SizedBox(height: 2),
+                              SkeletonLine(style: text.labelSmall, widthFactor: 0.45),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

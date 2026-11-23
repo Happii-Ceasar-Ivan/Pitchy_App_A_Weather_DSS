@@ -5,6 +5,7 @@ import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'dashed_border.dart';
 import 'data_state_badge.dart';
+import 'skeletons.dart';
 
 /// A source name without its trailing domain, for tight spaces:
 /// "PAGASA ATMO (panahon.gov.ph)" -> "PAGASA ATMO". The full name stays in the
@@ -44,6 +45,12 @@ class WeatherValueCard extends StatelessWidget {
   final List<SourceStatus> sources;
   final bool expanded;
   final VoidCallback onToggle;
+
+  /// Height of the footer row (state pill or expand arrow, whichever is taller).
+  static double footerHeight(BuildContext context) {
+    final pill = DataStateBadge.denseHeight(context);
+    return pill > 20 ? pill : 20;
+  }
 
   static String number(double v) {
     final s = v.toStringAsFixed(1);
@@ -89,65 +96,88 @@ class WeatherValueCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      quantity.label,
-                      style: text.labelLarge?.copyWith(color: palette.inkMuted),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Semantics(
-                    label: expanded ? 'Hide details' : 'Show source and times',
-                    excludeSemantics: true,
-                    child: Icon(
-                      expanded ? Icons.expand_less : Icons.expand_more,
-                      size: 20,
-                      color: palette.inkMuted,
-                    ),
-                  ),
-                ],
+              // One line: the label without its bracketed source (the full
+              // label is in the details and the screen-reader text).
+              Text(
+                shortSourceName(quantity.label),
+                style: text.labelLarge?.copyWith(color: palette.inkMuted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
               Semantics(
                 label: semantic,
                 excludeSemantics: true,
-                child: Text.rich(
-                  TextSpan(
-                    children: [
+                child: SizedBox(
+                  height: SkeletonLine.lineHeight(context, text.headlineMedium),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text.rich(
                       TextSpan(
-                        text: valueText,
-                        style: (value == null ? text.titleLarge : text.headlineMedium)?.copyWith(
-                          color: notCurrent ? palette.inkMuted : palette.ink,
-                        ),
+                        children: [
+                          TextSpan(
+                            text: valueText,
+                            style: (value == null ? text.titleLarge : text.headlineMedium)
+                                ?.copyWith(color: notCurrent ? palette.inkMuted : palette.ink),
+                          ),
+                          if (value != null) TextSpan(text: ' $unit', style: text.titleMedium),
+                        ],
                       ),
-                      if (value != null) TextSpan(text: ' $unit', style: text.titleMedium),
-                    ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 4),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (slot != null)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (used != null) ...[
-                          _LineDot(color: palette.lineFor(used.sourceId)),
-                          const SizedBox(width: 6),
+              SizedBox(
+                height: SkeletonLine.lineHeight(context, text.bodySmall),
+                child: slot == null
+                    ? null
+                    : Row(
+                        children: [
+                          if (used != null) ...[
+                            _LineDot(color: palette.lineFor(used.sourceId)),
+                            const SizedBox(width: 6),
+                          ],
+                          Flexible(
+                            child: Text(
+                              _hourRange(slot!),
+                              style: text.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
-                        Flexible(child: Text(_hourRange(slot!), style: text.bodySmall)),
-                      ],
+                      ),
+              ),
+              // Footer: the state pill (when not Current) and the expand arrow.
+              // Always present, so cards keep one height and a state change
+              // never moves the layout.
+              const SizedBox(height: 6),
+              SizedBox(
+                height: WeatherValueCard.footerHeight(context),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: notCurrent
+                          ? Align(
+                              alignment: Alignment.centerLeft,
+                              child: DataStateBadge(state: state, dense: true),
+                            )
+                          : const SizedBox.shrink(),
                     ),
-                  if (notCurrent) DataStateBadge(state: state, dense: true),
-                ],
+                    Semantics(
+                      label: expanded ? 'Hide details' : 'Show source and times',
+                      excludeSemantics: true,
+                      child: Icon(
+                        expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: palette.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               AnimatedSize(
                 duration: const Duration(milliseconds: 220),
@@ -202,6 +232,7 @@ class _Details extends StatelessWidget {
     final retrieved = used?.provenance?.retrievedAt;
     final range = slot.range;
     final rows = <(String, String, Color?)>[
+      if (shortSourceName(quantity.label) != quantity.label) ('Measure', quantity.label, null),
       (
         'Source',
         used?.sourceName ?? slot.sourceId ?? 'None',
@@ -378,6 +409,70 @@ class _WeatherCardGridState extends State<WeatherCardGrid> {
           ],
         );
       },
+    );
+  }
+}
+
+/// The card grid while loading: same columns, gaps, card padding and line
+/// heights as [WeatherCardGrid] (P-17). Reserves the "Show N more" row too,
+/// since the backend reports more quantities than fit.
+class WeatherCardGridSkeleton extends StatelessWidget {
+  const WeatherCardGridSkeleton({super.key, this.cards = 4});
+
+  final int cards;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    Widget card() => Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SkeletonLine(style: text.labelLarge, widthFactor: 0.7),
+            const SizedBox(height: 6),
+            SkeletonLine(style: text.headlineMedium, widthFactor: 0.45),
+            const SizedBox(height: 4),
+            SkeletonLine(style: text.bodySmall, widthFactor: 0.6),
+            const SizedBox(height: 6),
+            SizedBox(height: WeatherValueCard.footerHeight(context)),
+          ],
+        ),
+      ),
+    );
+    return SkeletonPulse(
+      label: 'Loading weather',
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final cols = c.maxWidth >= 720 ? 4 : 2;
+          const gap = 10.0;
+          final rows = (cards / cols).ceil();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var r = 0; r < rows; r++) ...[
+                if (r > 0) const SizedBox(height: gap),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < cols; i++) ...[
+                        if (i > 0) const SizedBox(width: gap),
+                        Expanded(child: r * cols + i < cards ? card() : const SizedBox.shrink()),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: SizedBox(height: AppTheme.minTarget),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

@@ -6,16 +6,23 @@ import '../../core/app_scope.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/pitchy_palette.dart';
+import '../../shared/services/mock/fixtures.dart' show MockScenario;
+import '../../shared/services/mock/mock_pitchy_api.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import 'update_check.dart';
 
-/// Settings (F0): Appearance and Credits. Feedback, updates and the other
-/// mock-up rows wait for team decisions (see docs/frontend/f0-screen-flow.md).
+/// Full Settings (P-16, P-17). Rows whose content the team hasn't supplied yet
+/// are shown disabled with "Not set up yet", never with invented content.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  static const _notYet = 'Not set up yet';
+
   @override
   Widget build(BuildContext context) {
-    final controller = AppScope.of(context).theme;
+    final scope = AppScope.of(context);
+    final controller = scope.theme;
+    final api = scope.api;
     return Scaffold(
       appBar: const PitchyTopBar(title: 'Settings'),
       body: ListenableBuilder(
@@ -54,26 +61,104 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
             const Divider(),
+            const _SectionHeader('Feedback and contact'),
+            const ListTile(
+              enabled: false,
+              leading: Icon(Icons.feedback_outlined),
+              title: Text('Send feedback'),
+              subtitle: Text(_notYet),
+            ),
+            const ListTile(
+              enabled: false,
+              leading: Icon(Icons.support_agent),
+              title: Text('Contact support'),
+              subtitle: Text(_notYet),
+            ),
+            const Divider(),
+            const _SectionHeader('Support Pitchy'),
+            const ListTile(
+              enabled: false,
+              leading: Icon(Icons.volunteer_activism_outlined),
+              title: Text('Support development'),
+              subtitle: Text('Optional donations. $_notYet'),
+            ),
+            const Divider(),
+            const _SectionHeader('Updates'),
+            ListTile(
+              leading: const Icon(Icons.system_update_alt),
+              title: const Text('Check for updates'),
+              subtitle: Text('Pitchy ${scope.info.label}'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showUpdateCheck(context),
+            ),
+            const Divider(),
             const _SectionHeader('About'),
             ListTile(
-              leading: const Icon(Icons.star_outline),
+              leading: const Icon(Icons.info_outline),
+              title: const Text('About Pitchy'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Routes.about),
+            ),
+            ListTile(
+              leading: const Icon(Icons.attribution_outlined),
               title: const Text('Credits'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go(Routes.credits),
+              onTap: () => context.push(Routes.credits),
             ),
-            if (kDebugMode)
+            const ListTile(
+              enabled: false,
+              leading: Icon(Icons.privacy_tip_outlined),
+              title: Text('Privacy policy'),
+              subtitle: Text(_notYet),
+            ),
+            const ListTile(
+              enabled: false,
+              leading: Icon(Icons.health_and_safety_outlined),
+              title: Text('Safety disclaimer'),
+              subtitle: Text(_notYet),
+            ),
+            if (kDebugMode) ...[
+              const Divider(),
+              const _SectionHeader('Developer (debug builds only)'),
+              if (api is MockPitchyApi) _MockScenarioPicker(api: api),
               ListTile(
                 leading: const Icon(Icons.developer_mode),
                 title: const Text('Component states'),
-                subtitle: const Text('Debug builds only'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push(Routes.stateGallery),
               ),
+            ],
           ],
         ),
       ),
     );
   }
+}
+
+/// Debug only: which state the mock backend is in. Pull to refresh the
+/// dashboard afterwards.
+class _MockScenarioPicker extends StatefulWidget {
+  const _MockScenarioPicker({required this.api});
+
+  final MockPitchyApi api;
+
+  @override
+  State<_MockScenarioPicker> createState() => _MockScenarioPickerState();
+}
+
+class _MockScenarioPickerState extends State<_MockScenarioPicker> {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+    child: DropdownMenu<MockScenario>(
+      label: const Text('Mock backend scenario'),
+      initialSelection: widget.api.scenario,
+      onSelected: (s) => setState(() => widget.api.scenario = s ?? widget.api.scenario),
+      dropdownMenuEntries: [
+        for (final s in MockScenario.values) DropdownMenuEntry(value: s, label: s.name),
+      ],
+    ),
+  );
 }
 
 class _SectionHeader extends StatelessWidget {

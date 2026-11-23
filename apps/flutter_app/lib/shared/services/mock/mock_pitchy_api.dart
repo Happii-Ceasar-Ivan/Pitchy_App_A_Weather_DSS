@@ -32,6 +32,11 @@ class MockPitchyApi implements PitchyApi {
 
   final Map<String, int> _jobPolls = {};
 
+  /// Matches created through this mock, so later reads return what was set up.
+  final Map<String, MatchContext> _matches = {};
+
+  DateTime _kickoffFor(String id) => _matches[id]?.kickoffAt ?? _kickoff;
+
   Future<T> _respond<T>(T Function() build) async {
     if (latency > Duration.zero) await Future<void>.delayed(latency);
     switch (scenario) {
@@ -51,8 +56,8 @@ class MockPitchyApi implements PitchyApi {
   Future<List<Venue>> listVenues() => _respond(() => venueListFromJson(venuesJson()));
 
   @override
-  Future<MatchContext> createMatchContext(MatchContextCreate request) => _respond(
-    () => MatchContext.fromJson(
+  Future<MatchContext> createMatchContext(MatchContextCreate request) => _respond(() {
+    final match = MatchContext.fromJson(
       matchContextJson(
         id: request.venueScopeKey == 'new_clark_city' ? newClarkCityId : rizalMemorialId,
         venue: request.venueScopeKey,
@@ -60,27 +65,40 @@ class MockPitchyApi implements PitchyApi {
         created: _now,
         pitchSurface: request.pitchSurface,
       ),
-    ),
-  );
+    );
+    return _matches[match.id] = match;
+  });
 
   @override
   Future<MatchContext> getMatchContext(String matchContextId) => _respond(
-    () => MatchContext.fromJson(
-      matchContextJson(id: matchContextId, kickoff: _kickoff, created: _now),
-    ),
+    () =>
+        _matches[matchContextId] ??
+        MatchContext.fromJson(
+          matchContextJson(id: matchContextId, kickoff: _kickoff, created: _now),
+        ),
   );
 
   @override
   Future<WeatherStatus> getWeatherStatus(String matchContextId) => _respond(
     () => WeatherStatus.fromJson(
-      weatherStatusJson(scenario, now: _now, kickoff: _kickoff, id: matchContextId),
+      weatherStatusJson(
+        scenario,
+        now: _now,
+        kickoff: _kickoffFor(matchContextId),
+        id: matchContextId,
+      ),
     ),
   );
 
   @override
   Future<ConsolidatedWeather> getWeather(String matchContextId, {int? hours}) => _respond(
     () => ConsolidatedWeather.fromJson(
-      consolidatedWeatherJson(scenario: scenario, now: _now, kickoff: _kickoff, id: matchContextId),
+      consolidatedWeatherJson(
+        scenario: scenario,
+        now: _now,
+        kickoff: _kickoffFor(matchContextId),
+        id: matchContextId,
+      ),
     ),
   );
 

@@ -1,9 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../shared/widgets/link_text.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 
 /// All credits live here (P-13), including the Open-Meteo attribution and link.
-/// Links become tappable when the link-opening package is added (F1).
 class CreditsScreen extends StatelessWidget {
   const CreditsScreen({super.key});
 
@@ -21,7 +21,6 @@ class CreditsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     return Scaffold(
       appBar: const PitchyTopBar(title: 'Credits'),
       body: ListView.separated(
@@ -44,14 +43,7 @@ class CreditsScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 4),
                 Text(detail),
-                const SizedBox(height: 4),
-                SelectableText(
-                  url,
-                  style: text.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
+                LinkText(url),
               ],
             ),
           );

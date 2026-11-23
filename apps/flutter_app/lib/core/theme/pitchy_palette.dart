@@ -25,7 +25,7 @@ class CustomSwatch {
   final Color color;
 }
 
-/// Fixed set for the Custom theme (provisional until confirmed with the team).
+/// Fixed set for the Custom theme (approved by the team, P-16).
 /// Each colour passes 4.5:1 against white. No reds, oranges or yellows, so a
 /// themed colour can never be mistaken for a safety colour.
 const customSwatches = <CustomSwatch>[

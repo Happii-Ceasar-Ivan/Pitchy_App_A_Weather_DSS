@@ -12,6 +12,14 @@ class DataStateBadge extends StatelessWidget {
   final WeatherDataState state;
   final bool dense;
 
+  /// Height of a dense pill, for skeletons that stand in for one.
+  static double denseHeight(BuildContext context) {
+    final style = Theme.of(context).textTheme.labelSmall;
+    final line =
+        MediaQuery.textScalerOf(context).scale(style?.fontSize ?? 11) * (style?.height ?? 1.45);
+    return (line > 14 ? line : 14) + 4;
+  }
+
   @override
   Widget build(BuildContext context) {
     final style = context.stateColors.of(state);
@@ -29,7 +37,14 @@ class DataStateBadge extends StatelessWidget {
         children: [
           Icon(style.icon, size: dense ? 14 : 16, color: style.foreground),
           SizedBox(width: dense ? 3 : 4),
-          Text(style.label.toUpperCase(), style: textStyle),
+          Flexible(
+            child: Text(
+              style.label.toUpperCase(),
+              style: textStyle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

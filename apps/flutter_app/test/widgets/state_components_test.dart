@@ -102,6 +102,9 @@ void main() {
   });
 
   group('source rail', () {
+    // Real fonts: row shapes must be compared as users will see them.
+    setUpAll(loadAppFonts);
+
     WeatherStatus status(MockScenario s) =>
         WeatherStatus.fromJson(weatherStatusJson(s, now: testNow, kickoff: testKickoff));
 
@@ -115,6 +118,37 @@ void main() {
         now: testNow,
       ),
     );
+
+    testWidgets('every rail row has the skeleton row shape, in every backend state', (
+      tester,
+    ) async {
+      final skeletonRows = <double>[];
+      await pumpThemed(tester, const SourceRailSkeleton());
+      for (final e in find.byType(IntrinsicHeight).evaluate()) {
+        skeletonRows.add(tester.getSize(find.byWidget(e.widget)).height);
+      }
+      for (final scenario in [
+        MockScenario.allCurrent,
+        MockScenario.someStale,
+        MockScenario.updating,
+        MockScenario.missing,
+        MockScenario.unavailable,
+      ]) {
+        await pumpRail(tester, status(scenario));
+        final rows = [
+          for (final e in find.byType(IntrinsicHeight).evaluate())
+            tester.getSize(find.byWidget(e.widget)).height,
+        ];
+        expect(rows.length, skeletonRows.length, reason: scenario.name);
+        for (var i = 0; i < rows.length; i++) {
+          expect(
+            (rows[i] - skeletonRows[i]).abs(),
+            lessThan(1.5),
+            reason: '${scenario.name} row $i',
+          );
+        }
+      }
+    });
 
     testWidgets('shows every source with the backend state, never upgraded', (tester) async {
       await pumpRail(tester, status(MockScenario.someStale));
@@ -160,7 +194,7 @@ void main() {
     testWidgets('collapsed: data only; expanded: source, timestamps and spread', (tester) async {
       await pumpGrid(tester, weatherFor(MockScenario.allCurrent));
       expect(find.text('Source'), findsNothing);
-      await tester.tap(find.text('Heat index (PAGASA)'));
+      await tester.tap(find.text('Heat index'));
       await tester.pumpAndSettle();
       expect(find.text('Source'), findsOneWidget);
       expect(find.text('PAGASA ATMO (panahon.gov.ph)'), findsOneWidget);
@@ -192,7 +226,7 @@ void main() {
       final cards = find.byType(WeatherValueCard);
       final expanded = tester.getSize(find.ancestor(of: find.text('Source'), matching: cards));
       final others = [
-        for (final label in ['Heat index (PAGASA)', 'Relative humidity'])
+        for (final label in ['Heat index', 'Relative humidity'])
           tester.getRect(find.ancestor(of: find.text(label), matching: cards)),
       ];
       expect(expanded.width, greaterThan(others.first.width * 1.9));

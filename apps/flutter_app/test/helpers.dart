@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/core/theme/app_theme.dart';
@@ -21,4 +24,21 @@ Future<void> pumpThemed(
       home: Scaffold(body: SingleChildScrollView(child: child)),
     ),
   );
+}
+
+/// Loads the app's bundled Roboto and the Material icon font, so layout tests
+/// measure real glyph widths instead of the wide square test font.
+Future<void> loadAppFonts() async {
+  final roboto = FontLoader('Roboto');
+  for (final f in ['regular', 'medium', 'bold']) {
+    roboto.addFont(rootBundle.load('assets/fonts/roboto-$f.ttf'));
+  }
+  await roboto.load();
+  final root = Platform.environment['FLUTTER_ROOT'];
+  if (root == null) return;
+  final icons = File('$root/bin/cache/artifacts/material_fonts/materialicons-regular.otf');
+  if (!icons.existsSync()) return;
+  final loader = FontLoader('MaterialIcons')
+    ..addFont(Future.value(ByteData.sublistView(icons.readAsBytesSync())));
+  await loader.load();
 }

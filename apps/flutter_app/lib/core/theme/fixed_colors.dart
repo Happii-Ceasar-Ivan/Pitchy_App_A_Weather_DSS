@@ -75,7 +75,7 @@ class StateColors extends ThemeExtension<StateColors> {
       label: 'Current',
     ),
     WeatherDataState.stale: StateStyle(
-      foreground: Color(0xFFFFCF7A),
+      foreground: Color(0xFFE3BF95),
       background: Color(0xFF3D2A07),
       icon: Icons.history,
       label: 'Stale',
