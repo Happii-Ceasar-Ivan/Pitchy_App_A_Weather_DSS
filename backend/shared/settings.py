@@ -119,7 +119,11 @@ class Settings(BaseSettings):
     )  # new sessions per client IP (in memory, hashed IP, never stored)
     chat_daily_ai_cap: int = Field(
         default=500, ge=0, validation_alias="PITCHY_CHAT_DAILY_AI_CAP"
-    )  # questions per UTC day that may call an AI provider, all users together
+    )  # questions per day (from midnight Asia/Manila) that may call an AI provider, all users
+    forwarded_hops: int = Field(
+        default=0, ge=0, le=5, validation_alias="PITCHY_FORWARDED_HOPS"
+    )  # trusted proxies in front of the app: client IP = X-Forwarded-For entry this far from the
+    # right (0 = the direct peer; Azure Container Apps = 1). Never the client-supplied left side.
     retention_conversation_days: float = Field(
         default=30, ge=1, validation_alias="PITCHY_RETENTION_CONVERSATION_DAYS"
     )  # conversation_events rows and anonymous sessions idle this long

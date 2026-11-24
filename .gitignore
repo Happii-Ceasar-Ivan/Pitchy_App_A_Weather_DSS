@@ -91,3 +91,6 @@ __pycache__/
 .mypy_cache/
 .uv-cache/
 backend/.tmp/
+
+# RAG source text (copyrighted manuals; loaded from the PC, never pushed)
+backend/services/rag/knowledge_base/*.txt

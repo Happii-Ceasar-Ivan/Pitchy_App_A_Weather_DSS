@@ -1,0 +1,31 @@
+# Documents loaded into protocol_documents / protocol_chunks by scripts/load_protocol_documents.py.
+# Keys match the source ids in services/safety_engine/thresholds/rules.yaml. Sections are exactly
+# what rules.yaml cites (DEC-09, confirmed 2026-11-24). The text files (<key>.txt) are git-ignored
+# (copyrighted manuals); each section starts with a line "# section: <name>" using the names below.
+documents:
+  fifa_ecm_2022:
+    title: FIFA Emergency Care Manual
+    authority: FIFA
+    version: "2022 (PDF dated 2022-09-30; no edition number printed)"
+    source_uri: "references/FIFA Emergency Care Manual EN.pdf"
+    file: fifa_ecm_2022.txt
+    sections:
+      - "Chapter 9, printed pp. 189-191: Prevention of heat-related illness, FIFA cooling breaks"
+  afc_com_2026:
+    title: AFC Competition Operations Manual
+    authority: Asian Football Confederation (AFC)
+    version: "Edition 2026 (1 Dec update)"
+    source_uri: "references/AFC-Competition-Operations-Manual-Edition-2026---1-Dec-update.pdf"
+    file: afc_com_2026.txt
+    sections:
+      - "Section 2 art. 8.3 (lightning), printed p. 26"
+      - "Art. 20 Cooling Break, printed p. 41"
+      - "Appendix 20 Part A (extreme conditions), printed pp. 199-200"
+  pff_heat_advisory:
+    title: "PFF Advisory Update: Enhanced Safety for Football Activities During Extreme Heat"
+    authority: Philippine Football Federation (PFF)
+    version: "undated on the page; read 2026-11-23"
+    source_uri: "https://pff.org.ph/pff-advisory-update-enhanced-safety-for-football-activities-during-extreme-heat/"
+    file: pff_heat_advisory.txt
+    sections:
+      - "Whole advisory page"

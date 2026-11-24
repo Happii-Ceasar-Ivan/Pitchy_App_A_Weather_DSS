@@ -32,7 +32,7 @@ def test_committed_contract_is_up_to_date() -> None:
     ("method", "path", "body"),
     [
         ("post", f"/match-contexts/{MATCH_ID}/conversation", {"role": "coach", "question": "Hi"}),
-        ("post", "/sessions", None),
+        # POST /sessions is built (B5 WP2); its tests are in tests/chat_sessions/.
     ],
 )
 def test_draft_routes_return_not_implemented(
