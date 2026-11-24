@@ -15,6 +15,7 @@ TABLES = {
     "weather_sources", "locations", "match_contexts", "ingestion_jobs", "source_fetches",
     "forecast_values", "safety_assessments", "assessment_inputs", "protocol_documents",
     "protocol_chunks", "anonymous_sessions", "alert_checks", "official_alerts",
+    "lightning_checks",
 }  # fmt: skip
 
 pytestmark = requires_db
@@ -73,7 +74,7 @@ def test_only_the_backend_role_has_policies(conn: psycopg.Connection) -> None:
 def test_backend_role_can_read_and_write_but_not_delete_or_alter(app_db_url: str, conn) -> None:
     location = _location(conn)
     with psycopg.connect(app_db_url, autocommit=True) as app:
-        assert app.execute("select count(*) from public.weather_sources").fetchone()[0] == 5
+        assert app.execute("select count(*) from public.weather_sources").fetchone()[0] == 6
         app.execute("update public.locations set name = 'renamed' where id = %s", (location,))
         with pytest.raises(errors.InsufficientPrivilege):
             app.execute("delete from public.locations where id = %s", (location,))
@@ -89,7 +90,7 @@ def test_sources_enabled_only_with_a_tested_adapter(conn: psycopg.Connection) ->
     rows = conn.execute("select id, enabled from public.weather_sources order by id").fetchall()
     assert rows == [
         ("dost_asti", False), ("open_meteo", True), ("pagasa", False),
-        ("pagasa_atmo", True), ("pagasa_ecmwf", True),
+        ("pagasa_atmo", True), ("pagasa_ecmwf", True), ("xweather_lightning", True),
     ]  # fmt: skip
 
 
@@ -218,3 +219,19 @@ def test_only_the_alerts_job_may_have_no_venue(conn: psycopg.Connection) -> None
     conn.execute(insert, ("pagasa_alerts",))
     with pytest.raises(errors.CheckViolation):
         conn.execute(insert, ("pagasa:somewhere",))
+
+
+def test_match_age_group_defaults_to_senior_and_is_checked(conn: psycopg.Connection) -> None:
+    location = _location(conn)
+    match = conn.execute(
+        "insert into public.match_contexts (kickoff_at, location_id) values (now(), %s)"
+        " returning age_group",
+        (location,),
+    ).fetchone()[0]
+    assert match == "senior"
+    with pytest.raises(errors.CheckViolation):
+        conn.execute(
+            "insert into public.match_contexts (kickoff_at, location_id, age_group)"
+            " values (now(), %s, 'veterans')",
+            (location,),
+        )

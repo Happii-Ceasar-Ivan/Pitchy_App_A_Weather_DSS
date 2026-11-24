@@ -30,6 +30,7 @@ HOURLY_UNITS: dict[str, str] = {
     "shortwave_radiation": "W/m²",
     "direct_normal_irradiance": "W/m²",
     "diffuse_radiation": "W/m²",
+    "surface_pressure": "hPa",  # instant; needed by the Liljegren WBGT method (DEC-05, B4)
 }
 STEP = timedelta(hours=1)
 

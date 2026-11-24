@@ -9,7 +9,7 @@ Source id: `open_meteo`. Decision: DEC-01 (2026-11-22). Licence: CC BY 4.0. The 
 | Param | Value |
 | --- | --- |
 | `latitude`, `longitude` | the venue's coordinates (`locations` row) |
-| `hourly` | the 15 variables in `adapter.py: HOURLY_UNITS` |
+| `hourly` | the 16 variables in `adapter.py: HOURLY_UNITS` (`surface_pressure` added 2026-11-24 for WBGT) |
 | `wind_speed_unit` | `ms` |
 | `timezone` | `GMT` (times are UTC) |
 
@@ -17,7 +17,7 @@ Source id: `open_meteo`. Decision: DEC-01 (2026-11-22). Licence: CC BY 4.0. The 
 
 - Parameter codes are Open-Meteo's own names (e.g. `temperature_2m`).
 - Times are UTC. Each value covers one hour, following Open-Meteo's own "valid time" per variable (docs, "Hourly Parameter Definition"):
-  - **Instant** variables (temperature, humidity, dew point, weather code, cloud cover, wind speed/direction, CAPE; wet-bulb is not listed and is treated as instant): `valid_from` = the time given, `valid_until` = +1 h.
+  - **Instant** variables (temperature, humidity, dew point, weather code, cloud cover, wind speed/direction, CAPE, surface pressure; wet-bulb is not listed and is treated as instant): `valid_from` = the time given, `valid_until` = +1 h.
   - **Preceding-hour** variables (`precipitation` sum, `precipitation_probability`, `wind_gusts_10m` max, `shortwave_radiation` / `direct_normal_irradiance` / `diffuse_radiation` means): `valid_from` = the time given − 1 h, `valid_until` = the time given. List: `adapter.py: PRECEDING_HOUR`.
   - Fixed 2026-11-22 (B3). Rows stored before the fix have these six variables one hour late. They stop being used once a newer fetch covers the match (Open-Meteo is current for 7 h), and they are kept unchanged as stored.
 - Units are checked against `HOURLY_UNITS`. A different unit means `SOURCE_RESPONSE_CHANGED`; nothing is converted silently.

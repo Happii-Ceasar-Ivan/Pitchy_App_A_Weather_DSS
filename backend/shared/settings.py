@@ -46,6 +46,23 @@ class Settings(BaseSettings):
     qwen_api_key: SecretStr | None = Field(default=None, validation_alias="QWEN_API_KEY")
     llama_api_key: SecretStr | None = Field(default=None, validation_alias="LLAMA_API_KEY")
 
+    # Vaisala Xweather (lightning, DEC-06). Sent as query parameters: never log request URLs.
+    xweather_client_id: SecretStr | None = Field(
+        default=None, validation_alias="XWEATHER_CLIENT_ID"
+    )
+    xweather_client_secret: SecretStr | None = Field(
+        default=None, validation_alias="XWEATHER_CLIENT_SECRET"
+    )
+    lightning_radius_km: float = Field(
+        default=40, gt=0, le=40, validation_alias="PITCHY_LIGHTNING_RADIUS_KM"
+    )  # Xweather's maximum for lightning/flash
+    lightning_check_minutes: float = Field(
+        default=5, ge=1, validation_alias="PITCHY_LIGHTNING_CHECK_MINUTES"
+    )  # one shared check per venue at most this often (data covers the past 5 minutes)
+    lightning_window_before_kickoff_minutes: float = Field(
+        default=120, ge=0, validation_alias="PITCHY_LIGHTNING_WINDOW_BEFORE_MINUTES"
+    )  # live checks only from this long before kickoff until the coverage window ends
+
     # Development-only demo routes (/api/v1/dev/...). Need PITCHY_ENV=development AND this flag,
     # and still answer only requests from this computer.
     enable_dev_routes: bool = Field(default=False, validation_alias="PITCHY_ENABLE_DEV_ROUTES")

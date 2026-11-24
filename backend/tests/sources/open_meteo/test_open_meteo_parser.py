@@ -19,7 +19,13 @@ VENUE = Venue("loc-1", "rizal_memorial", "Rizal", 14.563405271502504, 120.991931
 
 @pytest.fixture
 def payload() -> dict:
-    return json.loads(FIXTURE.read_text(encoding="utf-8"))
+    data = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    # The captured sample predates `surface_pressure` (added 2026-11-24). Add a synthetic series
+    # so the parser sees every requested variable; it is never used as real weather data.
+    hours = len(data["hourly"]["time"])
+    data["hourly_units"]["surface_pressure"] = "hPa"
+    data["hourly"]["surface_pressure"] = [1010.0] * hours
+    return data
 
 
 def test_parses_every_variable_for_every_hour(payload) -> None:

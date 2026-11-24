@@ -716,107 +716,6 @@
         }
       }
     },
-    "/api/v1/match-contexts/{match_context_id}/assessment": {
-      "get": {
-        "tags": [
-          "match contexts"
-        ],
-        "summary": "Get Assessment",
-        "description": "Deterministic assessment with inputs, limitations and rule version. Works without AI.",
-        "operationId": "get_assessment_api_v1_match_contexts__match_context_id__assessment_get",
-        "parameters": [
-          {
-            "name": "match_context_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Match Context Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SafetyAssessment"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
-            "headers": {
-              "Retry-After": {
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Not implemented yet (contract draft)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/match-contexts/{match_context_id}/conversation": {
       "post": {
         "tags": [
@@ -951,6 +850,107 @@
         }
       }
     },
+    "/api/v1/match-contexts/{match_context_id}/assessment": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Get Assessment",
+        "description": "Deterministic assessment with inputs, limitations and rule version (FR-SAF-001..005).\n\nHeat: WBGT estimate (Liljegren) at 90 and 60 minutes before kickoff; the level comes from the\napproved rules for the match's age group, only from current forecast data. Lightning: the\nlatest shared Xweather check and the AFC 10 km level. Rain: no approved rule. Official PAGASA\nalerts are listed as issued. Pitchy never makes the official decision.",
+        "operationId": "get_assessment_api_v1_match_contexts__match_context_id__assessment_get",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyAssessment"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/match-contexts/{match_context_id}/alerts": {
       "get": {
         "tags": [
@@ -978,6 +978,107 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VenueAlerts"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/match-contexts/{match_context_id}/lightning": {
+      "get": {
+        "tags": [
+          "lightning"
+        ],
+        "summary": "Get Lightning",
+        "description": "Lightning detected within the radius in the last 5 minutes. Checked live only from\nshortly before kickoff to the end of the match, at most once per venue every few minutes\nfor everyone. Shows the AFC 30/30 procedure when lightning is detected or a PAGASA\nthunderstorm alert covers the venue.",
+        "operationId": "get_lightning_api_v1_match_contexts__match_context_id__lightning_get",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenueLightning"
                 }
               }
             }
@@ -1156,6 +1257,15 @@
   },
   "components": {
     "schemas": {
+      "AgeGroup": {
+        "type": "string",
+        "enum": [
+          "senior",
+          "youth_u20"
+        ],
+        "title": "AgeGroup",
+        "description": "Selects the heat level set in rules.yaml (team decision 2026-11-24)."
+      },
       "AlertArea": {
         "properties": {
           "name": {
@@ -1244,6 +1354,46 @@
         ],
         "title": "AlertsStatus",
         "description": "Freshness of the nationwide PAGASA alerts check (DEC-04: current while checked < 1 h\nago). Alerts refresh on their own (schedule, and on open via GET .../alerts); they never\nmake ``ingestion_needed`` true."
+      },
+      "AssessmentLevel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "examples": [
+              "cooling_breaks_required"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "What the source says officials do at this level."
+          },
+          "source": {
+            "$ref": "#/components/schemas/GuidanceReference"
+          },
+          "also_supported_by": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceReference"
+            },
+            "type": "array",
+            "title": "Also Supported By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "action",
+          "source"
+        ],
+        "title": "AssessmentLevel",
+        "description": "The approved rule level that applies, with what the rule says to do and its source."
       },
       "Attribution": {
         "properties": {
@@ -1709,6 +1859,37 @@
         ],
         "title": "ErrorEnvelope"
       },
+      "FlashOut": {
+        "properties": {
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km",
+            "description": "Great-circle distance from the venue, computed by Pitchy."
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detected_at",
+          "distance_km",
+          "latitude",
+          "longitude"
+        ],
+        "title": "FlashOut"
+      },
       "GuidanceReference": {
         "properties": {
           "document_id": {
@@ -1803,7 +1984,17 @@
               }
             ],
             "title": "Classification",
-            "description": "Set only by approved deterministic rules."
+            "description": "Level id from the approved rules; null without a rule or current inputs."
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssessmentLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "basis": {
             "anyOf": [
@@ -1815,7 +2006,50 @@
               }
             ],
             "title": "Basis",
-            "description": "Method/rule identifier the classification used."
+            "description": "Method and level set the classification used."
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By",
+            "description": "Who makes the official decision under the source rules."
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/IndicatorPoint"
+            },
+            "type": "array",
+            "title": "Points",
+            "description": "Heat: WBGT at the FIFA measurement times (90 and 60 min before kickoff)."
+          },
+          "hourly": {
+            "items": {
+              "$ref": "#/components/schemas/IndicatorPoint"
+            },
+            "type": "array",
+            "title": "Hourly",
+            "description": "Heat: WBGT for each hour of the match (information)."
+          },
+          "notices": {
+            "items": {
+              "$ref": "#/components/schemas/RuleNotice"
+            },
+            "type": "array",
+            "title": "Notices"
+          },
+          "procedure": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Procedure",
+            "description": "Lightning: the official on-site procedure, when shown."
           },
           "inputs": {
             "items": {
@@ -1863,6 +2097,56 @@
         "additionalProperties": false,
         "type": "object",
         "title": "HealthResponse"
+      },
+      "IndicatorPoint": {
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At",
+            "description": "The time this value stands for."
+          },
+          "forecast_stamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Forecast Stamp",
+            "description": "Open-Meteo stamp used: instant values at it, radiation the hour before."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "used_for_level": {
+            "type": "boolean",
+            "title": "Used For Level",
+            "description": "True for the value that set the level."
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing",
+            "description": "Inputs that were missing."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "at",
+          "forecast_stamp",
+          "value",
+          "used_for_level"
+        ],
+        "title": "IndicatorPoint",
+        "description": "The indicator at one time (heat: WBGT for one forecast hour)."
       },
       "IndicatorStatus": {
         "type": "string",
@@ -2064,6 +2348,93 @@
         "title": "InputValue",
         "description": "A weather value the engine used, with its provenance (FR-CLI-004)."
       },
+      "LightningLevel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "examples": [
+              "within_30_second_distance"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis",
+            "description": "Where the level comes from (AFC 30 s ≈ 10 km, Pitchy's conversion)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "action",
+          "basis"
+        ],
+        "title": "LightningLevel",
+        "description": "Approved distance level for the nearest flash (team decision 2026-11-23)."
+      },
+      "LightningStatus": {
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/WeatherDataState",
+            "description": "current while the last check is under 5 minutes old; stale after that."
+          },
+          "last_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Checked At",
+            "description": "Last successful check."
+          },
+          "current_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Until"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code",
+            "description": "Set when the latest attempt failed."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "last_checked_at",
+          "current_until"
+        ],
+        "title": "LightningStatus"
+      },
       "Limitation": {
         "properties": {
           "code": {
@@ -2115,6 +2486,9 @@
             ],
             "title": "Pitch Surface"
           },
+          "age_group": {
+            "$ref": "#/components/schemas/AgeGroup"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2133,6 +2507,7 @@
           "kickoff_at",
           "venue",
           "pitch_surface",
+          "age_group",
           "created_at",
           "updated_at"
         ],
@@ -2167,6 +2542,11 @@
             ],
             "title": "Pitch Surface",
             "description": "Optional pitch metadata. Allowed values are not decided (P-07)."
+          },
+          "age_group": {
+            "$ref": "#/components/schemas/AgeGroup",
+            "description": "Competition age group. Selects the heat level set; shown with the assessment.",
+            "default": "senior"
           }
         },
         "additionalProperties": false,
@@ -2247,6 +2627,51 @@
           "matched_areas"
         ],
         "title": "OfficialAlertOut"
+      },
+      "OfficialGuidance": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "examples": [
+              "AFC Competition Operations Manual, Edition 2026, art. 8.3"
+            ]
+          },
+          "procedure": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Procedure"
+          },
+          "applies_note": {
+            "type": "string",
+            "title": "Applies Note"
+          },
+          "shown_because": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Shown Because",
+            "examples": [
+              [
+                "LIGHTNING_DETECTED",
+                "PAGASA_THUNDERSTORM_ALERT"
+              ]
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "procedure",
+          "applies_note",
+          "shown_because"
+        ],
+        "title": "OfficialGuidance",
+        "description": "Official procedure, shown as issued. Officials decide on site (AFC art. 8.3)."
       },
       "OfficialNotice": {
         "properties": {
@@ -2392,12 +2817,37 @@
         "title": "Provenance",
         "description": "Where and when a value came from (FR-WTH-005). Fields are null when a source omits them."
       },
+      "RuleNotice": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "source": {
+            "$ref": "#/components/schemas/GuidanceReference"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "text",
+          "source"
+        ],
+        "title": "RuleNotice",
+        "description": "Official guidance shown as information; it never changes the level (e.g. PFF midday)."
+      },
       "SafetyAssessment": {
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
-            "title": "Id"
+            "title": "Id",
+            "description": "The saved assessment (a new one only when inputs change)."
           },
           "match_context": {
             "$ref": "#/components/schemas/MatchContext"
@@ -2405,7 +2855,21 @@
           "assessed_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Assessed At"
+            "title": "Assessed At",
+            "description": "When this assessment was first saved."
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At",
+            "description": "When the inputs were last checked."
+          },
+          "age_group": {
+            "$ref": "#/components/schemas/AgeGroup"
+          },
+          "rules_approved": {
+            "type": "boolean",
+            "title": "Rules Approved"
           },
           "rule_version": {
             "type": "string",
@@ -2440,6 +2904,9 @@
           "id",
           "match_context",
           "assessed_at",
+          "checked_at",
+          "age_group",
+          "rules_approved",
           "rule_version",
           "indicators"
         ],
@@ -2682,6 +3149,125 @@
           "longitude"
         ],
         "title": "VenueInfo"
+      },
+      "VenueLightning": {
+        "properties": {
+          "venue": {
+            "type": "string",
+            "title": "Venue"
+          },
+          "live_window": {
+            "$ref": "#/components/schemas/CoverageWindow",
+            "description": "Live checks happen only in this window (before kickoff to match end)."
+          },
+          "in_live_window": {
+            "type": "boolean",
+            "title": "In Live Window"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LightningStatus"
+          },
+          "radius_km": {
+            "type": "number",
+            "title": "Radius Km"
+          },
+          "detection_minutes": {
+            "type": "integer",
+            "title": "Detection Minutes",
+            "description": "Each check covers this many minutes back."
+          },
+          "flash_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flash Count",
+            "description": "Flashes in the last successful check; null if none yet."
+          },
+          "nearest_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nearest Km"
+          },
+          "latest_flash_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Flash At"
+          },
+          "flashes": {
+            "items": {
+              "$ref": "#/components/schemas/FlashOut"
+            },
+            "type": "array",
+            "title": "Flashes",
+            "description": "Nearest first, from the last successful check."
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LightningLevel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set only when a current check found lightning inside an approved distance level. Null otherwise; null never means safe."
+          },
+          "guidance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OfficialGuidance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attribution": {
+            "$ref": "#/components/schemas/Attribution"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "Plain-language reminder of what the data is and is not; always show it."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "venue",
+          "live_window",
+          "in_live_window",
+          "status",
+          "radius_km",
+          "detection_minutes",
+          "flash_count",
+          "nearest_km",
+          "latest_flash_at",
+          "flashes",
+          "level",
+          "guidance",
+          "attribution",
+          "note"
+        ],
+        "title": "VenueLightning"
       },
       "VenueList": {
         "properties": {

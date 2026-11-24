@@ -45,6 +45,7 @@ class MatchContextRecord:
     pitch_surface: str | None
     created_at: datetime
     updated_at: datetime
+    age_group: str = "senior"  # 'senior' | 'youth_u20' (B4)
 
 
 @dataclass(frozen=True)
@@ -166,4 +167,23 @@ class StoredAlertRecord:
     valid_until: datetime | None
     areas: list[dict]
     matched_venues: list[str]
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class LightningCheckRecord:
+    id: UUID
+    location_id: UUID
+    ingestion_job_id: UUID | None
+    checked_at: datetime
+    status: str
+    error_code: str | None
+    error_summary: str | None
+    radius_km: float | None
+    flash_count: int | None
+    nearest_km: float | None
+    latest_flash_at: datetime | None
+    flashes: list[dict]
+    raw_payload: str | None
+    raw_payload_sha256: str | None
     created_at: datetime
