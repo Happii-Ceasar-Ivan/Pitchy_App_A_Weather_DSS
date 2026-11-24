@@ -16,6 +16,10 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 RULES_PATH = Path(__file__).parent / "thresholds" / "rules.yaml"
 
+# How strongly the app colours a level (P-19, team decision 2026-11-24). Display only: it never
+# changes a level or a classification.
+Severity = Literal["advisory", "warning", "danger"]
+
 
 class RulesFileError(ValueError):
     """The rules file is missing, malformed or inconsistent."""
@@ -69,6 +73,7 @@ class Level(_Strict):
     also_supported_by: list[str] = Field(default_factory=list)
     label: str
     action: str
+    severity: Severity | None = None  # display grade for the app's colour (P-19)
 
 
 class LevelSet(_Strict):
@@ -151,6 +156,7 @@ class DistanceLevel(_Strict):
     basis: str
     label: str
     action: str
+    severity: Severity | None = None  # display grade for the app's colour (P-19)
 
 
 class LightningGuidance(_Strict):

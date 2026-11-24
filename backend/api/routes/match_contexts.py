@@ -146,7 +146,10 @@ def _source_status(state: SourceState, name: str) -> SourceStatus:
         covers_match_time=cov is not None,
         current_until=state.current_until,
         provenance=provenance,
-        limitations=[Limitation(code=n.code, message=n.message) for n in state.notes],
+        limitations=[
+            Limitation(code=n.code, message=n.message, detail_code=n.detail_code)
+            for n in state.notes
+        ],
     )
 
 

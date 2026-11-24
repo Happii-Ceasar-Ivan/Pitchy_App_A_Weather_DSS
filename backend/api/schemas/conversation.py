@@ -25,6 +25,16 @@ class ConversationRole(StrEnum):
     SPECTATOR = "spectator"
 
 
+class ConversationLimitationCode(StrEnum):
+    """Limitation codes the conversation adds (B5 plan section 3), besides the assessment's own."""
+
+    AGENT_NOT_AUTHORITY = "AGENT_NOT_AUTHORITY"  # always present: officials decide
+    AI_UNAVAILABLE = "AI_UNAVAILABLE"  # no provider configured, or every provider failed
+    DAILY_LIMIT_REACHED = "DAILY_LIMIT_REACHED"  # the shared daily AI question cap was reached
+    ANSWER_CHECK_FAILED = "ANSWER_CHECK_FAILED"  # every reply failed the deterministic check
+    RETRIEVAL_KEYWORD_ONLY = "RETRIEVAL_KEYWORD_ONLY"  # embedding failed; full-text search only
+
+
 class ConversationRequest(ContractModel):
     role: ConversationRole
     question: str = Field(min_length=1, max_length=QUESTION_MAX_CHARS)
@@ -39,5 +49,10 @@ class ConversationResponse(ContractModel):
     )
     answer: str | None = Field(description="AI-generated explanation. Not an official decision.")
     references: list[GuidanceReference] = Field(default_factory=list)
-    limitations: list[Limitation] = Field(default_factory=list)
+    limitations: list[Limitation] = Field(
+        default_factory=list,
+        description="Always includes AGENT_NOT_AUTHORITY. Conversation codes: "
+        + ", ".join(c.value for c in ConversationLimitationCode)
+        + "; plus the assessment's own limitations.",
+    )
     responded_at: AwareDatetime

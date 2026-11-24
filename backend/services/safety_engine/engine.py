@@ -75,7 +75,18 @@ class LightningInput:
 @dataclass(frozen=True)
 class Note:
     code: str
-    message: str
+    message: str  # plain language only; technical codes go in detail_code
+    detail_code: str | None = None
+
+
+_OFFICIALS_APPROVED = (
+    "Pitchy shows what the approved rules say; the official decision stays with the match "
+    "officials named in each rule."
+)
+_OFFICIALS_DRAFT = (
+    "These rules are a draft and are not yet approved. Pitchy shows what the draft rules say; "
+    "the match officials and the venue medical officer make every decision."
+)
 
 
 @dataclass(frozen=True)
@@ -94,6 +105,7 @@ class LevelOut:
     action: str
     reference: Reference
     also_supported_by: tuple[Reference, ...] = ()
+    severity: str | None = None
 
 
 @dataclass
@@ -274,6 +286,7 @@ def assess_heat(
         level.action,
         _ref(rules, level.source),
         tuple(_ref(rules, s) for s in level.also_supported_by),
+        level.severity,
     )
     ind.basis = f"{heat.method}; level set {level_set.id} ({level_set.applies_to})"
     ind.status = "available" if len(good) == len(ind.points) else "limited"
@@ -317,7 +330,7 @@ def assess_lightning(
         found = guide.level_for_distance(lightning.nearest_km) if detected else None
         if found is not None:
             ind.level = LevelOut(found.id, found.label, " ".join(found.action.split()),
-                                 _ref(rules, found.source))  # fmt: skip
+                                 _ref(rules, found.source), severity=found.severity)  # fmt: skip
             ind.limitations.append(Note("PITCHY_CONVERSION", " ".join(found.basis.split())))
         elif detected:
             ind.limitations.append(Note(
@@ -335,8 +348,8 @@ def assess_lightning(
         state = lightning.state
         ind.status = "unavailable"
         code = "STALE_INPUT" if state == "stale" else "MISSING_INPUT"
-        detail = f" ({lightning.last_error_code})" if lightning.last_error_code else ""
-        ind.limitations.append(Note(code, f"No current lightning check: {state}{detail}."))
+        ind.limitations.append(Note(code, f"No current lightning check: {state}.",
+                                    lightning.last_error_code))  # fmt: skip
 
     if detected or thunderstorm_alert:
         ind.guidance.append(_ref(rules, guide.source))
@@ -366,11 +379,9 @@ def assess(
     kickoff_at = kickoff_at.astimezone(UTC)
     heat = assess_heat(rules, age_group, kickoff_at, latitude, longitude, weather, match_hours)
     heat.notices = heat_notices(rules, kickoff_at)
-    limitations = [Note(
-        "OFFICIALS_DECIDE",
-        "Pitchy shows what the approved rules say; the official decision stays with the match "
-        "officials named in each rule.",
-    )]  # fmt: skip
+    limitations = [
+        Note("OFFICIALS_DECIDE", _OFFICIALS_APPROVED if rules.approved else _OFFICIALS_DRAFT)
+    ]
     if not rules.approved:
         limitations.append(Note("RULES_NOT_APPROVED", "The rule set is still a draft."))
     if heat.value is not None and not math.isfinite(heat.value):

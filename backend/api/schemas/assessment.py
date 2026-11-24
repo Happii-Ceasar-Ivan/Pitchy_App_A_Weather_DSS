@@ -11,7 +11,13 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field
 
-from api.schemas.common import ContractModel, GuidanceReference, Limitation
+from api.schemas.common import (
+    SEVERITY_DESCRIPTION,
+    ContractModel,
+    GuidanceReference,
+    Limitation,
+    Severity,
+)
 from api.schemas.match import AgeGroup, MatchContext
 from api.schemas.weather import Provenance
 
@@ -47,6 +53,7 @@ class AssessmentLevel(ContractModel):
     action: str = Field(description="What the source says officials do at this level.")
     source: GuidanceReference
     also_supported_by: list[GuidanceReference] = Field(default_factory=list)
+    severity: Severity | None = Field(default=None, description=SEVERITY_DESCRIPTION)
 
 
 class IndicatorPoint(ContractModel):

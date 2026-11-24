@@ -90,6 +90,8 @@ def _broken(mutate):
         lambda d: _senior(d)[1]["when"].update(lt=31.0),  # gap 31..32
         lambda d: _senior(d)[1]["when"].update(lt=33.0),  # overlap 32..33
         lambda d: _senior(d)[0].update(colour="red"),  # unknown key
+        lambda d: _senior(d)[0].update(severity="red"),  # not a severity
+        lambda d: d["hazards"]["lightning"]["distance_levels"][0].update(severity="critical"),
         lambda d: d["hazards"]["heat"]["level_sets"][0].update(id="adult"),  # no senior set
         lambda d: d["hazards"]["lightning"].update(source="made_up"),
         lambda d: d["hazards"]["lightning"]["distance_levels"].append(
@@ -113,3 +115,23 @@ def test_missing_or_invalid_yaml_is_refused(tmp_path) -> None:
     bad.write_text("hazards: [unclosed", encoding="utf-8")
     with pytest.raises(RulesFileError):
         load_rules(bad)
+
+
+def test_every_level_has_the_team_severity() -> None:
+    """P-19 (team decision 2026-11-24): display grade only, set per level in rules.yaml."""
+    rules = load_rules()
+    for level_set in rules.hazards.heat.level_sets:
+        grades = {lvl.id: lvl.severity for lvl in level_set.levels}
+        assert grades == {"cooling_breaks_required": "warning",
+                          "below_cooling_break_level": "advisory"}  # fmt: skip
+    assert [d.severity for d in rules.hazards.lightning.distance_levels] == ["danger"]
+
+
+def test_severity_is_optional(tmp_path) -> None:
+    data = copy.deepcopy(RAW)
+    del _senior(data)[0]["severity"]
+    assert _senior_levels(load_rules(_write(tmp_path, data)))[0].severity is None
+
+
+def _senior_levels(rules):
+    return rules.hazards.heat.level_sets[0].levels

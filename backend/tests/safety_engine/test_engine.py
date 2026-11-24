@@ -76,6 +76,7 @@ def test_heat_levels_at_their_edges(pin, age, value, level) -> None:
     pin["default"] = value
     h = heat(run(age=age))
     assert (h.status, h.level.id, h.value) == ("available", level, value)
+    assert h.level.severity == ("warning" if level == "cooling_breaks_required" else "advisory")
     assert h.level.reference.issuer in {"FIFA", "Asian Football Confederation (AFC)"}
     assert "match management team" in h.decided_by
 
@@ -148,6 +149,7 @@ def test_lightning_10_km_level(pin, km, level) -> None:
     ind = lightning_of(run(lightning=live(km)))
     assert ind.status == "available" and ind.value == km
     assert (ind.level.id if ind.level else None) == level
+    assert (ind.level.severity if ind.level else None) == ("danger" if level else None)
     assert ind.procedure  # AFC 30/30 shown whenever lightning is detected
 
 
@@ -172,6 +174,13 @@ def test_lightning_outside_the_live_window_or_stale(pin) -> None:
     assert stale.status == "unavailable" and stale.level is None
 
 
+def test_lightning_error_code_is_kept_out_of_the_message(pin) -> None:
+    failed = engine.LightningInput("unavailable", True, None, None, None, "HTTP_503")
+    note = next(n for n in lightning_of(run(lightning=failed)).limitations
+                if n.code == "MISSING_INPUT")  # fmt: skip
+    assert note.detail_code == "HTTP_503" and "HTTP" not in note.message
+
+
 def test_rain_has_no_rule_and_officials_decide(pin) -> None:
     a = run()
     rain = next(i for i in a.indicators if i.hazard == "rainfall")
@@ -182,7 +191,12 @@ def test_rain_has_no_rule_and_officials_decide(pin) -> None:
 
 def test_draft_rules_are_flagged(pin) -> None:
     draft = get_rules().model_copy(update={"status": "draft"})
-    assert "RULES_NOT_APPROVED" in [n.code for n in run(rules=draft).limitations]
+    notes = {n.code: n.message for n in run(rules=draft).limitations}
+    assert "RULES_NOT_APPROVED" in notes
+    assert (
+        "draft" in notes["OFFICIALS_DECIDE"] and "approved rules" not in notes["OFFICIALS_DECIDE"]
+    )
+    assert "approved rules" in {n.code: n.message for n in run().limitations}["OFFICIALS_DECIDE"]
 
 
 def test_heat_is_flagged_until_wbgt_validation_is_complete(pin) -> None:

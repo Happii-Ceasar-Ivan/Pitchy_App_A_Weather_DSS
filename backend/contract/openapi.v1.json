@@ -838,7 +838,7 @@
             }
           },
           "401": {
-            "description": "INVALID_SESSION: token unknown or not issued.",
+            "description": "INVALID_SESSION: token missing, forged, unknown or expired.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1382,6 +1382,23 @@
             },
             "type": "array",
             "title": "Also Supported By"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "advisory",
+                  "warning",
+                  "danger"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity",
+            "description": "How strongly to show this level (advisory, warning or danger), from the rules file (P-19). Display only; null when the rules give none."
           }
         },
         "additionalProperties": false,
@@ -1696,7 +1713,8 @@
               "$ref": "#/components/schemas/Limitation"
             },
             "type": "array",
-            "title": "Limitations"
+            "title": "Limitations",
+            "description": "Always includes AGENT_NOT_AUTHORITY. Conversation codes: AGENT_NOT_AUTHORITY, AI_UNAVAILABLE, DAILY_LIMIT_REACHED, ANSWER_CHECK_FAILED, RETRIEVAL_KEYWORD_ONLY; plus the assessment's own limitations."
           },
           "responded_at": {
             "type": "string",
@@ -2369,6 +2387,23 @@
             "type": "string",
             "title": "Basis",
             "description": "Where the level comes from (AFC 30 s ≈ 10 km, Pitchy's conversion)."
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "advisory",
+                  "warning",
+                  "danger"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity",
+            "description": "How strongly to show this level (advisory, warning or danger), from the rules file (P-19). Display only; null when the rules give none."
           }
         },
         "additionalProperties": false,
@@ -2448,7 +2483,23 @@
           },
           "message": {
             "type": "string",
-            "title": "Message"
+            "title": "Message",
+            "description": "Plain-language text to show. Never contains technical codes."
+          },
+          "detail_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail Code",
+            "description": "Technical cause for support or logs (e.g. the source's error code). Optional; not meant for display.",
+            "examples": [
+              "HTTP_503"
+            ]
           }
         },
         "additionalProperties": false,

@@ -60,7 +60,8 @@ def test_state_rules() -> None:
     assert old.state == "stale"
     failed = FetchAttempt("x", "failed", now, "HTTP_503", "down")
     gone = assess_source("a", rule, [], failed, None, T, T + 2 * H, now)
-    assert gone.state == "unavailable" and gone.notes[0].code == "HTTP_503"
+    assert gone.state == "unavailable" and gone.notes[0].code == "SOURCE_ERROR"
+    assert gone.notes[0].detail_code == "HTTP_503" and "HTTP" not in gone.notes[0].message
     no_rule = assess_source("a", None, [_fetch(now)], None, None, T, T + 2 * H, now)
     assert no_rule.state == "unavailable"  # never "current" without a configured rule
 

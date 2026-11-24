@@ -90,7 +90,7 @@ def get_lightning(
         found = lightning_rules.level_for_distance(reading.nearest_km)
         if found is not None:
             level = LightningLevel(id=found.id, label=found.label, action=found.action,
-                                   basis=found.basis)  # fmt: skip
+                                   basis=found.basis, severity=found.severity)  # fmt: skip
     if reasons and getattr(lightning_rules, "status", None) == "guidance_only":
         src = rules.sources[lightning_rules.source]
         guidance = OfficialGuidance(

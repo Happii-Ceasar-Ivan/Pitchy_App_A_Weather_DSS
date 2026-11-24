@@ -69,6 +69,7 @@ def _indicator(ind: engine.Indicator, source_name: str, retrieved_at) -> HazardI
             action=" ".join(ind.level.action.split()),
             source=_guidance(ind.level.reference),
             also_supported_by=[_guidance(r) for r in ind.level.also_supported_by],
+            severity=ind.level.severity,
         )
     return HazardIndicator(
         hazard=ind.hazard,
@@ -99,7 +100,10 @@ def _indicator(ind: engine.Indicator, source_name: str, retrieved_at) -> HazardI
             )
             for r in ind.inputs
         ],
-        limitations=[Limitation(code=n.code, message=n.message) for n in ind.limitations],
+        limitations=[
+            Limitation(code=n.code, message=n.message, detail_code=n.detail_code)
+            for n in ind.limitations
+        ],
         guidance=[_guidance(r) for r in ind.guidance],
     )
 
@@ -205,7 +209,10 @@ def get_assessment(
     retrieved = weather.retrieved_at if weather else None
     indicators = [_indicator(i, om_name, retrieved) for i in result.indicators]
     notices = _official_notices(connect, location.scope_key, now)
-    limitations = [Limitation(code=n.code, message=n.message) for n in result.limitations]
+    limitations = [
+        Limitation(code=n.code, message=n.message, detail_code=n.detail_code)
+        for n in result.limitations
+    ]
 
     # Save on change (DEC-14): the fingerprint covers everything except the times of this check.
     body = {

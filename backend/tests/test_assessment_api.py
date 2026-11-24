@@ -93,6 +93,7 @@ def test_heat_assessment_from_the_real_wbgt_calculation(client, connect) -> None
     expected = "cooling_breaks_required" if wbgt >= 32.0 else "below_cooling_break_level"
     assert heat["classification"] == heat["level"]["id"] == expected
     assert heat["level"]["source"]["authority"] == "FIFA"
+    assert heat["level"]["severity"] in {"advisory", "warning"}
     assert [p["at"] for p in heat["points"]] == [
         (KICKOFF - timedelta(minutes=90)).isoformat().replace("+00:00", "Z"),
         (KICKOFF - H).isoformat().replace("+00:00", "Z"),

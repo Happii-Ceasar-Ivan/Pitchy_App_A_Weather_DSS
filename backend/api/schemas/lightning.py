@@ -2,7 +2,7 @@
 
 from pydantic import AwareDatetime, Field
 
-from api.schemas.common import ContractModel
+from api.schemas.common import SEVERITY_DESCRIPTION, ContractModel, Severity
 from api.schemas.weather import Attribution, CoverageWindow, WeatherDataState
 
 
@@ -44,6 +44,7 @@ class LightningLevel(ContractModel):
     basis: str = Field(
         description="Where the level comes from (AFC 30 s ≈ 10 km, Pitchy's conversion)."
     )
+    severity: Severity | None = Field(default=None, description=SEVERITY_DESCRIPTION)
 
 
 class VenueLightning(ContractModel):

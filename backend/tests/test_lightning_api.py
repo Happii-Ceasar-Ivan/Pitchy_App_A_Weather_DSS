@@ -91,6 +91,7 @@ def test_detected_lightning_shows_the_afc_procedure(api) -> None:
     assert body["flash_count"] == 1 and 0 < body["nearest_km"] < 10
     assert body["level"]["id"] == "within_30_second_distance"
     assert "Pitchy" in body["level"]["basis"]
+    assert body["level"]["severity"] == "danger"
     guidance = body["guidance"]
     assert guidance["shown_because"] == ["LIGHTNING_DETECTED"]
     assert guidance["source"].startswith("AFC Competition Operations Manual")

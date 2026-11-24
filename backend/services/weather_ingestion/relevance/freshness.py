@@ -42,7 +42,8 @@ def freshness_rules(settings: Settings) -> dict[str, FreshnessRule]:
 @dataclass(frozen=True)
 class Note:
     code: str
-    message: str
+    message: str  # plain language only; technical codes go in detail_code
+    detail_code: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,8 +95,8 @@ def assess_source(
             and latest.status == "failed"
             and (latest.requested_at > covering.retrieved_at)
         ):
-            notes.append(Note("LAST_ATTEMPT_FAILED",
-                              f"The latest request failed ({latest.error_code})."))  # fmt: skip
+            notes.append(Note("LAST_ATTEMPT_FAILED", "The latest request to this source failed.",
+                              latest.error_code))  # fmt: skip
         if rule is None:
             notes.append(Note("NO_FRESHNESS_RULE", "No freshness rule is configured."))
         else:
@@ -116,8 +117,8 @@ def assess_source(
             state = "current" if now < current_until else "stale"
     elif latest is not None and latest.status == "failed":
         state = "unavailable"
-        notes.append(Note(latest.error_code or "SOURCE_ERROR",
-                          latest.error_summary or "The latest request failed."))  # fmt: skip
+        notes.append(Note("SOURCE_ERROR", "The latest request to this source failed.",
+                          latest.error_code))  # fmt: skip
     else:
         state = "missing"
         notes.append(

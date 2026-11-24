@@ -7,9 +7,11 @@
 # How to change this file: edit a value AND its source, bump rule_set_version, run the tests.
 # `status: draft` would make every assessment carry a RULES_NOT_APPROVED limitation; the team
 # approved this rule set on 2026-11-23 (docs/decisions/safety-rules-files.md).
+# `severity` (advisory | warning | danger) only tells the app how strongly to colour a level
+# (P-19, team decision 2026-11-24, docs/decisions/safety-level-colours.md). It changes no level.
 
 schema_version: 1
-rule_set_version: "2026-11-23.3"
+rule_set_version: "2026-11-24.1"  # .1: level severity added (P-19)
 status: approved  # team approval 2026-11-23 (docs/decisions/safety-rules-files.md)
 
 sources:
@@ -55,6 +57,7 @@ hazards:
             source: fifa_ecm_2022
             also_supported_by: [afc_com_2026]
             label: "At or above the cooling-break level (WBGT 32 °C)"
+            severity: warning
             action: >-
               FIFA: cooling breaks must be used (after about 30 and 75 minutes of play), or the
               match may be postponed or cancelled depending on the WBGT level and the match
@@ -66,6 +69,7 @@ hazards:
             source: fifa_ecm_2022
             also_supported_by: [afc_com_2026]
             label: "Below the cooling-break level"
+            severity: advisory
             action: >-
               No FIFA or AFC cooling-break trigger. This is not a statement that conditions are
               safe. FIFA asks officials to consult when WBGT is near 32 °C (no number given), and
@@ -77,6 +81,7 @@ hazards:
             when: {gte: 28.0}
             source: afc_com_2026
             label: "At or above the youth cooling-break level (WBGT 28 °C)"
+            severity: warning
             action: >-
               AFC: for under-20 and younger competitions, cooling breaks may be introduced from
               WBGT 28 °C (3 minutes, around the 30th and 75th minute, added as stoppage time),
@@ -85,6 +90,7 @@ hazards:
             when: {lt: 28.0}
             source: afc_com_2026
             label: "Below the youth cooling-break level"
+            severity: advisory
             action: >-
               No AFC youth cooling-break trigger. This is not a statement that conditions are
               safe.
@@ -123,6 +129,7 @@ hazards:
           Sound travels about 343 m/s, so 30 s is about 10 km. This conversion is Pitchy's, not
           AFC's wording.
         label: "Lightning within about 10 km (AFC 30-second distance)"
+        severity: danger
         action: >-
           Under AFC's 30/30 procedure, players, officials and spectators take shelter; play
           restarts no earlier than 30 minutes after the last thunder. Officials on site decide.

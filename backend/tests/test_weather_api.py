@@ -326,7 +326,9 @@ def test_failed_ingestion_is_recorded_and_releases_the_lock(client, executor, so
     ]
     body = status(client, match_id)
     assert states(body)["open_meteo"] == "unavailable"
-    assert body["sources"][0]["limitations"][0]["code"] == "HTTP_503"
+    limitation = body["sources"][0]["limitations"][0]
+    assert limitation["code"] == "SOURCE_ERROR" and limitation["detail_code"] == "HTTP_503"
+    assert "HTTP" not in limitation["message"]
 
 
 def test_unavailable_offers_ingest_after_a_cooldown(client, executor, sources, conn) -> None:

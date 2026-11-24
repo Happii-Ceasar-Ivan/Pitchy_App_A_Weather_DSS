@@ -39,12 +39,13 @@ class Settings(BaseSettings):
     supabase_db_url: SecretStr | None = Field(default=None, validation_alias="SUPABASE_DB_URL")
     app_db_url: SecretStr | None = Field(default=None, validation_alias="PITCHY_APP_DB_URL")
 
-    ai_provider_primary: str | None = Field(default=None, validation_alias="AI_PROVIDER_PRIMARY")
-    ai_provider_fallback: str | None = Field(default=None, validation_alias="AI_PROVIDER_FALLBACK")
+    # AI providers (DEC-10): Gemini, then Groq, then OpenRouter (free models). The order, model
+    # names and timeouts are code constants. Keys go in request headers, never in URLs or logs.
     gemini_api_key: SecretStr | None = Field(default=None, validation_alias="GEMINI_API_KEY")
-    nvidia_api_key: SecretStr | None = Field(default=None, validation_alias="NVIDIA_API_KEY")
-    qwen_api_key: SecretStr | None = Field(default=None, validation_alias="QWEN_API_KEY")
-    llama_api_key: SecretStr | None = Field(default=None, validation_alias="LLAMA_API_KEY")
+    groq_api_key: SecretStr | None = Field(default=None, validation_alias="GROQ_API_KEY")
+    openrouter_api_key: SecretStr | None = Field(
+        default=None, validation_alias="OPENROUTER_API_KEY"
+    )
 
     # Vaisala Xweather (lightning, DEC-06). Sent as query parameters: never log request URLs.
     xweather_client_id: SecretStr | None = Field(
@@ -111,7 +112,17 @@ class Settings(BaseSettings):
     )
     session_token_secret: SecretStr | None = Field(
         default=None, validation_alias="PITCHY_SESSION_TOKEN_SECRET"
-    )
+    )  # signs and hashes anonymous session tokens (HMAC-SHA256)
+    # Values confirmed by the user 2026-11-24 (B5 plan section 7).
+    chat_sessions_per_ip_per_hour: int = Field(
+        default=30, ge=1, validation_alias="PITCHY_CHAT_SESSIONS_PER_IP_PER_HOUR"
+    )  # new sessions per client IP (in memory, hashed IP, never stored)
+    chat_daily_ai_cap: int = Field(
+        default=500, ge=0, validation_alias="PITCHY_CHAT_DAILY_AI_CAP"
+    )  # questions per UTC day that may call an AI provider, all users together
+    retention_conversation_days: float = Field(
+        default=30, ge=1, validation_alias="PITCHY_RETENTION_CONVERSATION_DAYS"
+    )  # conversation_events rows and anonymous sessions idle this long
 
     @property
     def expose_api_docs(self) -> bool:

@@ -7,6 +7,7 @@ Contract conventions (API v1, draft):
 """
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
@@ -52,11 +53,27 @@ class ErrorEnvelope(ContractModel):
     error: ErrorBody
 
 
+Severity = Literal["advisory", "warning", "danger"]
+"""Display grade of a rule level, set in the rules file (P-19). The app colours from it; it never
+changes a level or a classification."""
+
+SEVERITY_DESCRIPTION = (
+    "How strongly to show this level (advisory, warning or danger), from the rules file (P-19). "
+    "Display only; null when the rules give none."
+)
+
+
 class Limitation(ContractModel):
     """A data or method limitation the client must show (FR-SAF-004, FR-AGT-005)."""
 
     code: str = Field(examples=["STALE_INPUT", "MISSING_INPUT", "CONFLICTING_SOURCES"])
-    message: str
+    message: str = Field(description="Plain-language text to show. Never contains technical codes.")
+    detail_code: str | None = Field(
+        default=None,
+        examples=["HTTP_503"],
+        description="Technical cause for support or logs (e.g. the source's error code). "
+        "Optional; not meant for display.",
+    )
 
 
 class GuidanceReference(ContractModel):
@@ -86,7 +103,10 @@ ERROR_RESPONSES: dict[int | str, dict] = {
 }
 
 INVALID_SESSION_RESPONSE: dict[int | str, dict] = {
-    401: {"model": ErrorEnvelope, "description": "INVALID_SESSION: token unknown or not issued."},
+    401: {
+        "model": ErrorEnvelope,
+        "description": "INVALID_SESSION: token missing, forged, unknown or expired.",
+    },
 }
 
 NOT_FOUND_RESPONSE: dict[int | str, dict] = {
