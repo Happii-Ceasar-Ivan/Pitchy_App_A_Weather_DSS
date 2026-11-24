@@ -72,6 +72,7 @@ Json matchContextJson({
   'kickoff_at': _t(kickoff),
   'venue': venueJson(venue),
   'pitch_surface': pitchSurface,
+  'age_group': 'senior',
   'created_at': _t(created),
   'updated_at': _t(created),
 };
@@ -376,6 +377,9 @@ Json assessmentJson({required DateTime now, required DateTime kickoff}) => {
     created: now.subtract(const Duration(hours: 1)),
   ),
   'assessed_at': _t(now),
+  'checked_at': _t(now),
+  'age_group': 'senior',
+  'rules_approved': false,
   'rule_version': 'synthetic-0',
   'indicators': [
     {

@@ -27,6 +27,14 @@ void main() {
     final status = await api.getWeatherStatus(match.id);
     final weather = await api.getWeather(match.id);
     final alerts = await api.getAlerts(match.id);
+    expect(match.ageGroup, AgeGroup.senior); // backend default (B4)
+    final assessment = await api.getAssessment(match.id);
+    // ignore: avoid_print
+    print(
+      'assessment: rules_approved=${assessment.rulesApproved} '
+      'rule_version=${assessment.ruleVersion} '
+      'hazards=${assessment.indicators.map((i) => '${i.hazard.wire}:${i.status.wire}').join(', ')}',
+    );
     // ignore: avoid_print
     print(
       'sources: ${status.sources.map((s) => '${s.sourceId}=${s.state.wire}').join(', ')}; '

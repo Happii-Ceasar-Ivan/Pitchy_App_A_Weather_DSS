@@ -149,6 +149,9 @@ class SafetyAssessment {
     required this.id,
     required this.matchContext,
     required this.assessedAt,
+    required this.checkedAt,
+    required this.ageGroup,
+    required this.rulesApproved,
     required this.ruleVersion,
     required this.indicators,
     required this.officialNotices,
@@ -159,6 +162,9 @@ class SafetyAssessment {
     id: readString(json, 'id'),
     matchContext: MatchContext.fromJson(asJson(json['match_context'], 'match_context')),
     assessedAt: readTime(json, 'assessed_at'),
+    checkedAt: readTime(json, 'checked_at'),
+    ageGroup: readEnum(json, 'age_group', AgeGroup.values, AgeGroup.wireOf),
+    rulesApproved: readBool(json, 'rules_approved'),
     ruleVersion: readString(json, 'rule_version'),
     indicators: readList(json, 'indicators', HazardIndicator.fromJson),
     officialNotices: readList(json, 'official_notices', OfficialNotice.fromJson, optional: true),
@@ -168,6 +174,11 @@ class SafetyAssessment {
   final String id;
   final MatchContext matchContext;
   final DateTime assessedAt;
+  final DateTime checkedAt;
+  final AgeGroup ageGroup;
+
+  /// False while the rules file is a draft; the app must say so (F3).
+  final bool rulesApproved;
   final String ruleVersion;
   final List<HazardIndicator> indicators;
   final List<OfficialNotice> officialNotices;
