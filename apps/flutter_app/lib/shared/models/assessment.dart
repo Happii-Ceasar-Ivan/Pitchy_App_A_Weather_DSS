@@ -1,7 +1,6 @@
-// PROVISIONAL. Safety assessment (contract schemas SafetyAssessment, HazardIndicator,
-// InputValue, GuidanceReference, OfficialNotice). The backend returns 501 until
-// Sprint B4; these shapes follow the contract draft and may change. See
-// D:\Pitchy_App\docs\frontend\api-assumptions.md.
+// Safety assessment (contract schemas SafetyAssessment, HazardIndicator, AssessmentLevel,
+// IndicatorPoint, RuleNotice, InputValue, GuidanceReference, OfficialNotice).
+// Confirmed: live since Backend Sprint B4 (`GET /match-contexts/{id}/assessment`).
 //
 // The app displays classifications, values and guidance exactly as the backend
 // sends them. It never calculates, overrides or hardcodes a classification.
@@ -77,6 +76,80 @@ class InputValue {
   final Provenance provenance;
 }
 
+/// The level the approved rules gave an indicator (contract `AssessmentLevel`).
+/// Label and action are the source's words, shown verbatim.
+class AssessmentLevel {
+  const AssessmentLevel({
+    required this.id,
+    required this.label,
+    required this.action,
+    required this.source,
+    required this.alsoSupportedBy,
+  });
+
+  factory AssessmentLevel.fromJson(Json json) => AssessmentLevel(
+    id: readString(json, 'id'),
+    label: readString(json, 'label'),
+    action: readString(json, 'action'),
+    source: GuidanceReference.fromJson(asJson(json['source'], 'source')),
+    alsoSupportedBy: readList(
+      json,
+      'also_supported_by',
+      GuidanceReference.fromJson,
+      optional: true,
+    ),
+  );
+
+  final String id;
+  final String label;
+  final String action;
+  final GuidanceReference source;
+  final List<GuidanceReference> alsoSupportedBy;
+}
+
+/// One calculated value at one time (contract `IndicatorPoint`), e.g. WBGT at a
+/// FIFA measurement time. A null value comes with the inputs that were missing.
+class IndicatorPoint {
+  const IndicatorPoint({
+    required this.at,
+    required this.forecastStamp,
+    required this.value,
+    required this.usedForLevel,
+    required this.missing,
+  });
+
+  factory IndicatorPoint.fromJson(Json json) => IndicatorPoint(
+    at: readTime(json, 'at'),
+    forecastStamp: readTime(json, 'forecast_stamp'),
+    value: readDoubleOrNull(json, 'value'),
+    usedForLevel: readBool(json, 'used_for_level'),
+    missing: readStringList(json, 'missing', optional: true),
+  );
+
+  final DateTime at;
+  final DateTime forecastStamp;
+  final double? value;
+
+  /// True for the value the backend used to set the level.
+  final bool usedForLevel;
+  final List<String> missing;
+}
+
+/// A rule note from the approved rules (contract `RuleNotice`), shown verbatim.
+class RuleNotice {
+  const RuleNotice({required this.id, required this.text, required this.source});
+
+  factory RuleNotice.fromJson(Json json) => RuleNotice(
+    id: readString(json, 'id'),
+    text: readString(json, 'text'),
+    source: GuidanceReference.fromJson(asJson(json['source'], 'source')),
+  );
+
+  final String id;
+  final String text;
+  final GuidanceReference source;
+}
+
 class HazardIndicator {
   const HazardIndicator({
     required this.hazard,
@@ -84,7 +157,13 @@ class HazardIndicator {
     required this.indicatorValue,
     required this.indicatorUnit,
     required this.classification,
+    required this.level,
     required this.basis,
+    required this.decidedBy,
+    required this.points,
+    required this.hourly,
+    required this.notices,
+    required this.procedure,
     required this.inputs,
     required this.limitations,
     required this.guidance,
@@ -96,7 +175,13 @@ class HazardIndicator {
     indicatorValue: readDoubleOrNull(json, 'indicator_value'),
     indicatorUnit: readStringOrNull(json, 'indicator_unit'),
     classification: readStringOrNull(json, 'classification'),
+    level: json['level'] == null ? null : AssessmentLevel.fromJson(asJson(json['level'], 'level')),
     basis: readStringOrNull(json, 'basis'),
+    decidedBy: readStringOrNull(json, 'decided_by'),
+    points: readList(json, 'points', IndicatorPoint.fromJson, optional: true),
+    hourly: readList(json, 'hourly', IndicatorPoint.fromJson, optional: true),
+    notices: readList(json, 'notices', RuleNotice.fromJson, optional: true),
+    procedure: readStringList(json, 'procedure', optional: true),
     inputs: readList(json, 'inputs', InputValue.fromJson, optional: true),
     limitations: readList(json, 'limitations', Limitation.fromJson, optional: true),
     guidance: readList(json, 'guidance', GuidanceReference.fromJson, optional: true),
@@ -104,12 +189,30 @@ class HazardIndicator {
 
   final Hazard hazard;
   final IndicatorStatus status;
+
+  /// Calculated by the backend (e.g. WBGT). Never recalculated here.
   final double? indicatorValue;
   final String? indicatorUnit;
 
-  /// Backend-provided label, shown verbatim. Thresholds are still OPEN (DEC-05/06, P-11).
+  /// Level id from the approved rules; null without a rule or current inputs.
   final String? classification;
+
+  /// The level's label, action and source. Null when there is no classification.
+  final AssessmentLevel? level;
   final String? basis;
+
+  /// Who makes the official decision under the source rules.
+  final String? decidedBy;
+
+  /// Heat: WBGT at the FIFA measurement times (90 and 60 min before kickoff).
+  final List<IndicatorPoint> points;
+
+  /// Heat: WBGT for each hour of the match (information only).
+  final List<IndicatorPoint> hourly;
+  final List<RuleNotice> notices;
+
+  /// Lightning: the official on-site procedure, when the backend shows it.
+  final List<String> procedure;
   final List<InputValue> inputs;
   final List<Limitation> limitations;
   final List<GuidanceReference> guidance;

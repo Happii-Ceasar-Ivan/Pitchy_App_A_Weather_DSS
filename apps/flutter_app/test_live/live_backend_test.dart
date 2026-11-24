@@ -35,6 +35,31 @@ void main() {
       'rule_version=${assessment.ruleVersion} '
       'hazards=${assessment.indicators.map((i) => '${i.hazard.wire}:${i.status.wire}').join(', ')}',
     );
+    final lightning = await api.getLightning(match.id);
+    // ignore: avoid_print
+    print(
+      'lightning: in_window=${lightning.inLiveWindow} state=${lightning.status.state.wire} '
+      'flashes=${lightning.flashCount} level=${lightning.level?.id} '
+      'guidance=${lightning.guidance != null}',
+    );
+    expect(lightning.note, isNotEmpty);
+
+    // F3: the age group chosen in the setup form reaches the assessment.
+    final youth = await api.createMatchContext(
+      MatchContextCreate(
+        venueScopeKey: 'rizal_memorial',
+        kickoffAt: kickoff,
+        ageGroup: AgeGroup.youthU20,
+      ),
+    );
+    expect(youth.ageGroup, AgeGroup.youthU20);
+    final youthAssessment = await api.getAssessment(youth.id);
+    expect(youthAssessment.ageGroup, AgeGroup.youthU20);
+    // ignore: avoid_print
+    print(
+      'youth heat: ${youthAssessment.indicators.where((i) => i.hazard.wire == 'heat').map((i) => '${i.classification} basis=${i.basis}').join()}',
+    );
+
     // ignore: avoid_print
     print(
       'sources: ${status.sources.map((s) => '${s.sourceId}=${s.state.wire}').join(', ')}; '

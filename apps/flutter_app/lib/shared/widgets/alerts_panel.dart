@@ -222,10 +222,23 @@ class _AlertRow extends StatelessWidget {
         leading: AlertLevelMark(level: alertLevelOf(alert)),
         title: alert.headline,
         detail: detail,
-        trailing: Icon(
-          expanded ? Icons.expand_less : Icons.expand_more,
-          size: 20,
-          color: context.palette.inkMuted,
+        // A visible word as well as the chevron, so the row reads as openable.
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              expanded ? 'Hide' : 'Details',
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: context.palette.accent),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              expanded ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+              color: context.palette.accent,
+            ),
+          ],
         ),
       ),
     );
@@ -301,15 +314,25 @@ class _AlertDetails extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final palette = context.palette;
 
+    // At large text sizes the 88 px label column crowds; stack label over value.
+    final stacked = MediaQuery.textScalerOf(context).scale(14) > 14 * 1.3;
     Widget field(String k, String v) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 88, child: Text(k, style: text.bodySmall)),
-          Expanded(child: Text(v, style: text.bodyMedium)),
-        ],
-      ),
+      child: stacked
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(k, style: text.bodySmall),
+                Text(v, style: text.bodyMedium),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 88, child: Text(k, style: text.bodySmall)),
+                Expanded(child: Text(v, style: text.bodyMedium)),
+              ],
+            ),
     );
 
     final cyclones = alerts.activeTropicalCyclones;

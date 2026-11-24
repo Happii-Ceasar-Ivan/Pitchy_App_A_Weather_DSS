@@ -9,6 +9,7 @@ import '../../shared/models/assessment.dart';
 import '../../shared/models/conversation.dart';
 import '../../shared/models/ingestion.dart';
 import '../../shared/models/json.dart';
+import '../../shared/models/lightning.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
 import '../errors/api_failure.dart';
@@ -141,6 +142,10 @@ class HttpPitchyApi implements PitchyApi {
   @override
   Future<SafetyAssessment> getAssessment(String matchContextId) =>
       _get(_uri(['match-contexts', matchContextId, 'assessment']), SafetyAssessment.fromJson);
+
+  @override
+  Future<VenueLightning> getLightning(String matchContextId) =>
+      _get(_uri(['match-contexts', matchContextId, 'lightning']), VenueLightning.fromJson);
 
   @override
   Future<SessionCreated> createSession() async =>

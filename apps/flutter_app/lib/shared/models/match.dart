@@ -84,7 +84,7 @@ class MatchContextCreate {
   /// Optional metadata; no turf adjustment is applied (DEC-05). Max 50 characters.
   final String? pitchSurface;
 
-  /// Not chosen in the app yet (F3); the backend then uses senior.
+  /// Chosen in the setup form (F3). When null the backend uses senior.
   final AgeGroup? ageGroup;
 
   Json toJson() => {

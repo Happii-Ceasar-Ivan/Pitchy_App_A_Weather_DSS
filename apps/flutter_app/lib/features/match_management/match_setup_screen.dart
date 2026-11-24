@@ -181,6 +181,32 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                 ),
               ),
               _Section(
+                title: 'Age group',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SegmentedButton<AgeGroup>(
+                      segments: const [
+                        ButtonSegment(value: AgeGroup.senior, label: Text('Senior')),
+                        ButtonSegment(
+                          value: AgeGroup.youthU20,
+                          label: Text('Under-20 or younger'),
+                        ),
+                      ],
+                      selected: {draft.ageGroup},
+                      showSelectedIcon: false,
+                      onSelectionChanged: (s) => m.updateDraft(draft.copyWith(ageGroup: s.single)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Chooses which heat levels the safety assessment uses. '
+                      'To change it later, set up the match again.',
+                      style: text.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              _Section(
                 title: 'Pitch surface (optional)',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

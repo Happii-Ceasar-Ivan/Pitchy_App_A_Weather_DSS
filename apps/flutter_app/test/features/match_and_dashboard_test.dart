@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/core/storage/preferences.dart';
 import 'package:pitchy/features/match_management/match_controller.dart';
+import 'package:pitchy/shared/models/match.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
 import 'package:pitchy/shared/services/mock/mock_pitchy_api.dart';
 import 'package:pitchy/shared/widgets/request_states.dart';
@@ -66,6 +67,41 @@ void main() {
       expect(again.draft.surface, PitchSurface.syntheticTurf);
     });
 
+    test('age group: senior by default, saved with the draft, sent to the backend', () async {
+      final prefs = MemoryPreferences({PrefKeys.matchDraft: _draft()});
+      final c = MatchController(
+        api: MockPitchyApi(clock: () => testNow, latency: Duration.zero),
+        preferences: prefs,
+        clock: () => testNow,
+      );
+      expect(c.draft.ageGroup, AgeGroup.senior);
+      expect(const MatchDraft(ageGroup: AgeGroup.youthU20).isEmpty, isTrue);
+      c.updateDraft(c.draft.copyWith(ageGroup: AgeGroup.youthU20));
+      final again = MatchController(
+        api: MockPitchyApi(latency: Duration.zero),
+        preferences: prefs,
+      );
+      expect(again.draft.ageGroup, AgeGroup.youthU20);
+      final match = await c.submit();
+      expect(match.ageGroup, AgeGroup.youthU20);
+    });
+
+    test('a request without a chosen age group leaves it to the backend', () {
+      final json = MatchContextCreate(
+        kickoffAt: DateTime.utc(2026, 11, 23, 7),
+        venueScopeKey: 'rizal_memorial',
+      ).toJson();
+      expect(json.containsKey('age_group'), isFalse);
+      expect(
+        MatchContextCreate(
+          kickoffAt: DateTime.utc(2026, 11, 23, 7),
+          venueScopeKey: 'rizal_memorial',
+          ageGroup: AgeGroup.youthU20,
+        ).toJson()['age_group'],
+        'youth_u20',
+      );
+    });
+
     test('a successful setup clears the draft and remembers the active match', () async {
       final prefs = MemoryPreferences({PrefKeys.matchDraft: _draft()});
       final c = MatchController(
@@ -98,6 +134,18 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Choose a venue.'), findsOneWidget);
       expect(find.text('Choose a kickoff time.'), findsOneWidget);
+    });
+
+    testWidgets('age group is a visible two-way choice, Senior preselected', (tester) async {
+      await pumpPitchyApp(tester, prefs: {PrefKeys.matchDraft: _draft()});
+      await tester.tap(find.text('Set up a match'));
+      await tester.pumpAndSettle();
+      final choice = find.byType(SegmentedButton<AgeGroup>);
+      await tester.scrollUntilVisible(choice, 200);
+      expect(tester.widget<SegmentedButton<AgeGroup>>(choice).selected, {AgeGroup.senior});
+      await tester.tap(find.text('Under-20 or younger'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<SegmentedButton<AgeGroup>>(choice).selected, {AgeGroup.youthU20});
     });
 
     testWidgets('a kickoff earlier than now is refused', (tester) async {

@@ -16,14 +16,14 @@ Future<void> _openDrawer(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('phone: two-tab bottom bar; settings button, then logo, then screen name', (
+  testWidgets('phone: three-tab bottom bar; settings button, then logo, then screen name', (
     tester,
   ) async {
     await pumpPitchyApp(tester);
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.byType(NavigationDestination), findsNWidgets(2));
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
 
-    for (final tab in ['PitChyAT', 'Dashboard']) {
+    for (final tab in ['PitChyAT', 'Safety', 'Dashboard']) {
       await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(tab)));
       await tester.pumpAndSettle();
       final settingsX = tester.getCenter(_inBar(find.byTooltip('Quick settings'))).dx;

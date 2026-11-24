@@ -31,7 +31,13 @@ enum PitchSurface {
 /// draft so a half-filled form survives leaving the screen (rulebook law 4).
 @immutable
 class MatchDraft {
-  const MatchDraft({this.venueKey, this.date, this.time, this.surface});
+  const MatchDraft({
+    this.venueKey,
+    this.date,
+    this.time,
+    this.surface,
+    this.ageGroup = AgeGroup.senior,
+  });
 
   factory MatchDraft.fromJson(Map<String, Object?> j) {
     final d = j['date'];
@@ -43,6 +49,10 @@ class MatchDraft {
           ? TimeOfDay(hour: int.parse(t.split(':')[0]), minute: int.parse(t.split(':')[1]))
           : null,
       surface: PitchSurface.fromWire(j['surface'] as String?),
+      ageGroup: AgeGroup.values.firstWhere(
+        (a) => a.wire == j['age_group'],
+        orElse: () => AgeGroup.senior,
+      ),
     );
   }
 
@@ -55,6 +65,10 @@ class MatchDraft {
   final TimeOfDay? time;
   final PitchSurface? surface;
 
+  /// Selects the backend's heat level set. Senior by default, as on the backend.
+  final AgeGroup ageGroup;
+
+  /// The age group always has a value, so it doesn't count towards a started form.
   bool get isEmpty => venueKey == null && date == null && time == null && surface == null;
 
   /// The kickoff instant (UTC), when both date and time are set.
@@ -68,11 +82,13 @@ class MatchDraft {
     TimeOfDay? time,
     PitchSurface? surface,
     bool clearSurface = false,
+    AgeGroup? ageGroup,
   }) => MatchDraft(
     venueKey: venueKey ?? this.venueKey,
     date: date ?? this.date,
     time: time ?? this.time,
     surface: clearSurface ? null : (surface ?? this.surface),
+    ageGroup: ageGroup ?? this.ageGroup,
   );
 
   Map<String, Object?> toJson() => {
@@ -83,6 +99,7 @@ class MatchDraft {
               '${date!.day.toString().padLeft(2, '0')}',
     'time': time == null ? null : '${time!.hour}:${time!.minute}',
     'surface': surface?.wire,
+    'age_group': ageGroup.wire,
   };
 }
 
@@ -197,6 +214,7 @@ class MatchController extends ChangeNotifier {
           kickoffAt: _draft.kickoffUtc!,
           venueScopeKey: _draft.venueKey!,
           pitchSurface: _draft.surface?.wire,
+          ageGroup: _draft.ageGroup,
         ),
       );
       _active = Loaded(match);
@@ -222,6 +240,7 @@ class MatchController extends ChangeNotifier {
         date: DateTime.utc(pht.year, pht.month, pht.day),
         time: TimeOfDay(hour: pht.hour, minute: pht.minute),
         surface: PitchSurface.fromWire(m.pitchSurface),
+        ageGroup: m.ageGroup,
       ),
     );
   }
