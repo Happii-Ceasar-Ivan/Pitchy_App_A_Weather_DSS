@@ -15,10 +15,12 @@ from services.ai_providers.base import (
 from services.ai_providers.http_util import post_json
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-GEMINI_GENERATION_MODEL = "gemini-2.5-flash"
+# Free tier, fixed version. Chosen 2026-11-25 with `smoke_ai.py --try-gemini`: it answered in
+# 1.8 s while gemini-2.5-flash (404, closed to new keys) and gemini-flash-latest (503, busy) failed.
+GEMINI_GENERATION_MODEL = "gemini-3.5-flash-lite"
 GEMINI_EMBEDDING_MODEL = "gemini-embedding-001"
 TEMPERATURE = 0.2
-MAX_OUTPUT_TOKENS = 600
+MAX_OUTPUT_TOKENS = 2048  # thinking tokens count too; the answer check limits the answer length
 EMBED_BATCH_SIZE = 100
 EMBED_TIMEOUT_S = 30.0
 _TASK_TYPES = {"document": "RETRIEVAL_DOCUMENT", "query": "RETRIEVAL_QUERY"}
@@ -32,9 +34,12 @@ class GeminiGenerator:
     name = "gemini"
 
     def __init__(
-        self, api_key: SecretStr | None, transport: httpx.BaseTransport | None = None
+        self,
+        api_key: SecretStr | None,
+        transport: httpx.BaseTransport | None = None,
+        model: str = GEMINI_GENERATION_MODEL,  # only the smoke script passes another name
     ) -> None:
-        self.model = GEMINI_GENERATION_MODEL
+        self.model = model
         self._key = _key(api_key)
         self._transport = transport
 
@@ -55,9 +60,6 @@ class GeminiGenerator:
                     "temperature": TEMPERATURE,
                     "maxOutputTokens": MAX_OUTPUT_TOKENS,
                     "responseMimeType": "application/json",
-                    # 2.5 Flash thinks by default, and thinking tokens count toward the output
-                    # limit, which can leave no answer text. Short explanations need no thinking.
-                    "thinkingConfig": {"thinkingBudget": 0},
                 },
             },
             timeout_s=timeout_s,

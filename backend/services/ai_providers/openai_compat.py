@@ -7,7 +7,7 @@ from services.ai_providers.base import Generation, ProviderError, ProviderName
 from services.ai_providers.http_util import post_json
 
 TEMPERATURE = 0.2
-MAX_OUTPUT_TOKENS = 600
+MAX_OUTPUT_TOKENS = 2048  # reasoning tokens count too; the answer check limits the answer length
 
 
 class OpenAICompatGenerator:

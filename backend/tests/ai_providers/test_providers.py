@@ -11,7 +11,7 @@ from pydantic import SecretStr
 from services.ai_providers.base import EMBEDDING_DIMENSIONS, Generation, ProviderError
 from services.ai_providers.factory import build_embedder, build_generators
 from services.ai_providers.gemini.adapter import GeminiEmbedder, GeminiGenerator
-from services.ai_providers.groq.adapter import GroqGenerator
+from services.ai_providers.groq.adapter import GROQ_MODEL, GroqGenerator
 from services.ai_providers.openrouter.adapter import OpenRouterGenerator
 from services.ai_providers.provider_router.router import ProviderRouter
 
@@ -226,8 +226,8 @@ def test_request_body_shapes():
     cfg = gem["generationConfig"]
     assert cfg["temperature"] == 0.2
     assert cfg["responseMimeType"] == "application/json"
-    assert 0 < cfg["maxOutputTokens"] <= 1000
-    for body, model in ((groq, "llama-3.3-70b-versatile"), (orr, "openrouter/free")):
+    assert 0 < cfg["maxOutputTokens"] <= 4096  # room for thinking tokens
+    for body, model in ((groq, GROQ_MODEL), (orr, "openrouter/free")):
         assert body["model"] == model
         assert body["messages"] == [
             {"role": "system", "content": SYSTEM},
@@ -235,7 +235,7 @@ def test_request_body_shapes():
         ]
         assert body["temperature"] == 0.2
         assert body["response_format"] == {"type": "json_object"}
-        assert 0 < body["max_tokens"] <= 1000
+        assert 0 < body["max_tokens"] <= 4096
 
 
 def test_no_secrets_in_logs_or_errors(caplog):
