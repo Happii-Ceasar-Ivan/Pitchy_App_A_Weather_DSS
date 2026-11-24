@@ -194,6 +194,143 @@
         }
       }
     },
+    "/api/v1/match-contexts/{match_context_id}/conversation": {
+      "post": {
+        "tags": [
+          "conversation"
+        ],
+        "summary": "Ask Question",
+        "description": "Role-adapted explanation of the current assessment and approved guidance (one question).\n\nLimited per session (10 per 10 minutes, then a 20-minute cooldown: 429 with ``retry_at``).\nOff-topic questions get a fixed decline (limitation OFF_TOPIC) and no AI answer.",
+        "operationId": "ask_question_api_v1_match_contexts__match_context_id__conversation_post",
+        "parameters": [
+          {
+            "name": "match_context_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Context Id"
+            }
+          },
+          {
+            "name": "X-Session-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_SESSION: token missing, forged, unknown or expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/match-contexts": {
       "post": {
         "tags": [
@@ -705,140 +842,6 @@
           },
           "409": {
             "description": "INGESTION_NOT_NEEDED: current shared data already covers this match.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/match-contexts/{match_context_id}/conversation": {
-      "post": {
-        "tags": [
-          "match contexts"
-        ],
-        "summary": "Ask Question",
-        "description": "Role-adapted explanation of the active assessment and approved guidance.\n\nLimited per session with a sliding window; the first prompt over the limit starts a cooldown\nand returns 429 with ``retry_at``. Only prompts sent to an AI provider count.",
-        "operationId": "ask_question_api_v1_match_contexts__match_context_id__conversation_post",
-        "parameters": [
-          {
-            "name": "match_context_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Match Context Id"
-            }
-          },
-          {
-            "name": "X-Session-Token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 512,
-              "description": "Anonymous session token from POST /sessions.",
-              "title": "X-Session-Token"
-            },
-            "description": "Anonymous session token from POST /sessions."
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConversationRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConversationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
-            "headers": {
-              "Retry-After": {
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unexpected server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Not implemented yet (contract draft)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "INVALID_SESSION: token missing, forged, unknown or expired.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1714,7 +1717,7 @@
             },
             "type": "array",
             "title": "Limitations",
-            "description": "Always includes AGENT_NOT_AUTHORITY. Conversation codes: AGENT_NOT_AUTHORITY, AI_UNAVAILABLE, DAILY_LIMIT_REACHED, ANSWER_CHECK_FAILED, RETRIEVAL_KEYWORD_ONLY; plus the assessment's own limitations."
+            "description": "Always includes AGENT_NOT_AUTHORITY. Conversation codes: AGENT_NOT_AUTHORITY, AI_UNAVAILABLE, DAILY_LIMIT_REACHED, ANSWER_CHECK_FAILED, RETRIEVAL_KEYWORD_ONLY, OFF_TOPIC; plus the assessment's own limitations."
           },
           "responded_at": {
             "type": "string",

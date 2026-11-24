@@ -117,11 +117,35 @@ def require_session(
     from services.chat_sessions import tokens
     from shared.db.chat_sessions import PgChatSessionRepository
 
-    secret = session_secret(settings)
     invalid = ApiError(401, ErrorCode.INVALID_SESSION, "Missing or invalid session token.")
+    if not x_session_token:
+        raise invalid  # a missing token is the caller's problem, even if the server lacks a secret
+    secret = session_secret(settings)
     if not tokens.verify_token(x_session_token, secret):
         raise invalid
     key = tokens.token_hash(x_session_token, secret)
     if not PgChatSessionRepository(connect).exists(key):
         raise invalid
     return key
+
+
+def get_ai_generators(request: Request) -> list:
+    """The AI text providers in DEC-10 order (one set per app). Tests override this."""
+    from services.ai_providers.factory import build_generators
+
+    state = request.app.state
+    with _pool_lock:
+        if getattr(state, "ai_generators", None) is None:
+            state.ai_generators = build_generators(state.settings)
+    return state.ai_generators
+
+
+def get_embedder(request: Request):
+    """The Gemini embedder, or None without a key (retrieval is then keyword only)."""
+    from services.ai_providers.factory import build_embedder
+
+    state = request.app.state
+    with _pool_lock:
+        if not hasattr(state, "ai_embedder"):
+            state.ai_embedder = build_embedder(state.settings)
+    return state.ai_embedder

@@ -16,6 +16,7 @@ from api.middleware.request_id import RequestIdMiddleware
 from api.routes import (
     alerts,
     assessment,
+    conversation,
     health,
     ingestions,
     lightning,
@@ -59,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         health,
         venues,
         sessions,
+        conversation,
         match_contexts,
         assessment,
         alerts,

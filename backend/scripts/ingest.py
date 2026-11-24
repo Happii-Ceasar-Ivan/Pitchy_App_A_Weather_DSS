@@ -31,6 +31,7 @@ from services.weather_ingestion.jobs.alerts import (  # noqa: E402
 )
 from services.weather_ingestion.jobs.runner import run_ingestion  # noqa: E402
 from services.weather_ingestion.sources.allowlist.hosts import AllowlistedClient  # noqa: E402
+from shared.db.conversation_events import PgConversationEventRepository  # noqa: E402
 from shared.db.pool import DatabaseNotConfiguredError, create_pool  # noqa: E402
 from shared.db.repositories import (  # noqa: E402
     PgAlertRepository,
@@ -142,6 +143,16 @@ def _run(args, settings: Settings, connect) -> int:
                                              for k, v in deleted.items()))  # fmt: skip
     except Exception as exc:  # noqa: BLE001 - reported, then the run still succeeds
         print(f"  retention     failed ({type(exc).__name__})", file=sys.stderr)
+
+    # Retention (P-06, DEC-14): conversation rows and idle anonymous sessions after 30 days.
+    try:
+        deleted = PgConversationEventRepository(connect).purge(
+            timedelta(days=settings.retention_conversation_days)
+        )
+        print("  chat cleanup  " + ", ".join(f"{k.removesuffix('_deleted')}={v}"
+                                             for k, v in deleted.items()))  # fmt: skip
+    except Exception as exc:  # noqa: BLE001 - reported, then the run still succeeds
+        print(f"  chat cleanup  failed ({type(exc).__name__})", file=sys.stderr)
     return 0
 
 

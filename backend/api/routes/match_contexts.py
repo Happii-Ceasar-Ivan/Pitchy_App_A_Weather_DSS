@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from api.deps import (
     get_adapter_groups,
@@ -18,20 +18,17 @@ from api.deps import (
     get_ingestion_executor,
     get_settings_dep,
 )
-from api.errors import ApiError, not_implemented
+from api.errors import ApiError
 from api.routes.venues import venue_info
 from api.schemas.common import (
     ERROR_RESPONSES,
-    INVALID_SESSION_RESPONSE,
     NOT_FOUND_RESPONSE,
     ErrorCode,
     ErrorDetail,
     ErrorEnvelope,
     Limitation,
 )
-from api.schemas.conversation import ConversationRequest, ConversationResponse
 from api.schemas.match import MatchContext, MatchContextCreate
-from api.schemas.session import SESSION_TOKEN_HEADER, SESSION_TOKEN_MAX_CHARS
 from api.schemas.weather import (
     AlertsStatus,
     Attribution,
@@ -73,15 +70,6 @@ from shared.db.repositories import (
 )
 from shared.settings import Settings
 
-SessionToken = Annotated[
-    str,
-    Header(
-        alias=SESSION_TOKEN_HEADER,
-        min_length=1,
-        max_length=SESSION_TOKEN_MAX_CHARS,
-        description="Anonymous session token from POST /sessions.",
-    ),
-]
 Connect = Annotated[ConnectionFactory, Depends(get_connect)]
 AppSettings = Annotated[Settings, Depends(get_settings_dep)]
 Groups = Annotated[list, Depends(get_adapter_groups)]
@@ -362,19 +350,3 @@ def request_ingestion(
             for g in started
         ],
     )
-
-
-@router.post(
-    "/{match_context_id}/conversation",
-    response_model=ConversationResponse,
-    responses={**NOT_FOUND_RESPONSE, **INVALID_SESSION_RESPONSE},
-)
-async def ask_question(
-    match_context_id: UUID, body: ConversationRequest, session_token: SessionToken
-) -> ConversationResponse:
-    """Role-adapted explanation of the active assessment and approved guidance.
-
-    Limited per session with a sliding window; the first prompt over the limit starts a cooldown
-    and returns 429 with ``retry_at``. Only prompts sent to an AI provider count.
-    """
-    raise not_implemented("Sprint B5")

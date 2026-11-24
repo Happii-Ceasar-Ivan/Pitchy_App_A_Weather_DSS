@@ -2,7 +2,11 @@
 
 A reply is rejected (the router then tries the next provider) unless all of these hold:
 1. It is JSON {"answer": str, "sources": [str]}; the answer is non-empty and not too long.
-2. Every cited label ([A], [D1].., and the sources list) exists in what the model was given.
+   {"off_topic": true} is accepted as a decline: the route then shows Pitchy's fixed message,
+   so the model never writes a reply of its own to an off-topic question.
+2. It cites at least one block, and every cited label ([A], [D1].., and the sources list)
+   exists in what the model was given. An answer that cites nothing (a poem, code, a recipe)
+   is rejected.
 3. Every number with a unit (°C, km, minutes, %, ...) appears in the facts or the documents,
    allowing rounding. This blocks invented measurements and thresholds.
 4. No level label or id from rules.yaml appears unless it is the level the engine gave for that
@@ -119,7 +123,8 @@ def _plain(text: str) -> str:
     return "\n".join(line for line in lines if line).strip()
 
 
-def _parse(raw: str) -> tuple[str, list[str]] | None:
+def _parse(raw: str) -> tuple[str, list[str]] | str | None:
+    """(answer, sources), or "OFF_TOPIC" for the model's decline flag, or None if malformed."""
     text = _FENCE.sub("", raw.strip())
     try:
         data = json.loads(text)
@@ -131,6 +136,8 @@ def _parse(raw: str) -> tuple[str, list[str]] | None:
             data = json.loads(text[start : end + 1])
         except ValueError:
             return None
+    if isinstance(data, dict) and data.get("off_topic") is True:
+        return "OFF_TOPIC"
     if not isinstance(data, dict) or not isinstance(data.get("answer"), str):
         return None
     sources = data.get("sources", [])
@@ -177,6 +184,8 @@ def check_answer(raw: str, context: AnswerContext, rules: RuleSet) -> GuardResul
     parsed = _parse(raw)
     if parsed is None:
         return _reject("NOT_JSON")
+    if parsed == "OFF_TOPIC":
+        return GuardResult(True, "OFF_TOPIC")
     answer, sources = parsed
     answer = _plain(answer)
     if not answer:
@@ -185,6 +194,8 @@ def check_answer(raw: str, context: AnswerContext, rules: RuleSet) -> GuardResul
         return _reject("TOO_LONG")
 
     cited = set(_LABEL.findall(answer)) | {s for s in sources if s}
+    if not cited:
+        return _reject("NO_CITATION")
     if not cited <= context.labels:
         return _reject("UNKNOWN_CITATION")
 

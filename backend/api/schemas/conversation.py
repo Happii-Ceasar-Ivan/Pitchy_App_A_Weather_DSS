@@ -33,6 +33,7 @@ class ConversationLimitationCode(StrEnum):
     DAILY_LIMIT_REACHED = "DAILY_LIMIT_REACHED"  # the shared daily AI question cap was reached
     ANSWER_CHECK_FAILED = "ANSWER_CHECK_FAILED"  # every reply failed the deterministic check
     RETRIEVAL_KEYWORD_ONLY = "RETRIEVAL_KEYWORD_ONLY"  # embedding failed; full-text search only
+    OFF_TOPIC = "OFF_TOPIC"  # not about this match's weather safety; Pitchy's fixed decline
 
 
 class ConversationRequest(ContractModel):
