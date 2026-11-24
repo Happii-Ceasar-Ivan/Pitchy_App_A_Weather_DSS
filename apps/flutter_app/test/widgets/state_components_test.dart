@@ -108,25 +108,24 @@ void main() {
     WeatherStatus status(MockScenario s) =>
         WeatherStatus.fromJson(weatherStatusJson(s, now: testNow, kickoff: testKickoff));
 
-    Future<void> pumpRail(WidgetTester tester, WeatherStatus st) => pumpThemed(
-      tester,
-      SourceRail(
-        sources: st.sources,
-        checkedAt: st.checkedAt,
-        coverage: st.coverage,
-        kickoff: testKickoff,
-        now: testNow,
-      ),
-    );
+    Future<void> pumpRail(WidgetTester tester, WeatherStatus st, {bool expanded = true}) =>
+        pumpThemed(
+          tester,
+          SourceRail(
+            sources: st.sources,
+            checkedAt: st.checkedAt,
+            coverage: st.coverage,
+            kickoff: testKickoff,
+            now: testNow,
+            initiallyExpanded: expanded,
+          ),
+        );
 
-    testWidgets('every rail row has the skeleton row shape, in every backend state', (
+    testWidgets('the collapsed rail has the skeleton shape, in every backend state', (
       tester,
     ) async {
-      final skeletonRows = <double>[];
       await pumpThemed(tester, const SourceRailSkeleton());
-      for (final e in find.byType(IntrinsicHeight).evaluate()) {
-        skeletonRows.add(tester.getSize(find.byWidget(e.widget)).height);
-      }
+      final skeleton = tester.getSize(find.byType(SourceRailSkeleton)).height;
       for (final scenario in [
         MockScenario.allCurrent,
         MockScenario.someStale,
@@ -134,20 +133,29 @@ void main() {
         MockScenario.missing,
         MockScenario.unavailable,
       ]) {
-        await pumpRail(tester, status(scenario));
-        final rows = [
-          for (final e in find.byType(IntrinsicHeight).evaluate())
-            tester.getSize(find.byWidget(e.widget)).height,
-        ];
-        expect(rows.length, skeletonRows.length, reason: scenario.name);
-        for (var i = 0; i < rows.length; i++) {
-          expect(
-            (rows[i] - skeletonRows[i]).abs(),
-            lessThan(1.5),
-            reason: '${scenario.name} row $i',
-          );
-        }
+        await pumpRail(tester, status(scenario), expanded: false);
+        final rail = tester.getSize(find.byType(SourceRail)).height;
+        expect((rail - skeleton).abs(), lessThan(1.5), reason: scenario.name);
       }
+    });
+
+    testWidgets('collapsed: names and state words side by side; opens to the full lines', (
+      tester,
+    ) async {
+      await pumpRail(tester, status(MockScenario.someStale), expanded: false);
+      expect(find.text('Open-Meteo'), findsOneWidget);
+      expect(find.text('STALE'), findsOneWidget);
+      expect(find.text('CURRENT'), findsNWidgets(2));
+      expect(find.byType(ValidityBar), findsNothing);
+      final names = [
+        for (final n in ['Open-Meteo', 'PAGASA ATMO', 'PAGASA ECMWF'])
+          tester.getTopLeft(find.text(n)),
+      ];
+      expect(names.map((o) => o.dy).toSet().length, 1, reason: 'one horizontal row');
+      await tester.tap(find.byTooltip('Show source details'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ValidityBar), findsNWidgets(3));
+      expect(find.textContaining('9 h ago'), findsOneWidget);
     });
 
     testWidgets('shows every source with the backend state, never upgraded', (tester) async {
