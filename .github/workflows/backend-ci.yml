@@ -23,9 +23,11 @@ jobs:
       run:
         working-directory: backend
     # Disposable database for migration/RLS/lock tests. Throwaway credentials, not a secret.
+    # The official pgvector build of Postgres 17: B5's migration needs the vector extension
+    # (Supabase has it; the plain postgres image does not).
     services:
       postgres:
-        image: postgres:17
+        image: pgvector/pgvector:0.8.0-pg17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: pitchy_test
