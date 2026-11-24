@@ -21,7 +21,7 @@ class HttpPitchyApi implements PitchyApi {
   HttpPitchyApi({
     required Uri baseUrl,
     http.Client? client,
-    this.timeout = const Duration(seconds: 20),
+    this.timeout = const Duration(seconds: 40),
   }) : _base = baseUrl,
        _client = client ?? http.Client();
 

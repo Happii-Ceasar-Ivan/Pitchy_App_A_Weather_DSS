@@ -25,8 +25,11 @@ enum MockScenario {
   /// No stored forecast covers the match yet.
   missing,
 
-  /// A source failed; cooldown until next_ingestion_at.
+  /// A source failed; cooldown until next_ingestion_at. Update answers 429.
   unavailable,
+
+  /// PAGASA ATMO stale, Ingest offered, and the update job fails.
+  ingestFails,
 
   /// Backend answers 503 SERVICE_UNAVAILABLE.
   serviceError,
@@ -102,7 +105,7 @@ List<Json> _sourceStatuses(MockScenario s, DateTime now, DateTime kickoff) {
     for (final (id, name) in _sources)
       () {
         final state = switch (s) {
-          MockScenario.someStale when id == 'pagasa_atmo' => 'stale',
+          MockScenario.someStale || MockScenario.ingestFails when id == 'pagasa_atmo' => 'stale',
           MockScenario.updating => 'updating',
           MockScenario.missing => 'missing',
           MockScenario.unavailable when id == 'pagasa_ecmwf' => 'unavailable',
@@ -149,7 +152,10 @@ Json weatherStatusJson(
   String id = rizalMemorialId,
 }) {
   final needs =
-      s == MockScenario.someStale || s == MockScenario.missing || s == MockScenario.unavailable;
+      s == MockScenario.someStale ||
+      s == MockScenario.missing ||
+      s == MockScenario.unavailable ||
+      s == MockScenario.ingestFails;
   return {
     'match_context_id': id,
     'venue': 'rizal_memorial',
@@ -160,9 +166,7 @@ Json weatherStatusJson(
     },
     'sources': _sourceStatuses(s, now, kickoff),
     'ingestion_needed': needs,
-    'active_job_ids': s == MockScenario.updating
-        ? ['c1d2e3f4-0000-4000-8000-000000000001']
-        : <String>[],
+    'active_job_ids': s == MockScenario.updating ? [pagasaJobId] : <String>[],
     'next_ingestion_at': s == MockScenario.unavailable
         ? _t(now.add(const Duration(minutes: 15)))
         : null,
@@ -315,6 +319,7 @@ Json alertsJson({required DateTime now, bool withAlert = false}) => {
         ],
       },
   ],
+  'label': 'Official PAGASA information, shown as issued. Not a Pitchy classification.',
 };
 
 Json ingestionJobJson({
@@ -322,11 +327,12 @@ Json ingestionJobJson({
   required String state,
   required DateTime created,
   bool reused = false,
+  List<String> sources = const ['pagasa_atmo', 'pagasa_ecmwf'],
 }) => {
   'id': id,
   'state': state,
   'venue': 'rizal_memorial',
-  'source_ids': ['pagasa_atmo', 'pagasa_ecmwf'],
+  'source_ids': sources,
   'created_at': _t(created),
   'started_at': state == 'queued' ? null : _t(created.add(const Duration(seconds: 2))),
   'finished_at': (state == 'succeeded' || state == 'failed' || state == 'expired')
@@ -346,9 +352,20 @@ Json ingestionJobJson({
 Json ingestionRequestJson({required DateTime now, String id = rizalMemorialId}) => {
   'match_context_id': id,
   'jobs': [
-    ingestionJobJson(id: 'c1d2e3f4-0000-4000-8000-000000000001', state: 'queued', created: now),
+    ingestionJobJson(id: pagasaJobId, state: 'queued', created: now),
+    ingestionJobJson(
+      id: openMeteoJobId,
+      state: 'running',
+      created: now.subtract(const Duration(seconds: 20)),
+      reused: true,
+      sources: const ['open_meteo'],
+    ),
   ],
 };
+
+/// Demo job ids: the PAGASA group (ATMO + ECMWF) and the Open-Meteo group.
+const pagasaJobId = 'c1d2e3f4-0000-4000-8000-000000000001';
+const openMeteoJobId = 'c1d2e3f4-0000-4000-8000-000000000002';
 
 /// PROVISIONAL (B4 not built). Placeholder classification labels are clearly synthetic;
 /// real labels and thresholds come only from the backend's approved rules.

@@ -108,8 +108,17 @@ class MockPitchyApi implements PitchyApi {
         VenueAlerts.fromJson(alertsJson(now: _now, withAlert: scenario == MockScenario.someStale)),
   );
 
+  /// Update requests sent, for tests that check no duplicate is sent.
+  int ingestionRequests = 0;
+
+  /// What the mock backend does with an update request, by scenario:
+  /// all current → 409; unavailable → 429 with retry_at; otherwise 202 with two
+  /// group jobs (one reused) and the status turns Updating. Jobs then succeed
+  /// (the status turns Current), or fail in [MockScenario.ingestFails] (the
+  /// status then answers 429 for the cooldown).
   @override
   Future<IngestionRequestResult> requestIngestion(String matchContextId) => _respond(() {
+    ingestionRequests++;
     if (scenario == MockScenario.unavailable) {
       throw ApiError.fromEnvelope(
         429,
@@ -126,23 +135,36 @@ class MockPitchyApi implements PitchyApi {
         errorJson('INGESTION_NOT_NEEDED', 'Data is already current.'),
       );
     }
+    _jobsFail = scenario == MockScenario.ingestFails;
+    _jobPolls.clear();
+    if (!_jobsFail) scenario = MockScenario.updating;
     return IngestionRequestResult.fromJson(ingestionRequestJson(now: _now, id: matchContextId));
   });
 
-  /// Jobs move queued -> running -> succeeded over successive polls.
+  bool _jobsFail = false;
+
+  /// Jobs move queued -> running -> succeeded (or failed) over successive polls.
   @override
   Future<IngestionJob> getIngestionJob(String jobId) => _respond(() {
     final polls = _jobPolls.update(jobId, (n) => n + 1, ifAbsent: () => 0);
+    final end = _jobsFail && jobId == pagasaJobId ? 'failed' : 'succeeded';
     final state = switch (polls) {
       0 => 'queued',
       1 => 'running',
-      _ => 'succeeded',
+      _ => end,
     };
+    if (state == 'failed') scenario = MockScenario.unavailable;
+    if (state == 'succeeded' && scenario == MockScenario.updating && polls >= 2) {
+      scenario = MockScenario.allCurrent;
+    }
     return IngestionJob.fromJson(
       ingestionJobJson(
         id: jobId,
         state: state,
         created: _now.subtract(Duration(seconds: polls * 5)),
+        sources: jobId == openMeteoJobId
+            ? const ['open_meteo']
+            : const ['pagasa_atmo', 'pagasa_ecmwf'],
       ),
     );
   });

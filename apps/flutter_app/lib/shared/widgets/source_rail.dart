@@ -22,6 +22,8 @@ class SourceRail extends StatelessWidget {
     required this.coverage,
     required this.kickoff,
     required this.now,
+    this.action,
+    this.notice,
   });
 
   final List<SourceStatus> sources;
@@ -32,23 +34,44 @@ class SourceRail extends StatelessWidget {
   /// Only used to word ages ("9 h ago"), never to judge freshness.
   final DateTime now;
 
+  /// Header slot (48 px row, always present): the update button or progress.
+  final Widget? action;
+
+  /// Shown under the header after an update attempt (wait, failure).
+  final Widget? notice;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+        padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Semantics(
-              header: true,
-              child: Text(
-                'Sources · checked ${formatPhtTime(checkedAt)}',
-                style: text.labelLarge?.copyWith(color: context.palette.inkMuted),
+            // At least 48 px in every state, so the update button or progress
+            // appearing never moves the board. Grows (two lines) only at large
+            // text sizes, so the "checked ... PHT" time is never cut.
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        'Sources · checked ${formatPhtTime(checkedAt)}',
+                        style: text.labelLarge?.copyWith(color: context.palette.inkMuted),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  if (action != null) ...[const SizedBox(width: 8), action!],
+                ],
               ),
             ),
-            const SizedBox(height: 6),
+            if (notice != null) ...[const SizedBox(height: 4), notice!, const SizedBox(height: 4)],
             if (sources.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -435,12 +458,17 @@ class SourceRailSkeleton extends StatelessWidget {
       label: 'Loading weather sources',
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SkeletonLine(style: text.labelLarge, width: 190),
-              const SizedBox(height: 6),
+              SizedBox(
+                height: AppTheme.minTarget,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SkeletonLine(style: text.labelLarge, width: 190),
+                ),
+              ),
               for (var i = 0; i < lines; i++)
                 IntrinsicHeight(
                   child: Row(

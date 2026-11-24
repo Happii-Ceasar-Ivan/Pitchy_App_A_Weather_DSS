@@ -38,13 +38,33 @@ void main() {
   test('ingestion jobs progress to succeeded on polling', () async {
     final mock = api(MockScenario.someStale);
     final result = await mock.requestIngestion(rizalMemorialId);
-    final id = result.jobs.single.id;
+    expect(result.jobs, hasLength(2));
+    expect(result.jobs.where((j) => j.reusedExistingJob), hasLength(1));
+    expect(mock.scenario, MockScenario.updating);
+    final id = result.jobs.first.id;
     final states = [for (var i = 0; i < 3; i++) (await mock.getIngestionJob(id)).state];
     expect(states, [
       IngestionJobState.queued,
       IngestionJobState.running,
       IngestionJobState.succeeded,
     ]);
+    expect(mock.scenario, MockScenario.allCurrent);
+  });
+
+  test('a failing update job ends failed and the next request must wait', () async {
+    final mock = api(MockScenario.ingestFails);
+    final result = await mock.requestIngestion(rizalMemorialId);
+    final pagasa = result.jobs.firstWhere((j) => j.id == pagasaJobId);
+    IngestionJob job = pagasa;
+    for (var i = 0; i < 3; i++) {
+      job = await mock.getIngestionJob(pagasa.id);
+    }
+    expect(job.state, IngestionJobState.failed);
+    expect(job.failures, isNotEmpty);
+    await expectLater(
+      mock.requestIngestion(rizalMemorialId),
+      throwsA(isA<ApiError>().having((e) => e.code, 'code', ApiErrorCode.rateLimited)),
+    );
   });
 
   test('ingestion is refused when not needed or during cooldown', () async {

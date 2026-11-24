@@ -190,7 +190,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(SourceRail), findsNothing);
       expect(find.byType(ErrorState), findsOneWidget);
-      expect(find.text('Server temporarily unavailable'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ErrorState),
+          matching: find.text('Server temporarily unavailable'),
+        ),
+        findsOneWidget,
+      );
       api.scenario = MockScenario.allCurrent;
       await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
@@ -204,10 +210,13 @@ void main() {
         scenario: MockScenario.updating,
         settle: false, // the Updating spinner runs until the job ends
       );
+      final semantics = tester.ensureSemantics();
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      expect(find.textContaining('Updating weather data'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Updating weather data')), findsOneWidget);
+      semantics.dispose();
+      expect(find.text('Update'), findsNothing); // no second request while a job runs
     });
 
     testWidgets('phone stacks rail above cards; wide windows put them side by side', (

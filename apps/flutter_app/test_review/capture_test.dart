@@ -84,6 +84,96 @@ void main() {
   const phone = Size(390, 844);
   const desktop = Size(1280, 800);
 
+  // F2: update flow and official alerts.
+  testWidgets(
+    'f2 phone update offered',
+    (t) => _shot(t, 'f2-phone-update', size: phone, withMatch: true),
+  );
+  testWidgets(
+    'f2 phone updating',
+    (t) => _shot(
+      t,
+      'f2-phone-updating',
+      size: phone,
+      withMatch: true,
+      act: (t) => t.tap(find.text('Update')),
+    ),
+  );
+  testWidgets(
+    'f2 phone must wait',
+    (t) => _shot(
+      t,
+      'f2-phone-wait',
+      size: phone,
+      withMatch: true,
+      scenario: MockScenario.unavailable,
+      act: (t) => t.tap(find.text('Update')),
+    ),
+  );
+  testWidgets(
+    'f2 phone job failed',
+    (t) => _shot(
+      t,
+      'f2-phone-failed',
+      size: phone,
+      withMatch: true,
+      scenario: MockScenario.ingestFails,
+      act: (t) async {
+        await t.tap(find.text('Update'));
+        for (var i = 0; i < 12; i++) {
+          await t.pump(const Duration(seconds: 1));
+        }
+      },
+    ),
+  );
+  testWidgets(
+    'f2 phone updated',
+    (t) => _shot(
+      t,
+      'f2-phone-updated',
+      size: phone,
+      withMatch: true,
+      act: (t) async {
+        await t.tap(find.text('Update'));
+        for (var i = 0; i < 10; i++) {
+          await t.pump(const Duration(seconds: 1));
+        }
+      },
+    ),
+  );
+  testWidgets(
+    'f2 phone alert open',
+    (t) => _shot(
+      t,
+      'f2-phone-alert-open',
+      size: phone,
+      withMatch: true,
+      act: (t) => t.tap(find.text('SYNTHETIC: Thunderstorm advisory for Metro Manila')),
+    ),
+  );
+  testWidgets(
+    'f2 phone skeleton',
+    (t) => _shot(
+      t,
+      'f2-phone-skeleton',
+      size: phone,
+      withMatch: true,
+      latency: const Duration(seconds: 2),
+      settle: false,
+      act: (t) => t.pump(const Duration(milliseconds: 2100)),
+    ),
+  );
+  testWidgets(
+    'f2 desktop dark update',
+    (t) => _shot(
+      t,
+      'f2-desktop-dark',
+      size: desktop,
+      withMatch: true,
+      mode: PitchyThemeMode.dark,
+      act: (t) => t.tap(find.text('Update')),
+    ),
+  );
   testWidgets('phone dashboard empty', (t) => _shot(t, 'phone', size: phone));
   testWidgets(
     'phone dashboard board',
