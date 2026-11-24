@@ -31,7 +31,6 @@ def test_committed_contract_is_up_to_date() -> None:
 @pytest.mark.parametrize(
     ("method", "path", "body"),
     [
-        ("get", f"/match-contexts/{MATCH_ID}/assessment", None),
         ("post", f"/match-contexts/{MATCH_ID}/conversation", {"role": "coach", "question": "Hi"}),
         ("post", "/sessions", None),
     ],

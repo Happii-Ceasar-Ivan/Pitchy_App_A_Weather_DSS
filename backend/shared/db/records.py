@@ -45,6 +45,7 @@ class MatchContextRecord:
     pitch_surface: str | None
     created_at: datetime
     updated_at: datetime
+    age_group: str = "senior"  # 'senior' | 'youth_u20' (B4)
 
 
 @dataclass(frozen=True)

@@ -20,7 +20,6 @@ from api.deps import (
 )
 from api.errors import ApiError, not_implemented
 from api.routes.venues import venue_info
-from api.schemas.assessment import SafetyAssessment
 from api.schemas.common import (
     ERROR_RESPONSES,
     INVALID_SESSION_RESPONSE,
@@ -96,6 +95,7 @@ def _match_response(match: MatchContextRecord, location: Location) -> MatchConte
         kickoff_at=match.kickoff_at,
         venue=venue_info(location),
         pitch_surface=match.pitch_surface,
+        age_group=match.age_group,
         created_at=match.created_at,
         updated_at=match.updated_at,
     )
@@ -162,7 +162,11 @@ def create_match_context(body: MatchContextCreate, connect: Connect) -> MatchCon
             [ErrorDetail(field="body.venue", issue="Unknown venue. Use a key from GET /venues.")],
         )
     match = PgMatchContextRepository(connect).create(
-        body.kickoff_at.astimezone(UTC), location.id, location.name, body.pitch_surface
+        body.kickoff_at.astimezone(UTC),
+        location.id,
+        location.name,
+        body.pitch_surface,
+        body.age_group.value,
     )
     return _match_response(match, location)
 
@@ -355,16 +359,6 @@ def request_ingestion(
             for g in started
         ],
     )
-
-
-@router.get(
-    "/{match_context_id}/assessment",
-    response_model=SafetyAssessment,
-    responses=NOT_FOUND_RESPONSE,
-)
-async def get_assessment(match_context_id: UUID) -> SafetyAssessment:
-    """Deterministic assessment with inputs, limitations and rule version. Works without AI."""
-    raise not_implemented("Sprint B4")
 
 
 @router.post(

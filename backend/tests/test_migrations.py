@@ -219,3 +219,19 @@ def test_only_the_alerts_job_may_have_no_venue(conn: psycopg.Connection) -> None
     conn.execute(insert, ("pagasa_alerts",))
     with pytest.raises(errors.CheckViolation):
         conn.execute(insert, ("pagasa:somewhere",))
+
+
+def test_match_age_group_defaults_to_senior_and_is_checked(conn: psycopg.Connection) -> None:
+    location = _location(conn)
+    match = conn.execute(
+        "insert into public.match_contexts (kickoff_at, location_id) values (now(), %s)"
+        " returning age_group",
+        (location,),
+    ).fetchone()[0]
+    assert match == "senior"
+    with pytest.raises(errors.CheckViolation):
+        conn.execute(
+            "insert into public.match_contexts (kickoff_at, location_id, age_group)"
+            " values (now(), %s, 'veterans')",
+            (location,),
+        )

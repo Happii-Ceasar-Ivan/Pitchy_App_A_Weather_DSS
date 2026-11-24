@@ -60,6 +60,7 @@ class MatchContextRepository(Protocol):
         location_id: UUID,
         venue_name: str | None,
         pitch_surface: str | None,
+        age_group: str = "senior",
     ) -> MatchContextRecord: ...
     def get(self, match_context_id: UUID) -> MatchContextRecord | None: ...
 
@@ -186,14 +187,15 @@ class PgMatchContextRepository(_Repo):
         location_id: UUID,
         venue_name: str | None,
         pitch_surface: str | None,
+        age_group: str = "senior",
     ) -> MatchContextRecord:
         with self._connect() as conn:
             cur = conn.cursor(row_factory=class_row(MatchContextRecord))
             return cur.execute(
                 "insert into public.match_contexts"
-                " (kickoff_at, location_id, venue_name, pitch_surface)"
-                " values (%s, %s, %s, %s) returning *",
-                (kickoff_at, location_id, venue_name, pitch_surface),
+                " (kickoff_at, location_id, venue_name, pitch_surface, age_group)"
+                " values (%s, %s, %s, %s, %s) returning *",
+                (kickoff_at, location_id, venue_name, pitch_surface, age_group),
             ).fetchone()
 
     def get(self, match_context_id: UUID) -> MatchContextRecord | None:
@@ -587,6 +589,46 @@ class PgLightningRepository(_Repo):
                 " error_code, error_summary) values (%s, %s, 'failed', %s, %s) returning id",
                 (location_id, job_id, error_code, summary),
             ).fetchone()[0]
+
+
+class PgAssessmentRepository(_Repo):
+    """Saved safety assessments (FR-SAF-005, DEC-14: a new row only when the result changes)."""
+
+    def latest(self, match_context_id: UUID) -> dict | None:
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=dict_row)
+            return cur.execute(
+                "select id, assessed_at, result->>'input_fingerprint' as fingerprint"
+                " from public.safety_assessments where match_context_id = %s"
+                " order by assessed_at desc limit 1",
+                (match_context_id,),
+            ).fetchone()
+
+    def save(
+        self,
+        match_context_id: UUID,
+        rule_version: str,
+        result: dict,
+        limitations: list,
+        inputs: Sequence[tuple[int, str]],
+    ) -> dict:
+        """Store the result and the exact forecast values it used (hazard per value)."""
+        with self._connect() as conn, conn.transaction():
+            cur = conn.cursor(row_factory=dict_row)
+            row = cur.execute(
+                "insert into public.safety_assessments (match_context_id, rule_version, result,"
+                " limitations) values (%s, %s, %s, %s) returning id, assessed_at",
+                (match_context_id, rule_version, Jsonb(result), Jsonb(limitations)),
+            ).fetchone()
+            if inputs:
+                conn.execute(
+                    "insert into public.assessment_inputs"
+                    " (assessment_id, forecast_value_id, hazard)"
+                    " select %s, x.v, x.h from unnest(%s::bigint[], %s::text[]) as x(v, h)"
+                    " on conflict do nothing",
+                    (row["id"], [i for i, _ in inputs], [h for _, h in inputs]),
+                )
+            return row
 
 
 class PgRetentionRepository(_Repo):
