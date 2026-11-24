@@ -14,7 +14,11 @@ import 'weather_value_card.dart' show shortSourceName;
 ///
 /// Shows only what the backend reports (states, times, limitations); it never
 /// decides freshness itself.
-class SourceRail extends StatelessWidget {
+///
+/// Collapsed by default (team request 2026-11-24): one row with each source's
+/// line dot, short name and state pill side by side, so the weather values get
+/// the space. Opening it shows the full lines with times and validity bars.
+class SourceRail extends StatefulWidget {
   const SourceRail({
     super.key,
     required this.sources,
@@ -24,6 +28,7 @@ class SourceRail extends StatelessWidget {
     required this.now,
     this.action,
     this.notice,
+    this.initiallyExpanded = false,
   });
 
   final List<SourceStatus> sources;
@@ -40,9 +45,33 @@ class SourceRail extends StatelessWidget {
   /// Shown under the header after an update attempt (wait, failure).
   final Widget? notice;
 
+  /// Starts with the full lines open (used by tests and reviews).
+  final bool initiallyExpanded;
+
+  @override
+  State<SourceRail> createState() => _SourceRailState();
+}
+
+class _SourceRailState extends State<SourceRail> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  void _toggle() => setState(() => _expanded = !_expanded);
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final SourceRail(:sources, :checkedAt, :coverage, :kickoff, :now, :action, :notice) = widget;
+    final toggle = Semantics(
+      button: true,
+      expanded: _expanded,
+      label: _expanded ? 'Hide source details' : 'Show source details',
+      excludeSemantics: true,
+      child: IconButton(
+        onPressed: _toggle,
+        tooltip: _expanded ? 'Hide source details' : 'Show source details',
+        icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+      ),
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
@@ -62,20 +91,27 @@ class SourceRail extends StatelessWidget {
                       child: Text(
                         'Sources · checked ${formatPhtTime(checkedAt)}',
                         style: text.labelLarge?.copyWith(color: context.palette.inkMuted),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        // Wraps as far as it needs at large text, beside the update
+                        // button and the details toggle, so the PHT time is never cut.
                       ),
                     ),
                   ),
-                  if (action != null) ...[const SizedBox(width: 8), action!],
+                  if (action != null) ...[const SizedBox(width: 8), action],
+                  if (sources.isNotEmpty) toggle,
                 ],
               ),
             ),
-            if (notice != null) ...[const SizedBox(height: 4), notice!, const SizedBox(height: 4)],
+            if (notice != null) ...[const SizedBox(height: 4), notice, const SizedBox(height: 4)],
             if (sources.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text('No weather sources reported.', style: text.bodyMedium),
+              )
+            else if (!_expanded)
+              InkWell(
+                onTap: _toggle,
+                borderRadius: BorderRadius.circular(8),
+                child: SourceSummaryRow(sources: sources),
               )
             else
               for (var i = 0; i < sources.length; i++)
@@ -92,6 +128,87 @@ class SourceRail extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The collapsed rail: one equal column per source with its line dot (filled
+/// only when Current), short name and state pill (icon and word). One shape
+/// for every state, so the skeleton matches it.
+class SourceSummaryRow extends StatelessWidget {
+  const SourceSummaryRow({super.key, required this.sources});
+
+  final List<SourceStatus> sources;
+
+  static const _gap = 4.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 2, bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < sources.length; i++) ...[
+            if (i > 0) const SizedBox(width: _gap),
+            Expanded(
+              child: Semantics(
+                container: true,
+                label:
+                    '${sources[i].sourceName}: ${context.stateColors.of(sources[i].state).label}',
+                excludeSemantics: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _Dot(
+                          color: palette.lineFor(sources[i].sourceId),
+                          filled: sources[i].state == WeatherDataState.current,
+                          surface: palette.surface,
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            shortSourceName(sources[i].sourceName),
+                            // No extra tracking, so "PAGASA ECMWF" fits a phone column.
+                            style: text.labelMedium?.copyWith(letterSpacing: 0),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    DataStateBadge(state: sources[i].state, dense: true),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  const _Dot({required this.color, required this.filled, required this.surface});
+
+  final Color color;
+  final bool filled;
+  final Color surface;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 10,
+    height: 10,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: filled ? color : surface,
+      border: Border.all(color: color, width: 2),
+    ),
+  );
 }
 
 class _SourceLine extends StatelessWidget {
@@ -453,7 +570,6 @@ class SourceRailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final palette = context.palette;
     return SkeletonPulse(
       label: 'Loading weather sources',
       child: Card(
@@ -469,60 +585,40 @@ class SourceRailSkeleton extends StatelessWidget {
                   child: SkeletonLine(style: text.labelLarge, width: 190),
                 ),
               ),
-              for (var i = 0; i < lines; i++)
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(
-                        width: 24,
-                        child: CustomPaint(
-                          painter: _RailPainter(
-                            color: palette.hairline,
-                            rail: palette.hairline,
-                            filled: true,
-                            isFirst: i == 0,
-                            isLast: i == lines - 1,
-                            surface: palette.surface,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
+              // The collapsed summary row: one column per source.
+              Padding(
+                padding: const EdgeInsets.only(top: 2, bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < lines; i++) ...[
+                      if (i > 0) const SizedBox(width: SourceSummaryRow._gap),
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SkeletonLine(style: text.titleSmall, widthFactor: 0.55),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  SkeletonBox(
-                                    width: 76,
-                                    height: DataStateBadge.denseHeight(context),
-                                    radius: AppTheme.radiusPill,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              SkeletonLine(style: text.bodySmall, widthFactor: 0.7),
-                              const SizedBox(height: 8),
-                              const SizedBox(
-                                height: 10,
-                                child: Center(child: SkeletonBox(height: 4)),
-                              ),
-                              const SizedBox(height: 2),
-                              SkeletonLine(style: text.labelSmall, widthFactor: 0.45),
-                            ],
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const SkeletonBox(width: 10, height: 10, radius: 5),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: SkeletonLine(style: text.labelMedium, widthFactor: 0.8),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            SkeletonBox(
+                              width: 76,
+                              height: DataStateBadge.denseHeight(context),
+                              radius: AppTheme.radiusPill,
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),

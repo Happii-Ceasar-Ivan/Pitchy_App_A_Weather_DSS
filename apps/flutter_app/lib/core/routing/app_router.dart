@@ -5,6 +5,7 @@ import '../../features/conversational_agent/chat_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/dev/state_gallery_screen.dart';
 import '../../features/match_management/match_setup_screen.dart';
+import '../../features/safety/safety_screen.dart';
 import '../../features/settings/about_screen.dart';
 import '../../features/settings/credits_screen.dart';
 import '../../features/settings/settings_screen.dart';
@@ -13,6 +14,7 @@ import 'app_shell.dart';
 /// Route paths. Screen flow: docs/frontend/f0-screen-flow.md (local).
 abstract final class Routes {
   static const dashboard = '/dashboard';
+  static const safety = '/safety';
   static const chat = '/chat';
   static const matchSetup = '/match/setup';
   static const settings = '/settings';
@@ -29,6 +31,9 @@ GoRouter buildRouter({String initialLocation = Routes.dashboard}) => GoRouter(
       branches: [
         StatefulShellBranch(
           routes: [GoRoute(path: Routes.dashboard, builder: (_, _) => const DashboardScreen())],
+        ),
+        StatefulShellBranch(
+          routes: [GoRoute(path: Routes.safety, builder: (_, _) => const SafetyScreen())],
         ),
         StatefulShellBranch(
           routes: [GoRoute(path: Routes.chat, builder: (_, _) => const ChatScreen())],

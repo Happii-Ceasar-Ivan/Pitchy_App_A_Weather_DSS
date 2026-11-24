@@ -34,7 +34,13 @@ void main() {
     for (final st in ['queued', 'running', 'succeeded', 'failed'])
       'IngestionJob#$st': () =>
           ingestionJobJson(id: 'c1d2e3f4-0000-4000-8000-000000000001', state: st, created: now),
-    'SafetyAssessment': () => assessmentJson(now: now, kickoff: kickoff),
+    for (final s in SafetyScenario.values)
+      if (s != SafetyScenario.notReady)
+        'SafetyAssessment#${s.name}': () =>
+            assessmentJson(now: now, kickoff: safetyKickoff(s, now), scenario: s),
+    for (final s in SafetyScenario.values)
+      'VenueLightning#${s.name}': () =>
+          lightningJson(now: now, kickoff: safetyKickoff(s, now), scenario: s),
     'SessionCreated': () => sessionJson(now: now),
     'ConversationResponse': () => conversationJson(now: now, role: 'coach'),
     'ErrorEnvelope': () => errorJson('RATE_LIMITED', 'Try later.', retryAt: now),

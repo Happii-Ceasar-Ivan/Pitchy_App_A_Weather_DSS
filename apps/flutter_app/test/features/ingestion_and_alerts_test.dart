@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/core/errors/api_failure.dart';
 import 'package:pitchy/core/state/loadable.dart';
+import 'package:pitchy/core/theme/app_theme.dart';
+import 'package:pitchy/core/theme/pitchy_palette.dart';
 import 'package:pitchy/features/dashboard/ingestion_controller.dart';
 import 'package:pitchy/shared/models/alerts.dart';
 import 'package:pitchy/shared/models/ingestion.dart';
@@ -316,6 +318,43 @@ void main() {
       expect(find.text('Couldn’t load official alerts'), findsOneWidget);
       await tester.tap(find.text('Try again'));
       expect(retried, isTrue);
+    });
+  });
+
+  group('alert panel polish (F3)', () {
+    setUpAll(loadAppFonts);
+
+    Loadable<VenueAlerts> withAlert() =>
+        Loaded(VenueAlerts.fromJson(alertsJson(now: testNow, withAlert: true)));
+
+    testWidgets('the collapsed alert row says "Details", then "Hide" when open', (tester) async {
+      await pumpThemed(tester, AlertsPanel(alerts: withAlert()));
+      expect(find.text('Details'), findsOneWidget);
+      await tester.tap(find.text('Details'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hide'), findsOneWidget);
+    });
+
+    testWidgets('at 1.6x text the expanded fields stack and nothing overflows', (tester) async {
+      tester.view.physicalSize = const Size(360, 800) * tester.view.devicePixelRatio;
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.build(PitchyPalette.light),
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(1.6)),
+            child: Scaffold(
+              body: SingleChildScrollView(child: AlertsPanel(alerts: withAlert())),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Details'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final label = tester.getTopLeft(find.text('Issued by'));
+      final value = tester.getTopLeft(find.text('PAGASA'));
+      expect(value.dy, greaterThan(label.dy), reason: 'value sits under its label');
     });
   });
 

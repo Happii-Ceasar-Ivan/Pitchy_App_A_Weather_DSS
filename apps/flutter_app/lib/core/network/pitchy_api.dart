@@ -2,6 +2,7 @@ import '../../shared/models/alerts.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/conversation.dart';
 import '../../shared/models/ingestion.dart';
+import '../../shared/models/lightning.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
 
@@ -36,8 +37,13 @@ abstract interface class PitchyApi {
   /// `GET /ingestions/{id}`
   Future<IngestionJob> getIngestionJob(String jobId);
 
-  /// PROVISIONAL (501 until Sprint B4). `GET /match-contexts/{id}/assessment`
+  /// `GET /match-contexts/{id}/assessment` (live since B4). Saved by the backend only
+  /// when the result changes, so polling it does not add rows.
   Future<SafetyAssessment> getAssessment(String matchContextId);
+
+  /// `GET /match-contexts/{id}/lightning` (live since B4). The backend calls the
+  /// detection source at most once per venue per interval, only in the live window.
+  Future<VenueLightning> getLightning(String matchContextId);
 
   /// PROVISIONAL (501 until Sprint B6). `POST /sessions`
   Future<SessionCreated> createSession();

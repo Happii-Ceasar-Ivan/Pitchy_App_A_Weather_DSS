@@ -4,6 +4,7 @@ import '../../models/alerts.dart';
 import '../../models/assessment.dart';
 import '../../models/conversation.dart';
 import '../../models/ingestion.dart';
+import '../../models/lightning.dart';
 import '../../models/match.dart';
 import '../../models/weather.dart';
 import 'fixtures.dart';
@@ -13,22 +14,24 @@ import 'fixtures.dart';
 class MockPitchyApi implements PitchyApi {
   MockPitchyApi({
     this.scenario = MockScenario.allCurrent,
+    this.safety = SafetyScenario.heatBelow,
     DateTime Function()? clock,
     this.latency = const Duration(milliseconds: 350),
   }) : _clock = clock ?? DateTime.now;
 
   /// The state the mock backend is in. Change it to demo or test each UI state.
   MockScenario scenario;
+
+  /// The safety situation served by the assessment and lightning endpoints.
+  final SafetyScenario safety;
   final DateTime Function() _clock;
   final Duration latency;
 
   DateTime get _now => _clock().toUtc();
 
-  /// Kickoff for demo match contexts: three hours from now, on the hour.
-  DateTime get _kickoff {
-    final t = _now.add(const Duration(hours: 3));
-    return DateTime.utc(t.year, t.month, t.day, t.hour);
-  }
+  /// Kickoff for demo match contexts, on the hour: three hours from now (within the
+  /// hour for the live lightning safety scenarios).
+  DateTime get _kickoff => safetyKickoff(safety, _now);
 
   final Map<String, int> _jobPolls = {};
 
@@ -64,6 +67,7 @@ class MockPitchyApi implements PitchyApi {
         kickoff: request.kickoffAt,
         created: _now,
         pitchSurface: request.pitchSurface,
+        ageGroup: request.ageGroup?.wire ?? 'senior',
       ),
     );
     return _matches[match.id] = match;
@@ -170,8 +174,37 @@ class MockPitchyApi implements PitchyApi {
   });
 
   @override
-  Future<SafetyAssessment> getAssessment(String matchContextId) =>
-      _respond(() => SafetyAssessment.fromJson(assessmentJson(now: _now, kickoff: _kickoff)));
+  Future<SafetyAssessment> getAssessment(String matchContextId) => _respond(() {
+    if (safety == SafetyScenario.notReady) {
+      throw ApiError.fromEnvelope(
+        501,
+        errorJson('NOT_IMPLEMENTED', 'This endpoint is part of the contract draft.'),
+      );
+    }
+    final match = _matches[matchContextId];
+    return SafetyAssessment.fromJson(
+      assessmentJson(
+        now: _now,
+        kickoff: _kickoffFor(matchContextId),
+        scenario: safety,
+        ageGroup: match?.ageGroup.wire ?? 'senior',
+        matchContextId: matchContextId,
+        venue: match?.venue.scopeKey ?? 'rizal_memorial',
+      ),
+    );
+  });
+
+  @override
+  Future<VenueLightning> getLightning(String matchContextId) => _respond(
+    () => VenueLightning.fromJson(
+      lightningJson(
+        now: _now,
+        kickoff: _kickoffFor(matchContextId),
+        scenario: safety,
+        venue: _matches[matchContextId]?.venue.scopeKey ?? 'rizal_memorial',
+      ),
+    ),
+  );
 
   @override
   Future<SessionCreated> createSession() =>
