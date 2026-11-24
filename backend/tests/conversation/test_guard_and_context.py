@@ -287,3 +287,12 @@ def test_prompt_stays_within_the_budget() -> None:
     c = build_context(assessment(), RetrievalResult(chunks, "hybrid"))
     system, prompt = build_prompt(c, ConversationRole.MEDICAL_STAFF, "x" * 2000)
     assert len(system) + len(prompt) < 12_000  # about 3,000 tokens (Groq's per-minute cap)
+
+
+def test_look_alike_dashes_and_spaces_cannot_hide_a_wrong_level() -> None:
+    # Seen live: the model wrote "cooling‑break" (non-breaking hyphen).
+    assert check("WBGT is below the cooling‑break level [A].").reason == "LEVEL_NOT_GIVEN"
+    assert check("WBGT is below the cooling–break level [A].").reason == "LEVEL_NOT_GIVEN"
+    assert check("It is safe to play [A].").reason == "SAFETY_CLAIM"
+    result = check("At or above the cooling‑break level (WBGT 32 °C) [A].")
+    assert result.ok and "‑" not in result.answer

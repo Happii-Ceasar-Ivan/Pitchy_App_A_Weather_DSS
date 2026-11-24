@@ -19,12 +19,23 @@ reply; the deterministic assessment is always shown by the app.
 
 import json
 import re
+import unicodedata
 from dataclasses import dataclass, field
 
 from services.rag.context_builder.builder import AnswerContext
 from services.safety_engine.rules import RuleSet
 
 MAX_ANSWER_CHARS = 1500
+
+# Look-alike dashes and spaces (seen live: "cooling‑break"). NFKC turns most look-alikes,
+# such as non-breaking spaces, into plain ones; these dashes are then mapped to "-", so the
+# checks below cannot be dodged by a different hyphen.
+_DASHES = dict.fromkeys(map(ord, "‐‑‒–—―−﹘﹣－"), "-")
+
+
+def _canon(text: str) -> str:
+    return unicodedata.normalize("NFKC", text).translate(_DASHES)
+
 
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
 _TAG = re.compile(r"<[^>]{0,200}>")
@@ -169,7 +180,7 @@ def _unnegated_match(pattern: re.Pattern, text: str) -> bool:
 
 
 def _norm(text: str) -> str:
-    return " ".join(text.lower().split())
+    return " ".join(_canon(text).lower().split())
 
 
 def level_catalogue(rules: RuleSet) -> dict[str, list[tuple[str, str]]]:
@@ -187,7 +198,7 @@ def check_answer(raw: str, context: AnswerContext, rules: RuleSet) -> GuardResul
     if parsed == "OFF_TOPIC":
         return GuardResult(True, "OFF_TOPIC")
     answer, sources = parsed
-    answer = _plain(answer)
+    answer = _canon(_plain(answer))
     if not answer:
         return _reject("EMPTY")
     if len(answer) > MAX_ANSWER_CHARS:
