@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/alerts.dart';
 import '../models/weather.dart';
+import 'alert_level.dart';
 import 'data_state_badge.dart';
 import 'skeletons.dart';
 
@@ -55,7 +56,8 @@ class _AlertsPanelState extends State<AlertsPanel> {
         row: _EmptyRow(state: v.status.state, checkedAt: checked),
       );
     }
-    final first = v.alerts.first;
+    // Most severe first (by PAGASA's own level words, P-18).
+    final first = bySeverity(v.alerts).first;
     final more = v.alerts.length - 1;
     return _Frame(
       header: header,
@@ -140,9 +142,18 @@ class _Header extends StatelessWidget {
 
 /// The one collapsed row: a 24 px leading icon, two lines, a 48 px trailing slot.
 class _Row extends StatelessWidget {
-  const _Row({required this.icon, required this.title, required this.detail, this.trailing});
+  const _Row({
+    this.icon,
+    this.leading,
+    required this.title,
+    required this.detail,
+    this.trailing,
+  });
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// Replaces [icon] (24 px), e.g. the alert level mark.
+  final Widget? leading;
   final String title;
   final String detail;
   final Widget? trailing;
@@ -154,7 +165,10 @@ class _Row extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
       child: Row(
         children: [
-          Icon(icon, size: 24, color: context.palette.ink),
+          SizedBox.square(
+            dimension: 24,
+            child: leading ?? Icon(icon, size: 24, color: context.palette.ink),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -205,7 +219,7 @@ class _AlertRow extends StatelessWidget {
           '${expanded ? 'Hide' : 'Show'} the full alert text.',
       excludeSemantics: true,
       child: _Row(
-        icon: Icons.campaign_outlined,
+        leading: AlertLevelMark(level: alertLevelOf(alert)),
         title: alert.headline,
         detail: detail,
         trailing: Icon(
@@ -304,9 +318,14 @@ class _AlertDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final a in alerts.alerts) ...[
+          for (final a in bySeverity(alerts.alerts)) ...[
             const Divider(),
             const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: AlertLevelPill(alert: a),
+            ),
+            const SizedBox(height: 6),
             Text(a.headline, style: text.titleSmall),
             const SizedBox(height: 6),
             // Untrusted source text: plain Text only, never parsed.

@@ -299,6 +299,7 @@ Do:
 - Do show every data state as a pill with its icon and word, and keep Stale data on screen with its dashed stamp.
 - Do give each new weather source one fixed, cool line colour (light and dark variants) and use it only for that source's dot, rail stop and validity bar.
 - Do label every time PHT, and name the day when it isn't today in PHT.
+- Do colour an official alert only from PAGASA's own level (P-18): watch, yellow rainfall and signal 1 are advisory; advisory, orange rainfall and signals 2–3 are warning; warning, red rainfall and signals 4–5 are danger; anything else stays neutral. Always show PAGASA's words with the colour.
 - Do keep tap targets at least 48px, and keep cards flat with a 1px hairline border and a 12px radius.
 - Do keep the Pitchy logo left of the screen name in every top bar.
 Full: .impeccable/design-full.md (read a section when you need its detail)
