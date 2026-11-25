@@ -105,9 +105,8 @@ def ask_question(
     started = time.monotonic()
     load_match(connect, match_context_id)  # 404 before anything is counted
     configured = any(g.configured for g in generators)
-    decision = ChatLimiter(connect, settings).check_and_count(
-        session_key, providers_configured=configured
-    )
+    limiter = ChatLimiter(connect, settings)
+    decision = limiter.check_and_count(session_key, providers_configured=configured)
     if isinstance(decision, RateLimited):
         raise rate_limited(decision.retry_at)
     if not isinstance(decision, Counted | NotCounted):  # SessionUnknown: purged since the check
@@ -138,6 +137,11 @@ def ask_question(
             retrieval_mode=retrieval_mode,
             duration_ms=int((time.monotonic() - started) * 1000),
         ))  # fmt: skip
+        if isinstance(decision, Counted) and not provider_called:
+            # Off-topic, or the router called nobody: the daily AI slot goes back. A request
+            # that fails before this point keeps its slot (the cap is then reached early, never
+            # exceeded).
+            limiter.release(decision)
         own = [_limit(Code.AGENT_NOT_AUTHORITY)] + ([_limit(outcome)] if outcome else [])
         return ConversationResponse(
             match_context_id=match_context_id,

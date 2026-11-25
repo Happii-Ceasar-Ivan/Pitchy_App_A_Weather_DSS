@@ -141,6 +141,12 @@ def codes(res):
     return [lim["code"] for lim in res.json()["limitations"]]
 
 
+def ai_slots(conn):
+    """Daily AI slots reserved today (B6 item 6)."""
+    row = conn.execute("select coalesce(sum(reserved), 0) from public.chat_daily_ai_usage")
+    return row.fetchone()[0]
+
+
 def test_generated_answer_with_backend_references(client, conn, match_id, token, document):
     res = ask(client, match_id, token)
     assert res.status_code == 200, res.text
@@ -153,6 +159,7 @@ def test_generated_answer_with_backend_references(client, conn, match_id, token,
     assert row[:5] == ("GENERATED", "generated", "gemini", True, "hybrid")
     assert "fifa_ecm_2022" in row[5]  # [A] cites the assessment's own rule sources too
     assert counted(conn) == 1
+    assert ai_slots(conn) == 1
 
 
 def test_off_topic_question_never_reaches_the_ai(client, conn, ai, match_id, token):
@@ -166,6 +173,7 @@ def test_off_topic_question_never_reaches_the_ai(client, conn, ai, match_id, tok
     assert codes(res) == ["AGENT_NOT_AUTHORITY", "OFF_TOPIC"]
     assert ai["generators"][0].calls == 0
     assert events(conn)[0][:4] == ("OFF_TOPIC", "unavailable", None, False)
+    assert ai_slots(conn) == 0  # no provider called: the daily slot was given back
 
 
 def test_model_off_topic_flag_gives_the_fixed_decline(client, conn, ai, match_id, token):
@@ -175,6 +183,7 @@ def test_model_off_topic_flag_gives_the_fixed_decline(client, conn, ai, match_id
     res = ask(client, match_id, token, question)
     assert res.json()["answer"] is None and codes(res)[-1] == "OFF_TOPIC"
     assert events(conn)[0][:4] == ("OFF_TOPIC", "unavailable", None, True)
+    assert ai_slots(conn) == 1  # the provider was called, so the slot stays used
 
 
 def test_uncited_answer_is_rejected_then_next_provider(client, conn, ai, match_id, token, document):
