@@ -181,7 +181,7 @@ def ask_question(
     checked: dict[str, GuardResult] = {}
 
     def accept(generation) -> bool:
-        result = check_answer(generation.text, context, rules)
+        result = check_answer(generation.text, context, rules, body.question)
         checked["last"] = result
         if not result.ok:
             logger.info("Answer from %s rejected: %s", generation.provider, result.reason)

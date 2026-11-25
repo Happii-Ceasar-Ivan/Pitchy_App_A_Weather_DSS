@@ -8,10 +8,13 @@ A reply is rejected (the router then tries the next provider) unless all of thes
    exists in what the model was given. An answer that cites nothing (a poem, code, a recipe)
    is rejected.
 3. Every number with a unit (°C, km, minutes, %, ...) appears in the facts or the documents,
-   allowing rounding. This blocks invented measurements and thresholds.
+   allowing rounding. This blocks invented measurements and thresholds. One exception (P-21):
+   a number from the user's own question, where the answer says in the same clause that it is
+   the user's ("the 35 °C you mentioned", "your 35 °C").
 4. No level label or id from rules.yaml appears unless it is the level the engine gave for that
    hazard; no wording that claims a level the engine did not give; never "it is safe".
 HTML, links and markdown are removed first, so the answer is returned as plain text.
+Answers are in English (P-21); a few Filipino/Taglish "it is safe" phrases are a backup.
 
 This check is strict on purpose: a rejected answer costs only a fallback or an "unavailable"
 reply; the deterministic assessment is always shown by the app.
@@ -31,10 +34,11 @@ MAX_ANSWER_CHARS = 1500
 # such as non-breaking spaces, into plain ones; these dashes are then mapped to "-", so the
 # checks below cannot be dodged by a different hyphen.
 _DASHES = dict.fromkeys(map(ord, "‐‑‒–—―−﹘﹣－"), "-")
+_APOSTROPHES = dict.fromkeys(map(ord, "‘’‛ʼ′"), "'")  # "isn’t" is checked as "isn't"
 
 
 def _canon(text: str) -> str:
-    return unicodedata.normalize("NFKC", text).translate(_DASHES)
+    return unicodedata.normalize("NFKC", text).translate(_DASHES).translate(_APOSTROPHES)
 
 
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
@@ -51,18 +55,61 @@ _UNIT = (
 )
 _NUMBER_WITH_UNIT = re.compile(rf"(?<![\w.])(\d+(?:[.,]\d+)?)\s?(?:-\s?)?{_UNIT}", re.IGNORECASE)
 _ANY_NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
-_NEGATION = re.compile(r"\b(?:not|no|never|nor|without|cannot|isn't|aren't|n't)\b", re.I)
+# A negation cancels a claim only when it is one of the few words right before it, in the same
+# clause (B6): "It is not raining and the match is safe" is a claim; "not a statement that it is
+# safe" is not. "no", "nor" and "without" don't count ("No rain today the match is safe").
+_NEGATION = re.compile(r"\b(?:not|never|cannot|hindi|di)\b|\b\w+n't\b", re.I)
+_CLAUSE_BREAK = re.compile(
+    r"[.!?;:,()\n]|\s-\s|\b(?:so|but|and|or|while|although|though|because|then|however|yet)\b",
+    re.I,
+)
+NEGATION_WORDS = 4
+# The user's own number, said to be theirs in the same clause (P-21). "your" counts only right
+# before the number ("your team stops at 35 °C" is not the user's number); after "you
+# mentioned" etc. only a few filler words may come between.
+_ATTRIBUTED_BEFORE = re.compile(
+    r"(?:\byour|\byou(?:'ve|\s+have)?\s+(?:mentioned|asked(?:\s+(?:about|if|whether))?|gave|said"
+    r"|quoted|wrote|suggested)(?:\s+(?:a|an|the|of|about|whether|if|wbgt|temperature|heat"
+    r"|index|value|reading|figure|number)){0,3})\s+$",
+    re.I,
+)
+# An attributed number is still rejected when its clause makes a threshold or decision claim
+# about it ("the 40 °C you mentioned is the limit"): only the engine classifies (P-21).
+_JUDGEMENT = re.compile(
+    r"\b(?:limit|threshold|cut-?off|level|maximum|max|minimum|stop|stops|cancel|suspend|postpone"
+    r"|above|below|over|under|exceed\w*|too|dangerous|danger|unsafe|safe|risk\w*|okay|ok|fine"
+    r"|delikado|ligtas|mapanganib)\b",
+    re.I,
+)
+_ATTRIBUTED_AFTER = re.compile(
+    r"^\s+(?:that\s+)?you(?:'ve|\s+have)?\s+(?:mentioned|asked\s+about|gave|said|quoted|wrote"
+    r"|suggested)\b",
+    re.I,
+)
 
 # Claims that conditions are safe: never allowed (unless negated, e.g. "not a statement that it
 # is safe", which the rules themselves use).
 _SAFE_CLAIMS = [
     re.compile(
-        r"\b(?:conditions?|it|play|playing|the match|the game|the pitch|weather|everything)"
-        r"\s+(?:is|are|looks?|seems?|will be)\s+(?:completely\s+|perfectly\s+|totally\s+)?safe\b",
+        r"\b(?:conditions?|it|that|play|playing|the match|the game|the pitch|weather|everything)"
+        r"(?:\s+(?:is|are|looks?|seems?|will be)|'s|'re)\s+"
+        r"(?:completely\s+|perfectly\s+|totally\s+|now\s+)?safe\b",
         re.I,
     ),
-    re.compile(r"\bsafe\s+to\s+(?:play|continue|proceed|start|train)\b", re.I),
+    re.compile(r"\bsafe\s+to\s+(?:play|continue|proceed|start|train|go\s+ahead)\b", re.I),
     re.compile(r"\b(?:no|zero)\s+(?:heat\s+|lightning\s+)?(?:risk|danger)\b", re.I),
+    # Filipino / Taglish backup (P-21; to be reviewed by a Filipino speaker on the team).
+    re.compile(
+        r"\b(?:ligtas|safe)\s+(?:na\s+)?(?:po\s+)?(?:ang\s+|na\s+)?"
+        r"(?:mag-?laro|maglaro|laro|laban|tumuloy|ituloy|panahon|kondisyon|lahat)\b",
+        re.I,
+    ),
+    re.compile(r"\b(?:laro|laban|panahon|kondisyon|lahat)\s+(?:ay\s+)?(?:ligtas|safe)\b", re.I),
+    re.compile(r"\bwalang\s+(?:panganib|peligro|delikado|risk|danger)\b", re.I),
+    re.compile(r"\b(?:hindi|di)\s+(?:delikado|mapanganib)\b", re.I),
+    re.compile(
+        r"\b(?:pwede|puwede|pede)(?:ng)?\s+(?:na\s+|nang\s+)?(?:mag-?laro|maglaro|ituloy)\b", re.I
+    ),
 ]
 # Wording that claims a level, per hazard: (level id that allows it, pattern). Shown only when the
 # engine gave that level; otherwise rejected unless negated.
@@ -169,10 +216,19 @@ def _allowed(value: float, grounded: set[float]) -> bool:
 
 
 def _negated(text: str, start: int) -> bool:
-    """A negation shortly before the match, in the same clause ("No flash, so it is safe" is
-    not negated; "not a statement that it is safe" is)."""
-    window = re.split(r"[.!?;:,\n]|\bso\b|\bbut\b", text[max(0, start - 40) : start])[-1]
-    return _NEGATION.search(window) is not None
+    """A negation among the last few words before the match, in the same clause ("No flash, so
+    it is safe" is not negated; "not a statement that it is safe" is)."""
+    clause = _CLAUSE_BREAK.split(text[max(0, start - 120) : start])[-1]
+    return _NEGATION.search(" ".join(clause.split()[-NEGATION_WORDS:])) is not None
+
+
+def _attributed(text: str, start: int, end: int) -> bool:
+    """The number at text[start:end] is said to be the user's, in the same clause."""
+    before = _CLAUSE_BREAK.split(text[max(0, start - 120) : start])[-1]
+    after = _CLAUSE_BREAK.split(text[end : end + 160])[0]
+    if _JUDGEMENT.search(before) or _JUDGEMENT.search(after):
+        return False
+    return bool(_ATTRIBUTED_BEFORE.search(" " + before) or _ATTRIBUTED_AFTER.match(after))
 
 
 def _unnegated_match(pattern: re.Pattern, text: str) -> bool:
@@ -191,7 +247,10 @@ def level_catalogue(rules: RuleSet) -> dict[str, list[tuple[str, str]]]:
     return {"heat": heat, "lightning": lightning}
 
 
-def check_answer(raw: str, context: AnswerContext, rules: RuleSet) -> GuardResult:
+def check_answer(
+    raw: str, context: AnswerContext, rules: RuleSet, question: str = ""
+) -> GuardResult:
+    """``question`` is the user's question: only its numbers can be quoted back, attributed."""
     parsed = _parse(raw)
     if parsed is None:
         return _reject("NOT_JSON")
@@ -231,8 +290,13 @@ def check_answer(raw: str, context: AnswerContext, rules: RuleSet) -> GuardResul
         return _reject("SAFETY_CLAIM")
 
     grounded = {_to_float(t) for t in _ANY_NUMBER.findall(context.grounding_text)}
+    asked = {_to_float(t) for t in _ANY_NUMBER.findall(_canon(question))}
     for match in _NUMBER_WITH_UNIT.finditer(answer):
-        if not _allowed(_to_float(match.group(1)), grounded):
-            return _reject("UNGROUNDED_NUMBER")
+        value = _to_float(match.group(1))
+        if _allowed(value, grounded):
+            continue
+        if value in asked and _attributed(answer, match.start(), match.end()):
+            continue  # the user's own number, quoted back as theirs (P-21)
+        return _reject("UNGROUNDED_NUMBER")
 
     return GuardResult(True, "OK", answer, cited)
