@@ -158,12 +158,18 @@ class _Row extends StatelessWidget {
     required this.title,
     required this.detail,
     this.trailing,
+    this.titleMaxLines = 1,
     this.detailMaxLines = 1,
   });
+
+  /// Two only for the empty state ("No official alerts for this venue"); an
+  /// alert headline stays one line so the panel lands where its skeleton was
+  /// (the full text is in the details).
 
   /// More than one only where the detail carries a caveat that must not be
   /// cut ("Newer alerts may exist."). The row then grows downwards only.
   final int detailMaxLines;
+  final int titleMaxLines;
 
   final IconData? icon;
 
@@ -224,7 +230,12 @@ class _Row extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: text.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: text.titleSmall,
+                  maxLines: titleMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   detail,
@@ -335,7 +346,13 @@ class _EmptyRow extends StatelessWidget {
       container: true,
       label: '$title. $detail',
       excludeSemantics: true,
-      child: _Row(icon: icon, title: title, detail: detail, detailMaxLines: 3),
+      child: _Row(
+        icon: icon,
+        title: title,
+        detail: detail,
+        titleMaxLines: 2,
+        detailMaxLines: 3,
+      ),
     );
   }
 }

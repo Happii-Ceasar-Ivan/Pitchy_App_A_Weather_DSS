@@ -154,6 +154,16 @@ class _RailTitle extends StatelessWidget {
   );
 }
 
+/// Below this content width the collapsed rail lists one source per line,
+/// so three source names never have to share a narrow phone row.
+const _stackSourcesBelow = 380.0;
+
+/// True when the collapsed rail lists one source per line: at large text, or
+/// when [width] (the rail's measured content width) is too narrow for three
+/// named columns. The skeleton uses the same rule on its own width.
+bool stackedSources(BuildContext context, double width) =>
+    AppTheme.isLargeText(context) || width < _stackSourcesBelow;
+
 /// The collapsed rail: one equal column per source with its line dot (filled
 /// only when Current), short name and state pill (icon and word). One shape
 /// for every state, so the skeleton matches it.
@@ -165,14 +175,18 @@ class SourceSummaryRow extends StatelessWidget {
   static const _gap = 4.0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: (context, c) => _build(context, stackedSources(context, c.maxWidth)));
+
+  Widget _build(BuildContext context, bool stacked) {
     final palette = context.palette;
     final text = Theme.of(context).textTheme;
     // A filled dot means Current; a saved copy never shows one.
     bool filled(SourceStatus s) =>
         s.state == WeatherDataState.current && !claimsLiveInSavedCopy(context, s.state);
-    if (AppTheme.isLargeText(context)) {
-      // Large text: one line per source (name, then its pill), nothing cut.
+    if (stacked) {
+      // Large text or a narrow phone: one line per source (name, then its
+      // pill), so "PAGASA ATMO" is never cut.
       return Padding(
         padding: const EdgeInsets.only(top: 2, bottom: 6),
         child: Column(
@@ -646,31 +660,14 @@ class SourceRailSkeleton extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header: same shapes as the rail (stacked only at large text).
               if (AppTheme.isLargeText(context)) ...[
                 Padding(
                   padding: const EdgeInsets.only(top: 10, bottom: 4),
                   child: SkeletonLine(style: text.labelLarge, widthFactor: 0.9),
                 ),
                 const SizedBox(height: AppTheme.minTarget),
-                for (var i = 0; i < lines; i++)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        const SkeletonBox(width: 10, height: 10, radius: 5),
-                        const SizedBox(width: 6),
-                        SkeletonLine(style: text.labelMedium, width: 110),
-                        const SizedBox(width: 8),
-                        SkeletonBox(
-                          width: 120,
-                          height: DataStateBadge.denseHeight(context),
-                          radius: AppTheme.radiusPill,
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 6),
-              ] else ...[
+              ] else
                 SizedBox(
                   height: AppTheme.minTarget,
                   child: Align(
@@ -678,41 +675,71 @@ class SourceRailSkeleton extends StatelessWidget {
                     child: SkeletonLine(style: text.labelLarge, width: 190),
                   ),
                 ),
-                // The collapsed summary row: one column per source.
-                Padding(
-                  padding: const EdgeInsets.only(top: 2, bottom: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (var i = 0; i < lines; i++) ...[
-                        if (i > 0) const SizedBox(width: SourceSummaryRow._gap),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const SkeletonBox(width: 10, height: 10, radius: 5),
-                                  const SizedBox(width: 5),
-                                  Expanded(
-                                    child: SkeletonLine(style: text.labelMedium, widthFactor: 0.8),
-                                  ),
-                                ],
+              // Summary: one line per source or one column per source, by the
+              // same width rule as [SourceSummaryRow].
+              LayoutBuilder(
+                builder: (context, c) => stackedSources(context, c.maxWidth)
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 6),
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < lines; i++)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    const SkeletonBox(width: 10, height: 10, radius: 5),
+                                    const SizedBox(width: 6),
+                                    SkeletonLine(style: text.labelMedium, width: 110),
+                                    const SizedBox(width: 8),
+                                    SkeletonBox(
+                                      width: 120,
+                                      height: DataStateBadge.denseHeight(context),
+                                      radius: AppTheme.radiusPill,
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 4),
-                              SkeletonBox(
-                                width: 76,
-                                height: DataStateBadge.denseHeight(context),
-                                radius: AppTheme.radiusPill,
+                          ],
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (var i = 0; i < lines; i++) ...[
+                              if (i > 0) const SizedBox(width: SourceSummaryRow._gap),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const SkeletonBox(width: 10, height: 10, radius: 5),
+                                        const SizedBox(width: 5),
+                                        Expanded(
+                                          child: SkeletonLine(
+                                            style: text.labelMedium,
+                                            widthFactor: 0.8,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    SkeletonBox(
+                                      width: 76,
+                                      height: DataStateBadge.denseHeight(context),
+                                      radius: AppTheme.radiusPill,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
-                          ),
+                          ],
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+                      ),
+              ),
             ],
           ),
         ),

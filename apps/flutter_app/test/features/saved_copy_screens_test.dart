@@ -185,6 +185,45 @@ void main() {
     });
   });
 
+  group('narrow phone, long real strings (platform QA F-1)', () {
+    // Wed 25 Nov 12:00 UTC: the mock kickoff is three hours later, 11:00 PM PHT,
+    // the longest time string the app shows.
+    final late = DateTime.utc(2026, 11, 25, 12);
+
+    for (final offline in [false, true]) {
+      testWidgets('347 px at 100% text (${offline ? 'saved copy' : 'live'}): nothing is cut', (
+        tester,
+      ) async {
+        final (api, _) = await pumpPitchyApp(
+          tester,
+          size: const Size(347, 2400),
+          prefs: withActiveMatch(),
+          now: late,
+        );
+        if (offline) {
+          api.scenario = MockScenario.offline;
+          await tester.tap(find.byTooltip('Refresh'));
+          await tester.pumpAndSettle();
+          expect(banner(), findsOneWidget);
+        }
+        expect(find.textContaining('11:00 PM PHT'), findsWidgets);
+        for (final area in [
+          find.byType(KickoffStrip),
+          find.byType(AlertsPanel),
+          find.byType(SourceRail),
+          find.byType(WeatherCardGrid),
+        ]) {
+          final cut = [
+            for (final e in find.descendant(of: area, matching: find.byType(RichText)).evaluate())
+              if ((e.renderObject! as RenderParagraph).didExceedMaxLines)
+                (e.widget as RichText).text.toPlainText(),
+          ];
+          expect(cut, isEmpty, reason: 'cut in ${area.describeMatch(Plurality.one)}');
+        }
+      });
+    }
+  });
+
   group('safety', () {
     testWidgets('server unreachable: the saved assessment, not current, under the banner', (
       tester,

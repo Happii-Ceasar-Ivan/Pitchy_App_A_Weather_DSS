@@ -38,16 +38,18 @@ class KickoffStrip extends StatelessWidget {
                     // Large text: venue and kickoff wrap rather than being cut
                     // (the kickoff time must always be readable in full).
                     final large = AppTheme.isLargeText(context);
+                    // Two lines at normal sizes: the kickoff time is never cut
+                    // on a narrow phone ("Wed 25 Nov, 11:00 PM PHT").
                     final venue = Text(
                       match.venue.name,
                       style: text.bodyMedium?.copyWith(color: p.onShellMuted),
-                      maxLines: large ? null : 1,
+                      maxLines: large ? null : 2,
                       overflow: large ? null : TextOverflow.ellipsis,
                     );
                     final kickoff = Text(
                       'Kickoff ${formatPhtDateTime(match.kickoffAt)}',
                       style: text.titleMedium?.copyWith(color: p.onShell),
-                      maxLines: large ? null : 1,
+                      maxLines: large ? null : 2,
                       overflow: large ? null : TextOverflow.ellipsis,
                     );
                     return c.maxWidth >= wideWidth && !large

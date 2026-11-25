@@ -141,12 +141,13 @@ class WeatherValueCard extends StatelessWidget {
                             _LineDot(color: palette.lineFor(used.sourceId)),
                             const SizedBox(width: 6),
                           ],
+                          // Scales down a little on a narrow phone rather than
+                          // cutting "PHT" (large text uses one card per row).
                           Flexible(
-                            child: Text(
-                              _hourRange(slot!),
-                              style: text.bodySmall,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(_hourRange(slot!), style: text.bodySmall, maxLines: 1),
                             ),
                           ),
                         ],

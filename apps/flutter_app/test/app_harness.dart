@@ -23,15 +23,17 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
   String location = Routes.dashboard,
   Duration latency = Duration.zero,
   bool settle = true,
+  DateTime? now,
 }) async {
+  final clockNow = now ?? testNow;
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.reset);
   final preferences = MemoryPreferences(prefs);
-  final savedCopies = SavedCopyStore(preferences, clock: () => testNow);
+  final savedCopies = SavedCopyStore(preferences, clock: () => clockNow);
   final api = MockPitchyApi(
     scenario: scenario,
-    clock: () => testNow,
+    clock: () => clockNow,
     latency: latency,
     savedCopies: savedCopies,
   );
@@ -43,7 +45,7 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
       preferences: preferences,
       savedCopies: savedCopies,
       initialLocation: location,
-      clock: () => testNow,
+      clock: () => clockNow,
     ),
   );
   if (settle) await tester.pumpAndSettle();

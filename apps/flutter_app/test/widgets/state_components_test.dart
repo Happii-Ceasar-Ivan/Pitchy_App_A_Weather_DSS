@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/core/errors/api_failure.dart';
@@ -117,18 +118,23 @@ void main() {
     WeatherStatus status(MockScenario s) =>
         WeatherStatus.fromJson(weatherStatusJson(s, now: testNow, kickoff: testKickoff));
 
-    Future<void> pumpRail(WidgetTester tester, WeatherStatus st, {bool expanded = true}) =>
-        pumpThemed(
-          tester,
-          SourceRail(
-            sources: st.sources,
-            checkedAt: st.checkedAt,
-            coverage: st.coverage,
-            kickoff: testKickoff,
-            now: testNow,
-            initiallyExpanded: expanded,
-          ),
-        );
+    Future<void> pumpRail(
+      WidgetTester tester,
+      WeatherStatus st, {
+      bool expanded = true,
+      Size size = const Size(390, 844),
+    }) => pumpThemed(
+      tester,
+      size: size,
+      SourceRail(
+        sources: st.sources,
+        checkedAt: st.checkedAt,
+        coverage: st.coverage,
+        kickoff: testKickoff,
+        now: testNow,
+        initiallyExpanded: expanded,
+      ),
+    );
 
     testWidgets('the collapsed rail has the skeleton shape, in every backend state', (
       tester,
@@ -148,24 +154,47 @@ void main() {
       }
     });
 
-    testWidgets('collapsed: names and state words side by side; opens to the full lines', (
-      tester,
-    ) async {
+    testWidgets('collapsed on a phone: one line per source, so no name is cut', (tester) async {
       await pumpRail(tester, status(MockScenario.someStale), expanded: false);
-      expect(find.text('Open-Meteo'), findsOneWidget);
-      expect(find.text('STALE'), findsOneWidget);
-      expect(find.text('CURRENT'), findsNWidgets(2));
-      expect(find.byType(ValidityBar), findsNothing);
       final names = [
-        for (final n in ['Open-Meteo', 'PAGASA ATMO', 'PAGASA ECMWF'])
-          tester.getTopLeft(find.text(n)),
+        for (final n in ['Open-Meteo', 'PAGASA ATMO', 'PAGASA ECMWF']) find.text(n),
       ];
-      expect(names.map((o) => o.dy).toSet().length, 1, reason: 'one horizontal row');
-      await tester.tap(find.byTooltip('Show source details'));
-      await tester.pumpAndSettle();
-      expect(find.byType(ValidityBar), findsNWidgets(3));
-      expect(find.textContaining('9 h ago'), findsOneWidget);
+      expect(
+        names.map((f) => tester.getTopLeft(f).dy).toSet().length,
+        3,
+        reason: 'one line each',
+      );
+      for (final f in names) {
+        expect(tester.renderObject<RenderParagraph>(f).didExceedMaxLines, isFalse);
+      }
     });
+
+    testWidgets(
+      'collapsed when wide: names and state words side by side; opens to the full lines',
+      (
+        tester,
+      ) async {
+        await pumpRail(
+          tester,
+          status(MockScenario.someStale),
+          expanded: false,
+          size: const Size(900, 844),
+        );
+        expect(find.text('Open-Meteo'), findsOneWidget);
+        expect(find.text('STALE'), findsOneWidget);
+        expect(find.text('CURRENT'), findsNWidgets(2));
+        expect(find.byType(ValidityBar), findsNothing);
+        final names = [
+          for (final n in ['Open-Meteo', 'PAGASA ATMO', 'PAGASA ECMWF'])
+            tester.getTopLeft(find.text(n)),
+        ];
+        expect(names.map((o) => o.dy).toSet().length, 1, reason: 'one horizontal row');
+        await tester.tap(find.byTooltip('Show source details'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ValidityBar), findsNWidgets(3));
+        expect(find.textContaining('9 h ago'), findsOneWidget);
+      },
+    );
 
     testWidgets('shows every source with the backend state, never upgraded', (tester) async {
       await pumpRail(tester, status(MockScenario.someStale));
