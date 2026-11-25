@@ -33,7 +33,7 @@ class AppShell extends StatefulWidget {
   static const destinations = [
     (Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
     (Icons.health_and_safety_outlined, Icons.health_and_safety, 'Safety'),
-    (Icons.forum_outlined, Icons.forum, 'PitChyAT'),
+    (Icons.forum_outlined, Icons.forum, 'Ask Pitchy'),
   ];
 
   @override

@@ -40,7 +40,7 @@ class MockPitchyApi implements PitchyApi {
   /// The safety situation served by the assessment and lightning endpoints.
   final SafetyScenario safety;
 
-  /// What PitChyAT does with a question (F4).
+  /// What Ask Pitchy does with a question (F4).
   ChatScenario chat;
 
   /// Sessions created and questions received, for tests.

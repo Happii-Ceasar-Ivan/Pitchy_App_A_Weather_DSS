@@ -134,7 +134,7 @@ void main() {
     expect(find.textContaining('Assessed'), findsWidgets);
     await _shot(t, 'a3-safety');
 
-    await t.tap(_tab('PitChyAT'));
+    await t.tap(_tab('Ask Pitchy'));
     await t.pumpAndSettle();
     await _shot(t, 'a4-chat-entry');
 

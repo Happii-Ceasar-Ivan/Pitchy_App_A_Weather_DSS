@@ -126,8 +126,11 @@ class SafetyColors extends ThemeExtension<SafetyColors> {
     required this.onDanger,
     required this.requestError,
     required this.onRequestError,
+    required this.requestErrorInk,
+    required this.onRequestErrorInk,
   });
 
+  /// Light themes.
   static const fixed = SafetyColors(
     advisory: Color(0xFFF2C200),
     onAdvisory: Color(0xFF1A1400),
@@ -137,6 +140,23 @@ class SafetyColors extends ThemeExtension<SafetyColors> {
     onDanger: Color(0xFFFFFFFF),
     requestError: Color(0xFF9F1D1D),
     onRequestError: Color(0xFFFFFFFF),
+    requestErrorInk: Color(0xFF9F1D1D),
+    onRequestErrorInk: Color(0xFFFFFFFF),
+  );
+
+  /// Dark themes: the same fills; only the request-error text/icon colour is
+  /// lighter, because #9F1D1D is 2.03:1 on the dark surface (user, 2026-11-25).
+  static const fixedDark = SafetyColors(
+    advisory: Color(0xFFF2C200),
+    onAdvisory: Color(0xFF1A1400),
+    warning: Color(0xFFE8710A),
+    onWarning: Color(0xFF1A0B00),
+    danger: Color(0xFFC62828),
+    onDanger: Color(0xFFFFFFFF),
+    requestError: Color(0xFF9F1D1D),
+    onRequestError: Color(0xFFFFFFFF),
+    requestErrorInk: Color(0xFFFF8A80),
+    onRequestErrorInk: Color(0xFF07111F),
   );
 
   final Color advisory;
@@ -146,9 +166,16 @@ class SafetyColors extends ThemeExtension<SafetyColors> {
   final Color danger;
   final Color onDanger;
 
-  /// A failed request (not a hazard).
+  /// A failed request (not a hazard): the filled banner colour.
   final Color requestError;
   final Color onRequestError;
+
+  /// A failed request as text or an icon on the page or a card (form errors,
+  /// error icons). Same as [requestError] in light themes; lighter in dark.
+  final Color requestErrorInk;
+
+  /// Text on a fill of [requestErrorInk] (the scheme's `onError`).
+  final Color onRequestErrorInk;
 
   @override
   SafetyColors copyWith() => this;

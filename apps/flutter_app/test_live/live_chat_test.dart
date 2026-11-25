@@ -1,4 +1,4 @@
-// Live check of PitChyAT against the deployed backend (not part of the normal
+// Live check of Ask Pitchy against the deployed backend (not part of the normal
 // test run):
 //   flutter test test_live/live_chat_test.dart
 // Uses the app's own HTTP client, models and ChatController. Creates one
@@ -18,7 +18,7 @@ import 'package:pitchy/shared/models/match.dart';
 void main() {
   final api = HttpPitchyApi(baseUrl: Uri.parse(AppConfig.defaultApiBaseUrl));
 
-  test('PitChyAT answers a match question and declines an off-topic one', () async {
+  test('Ask Pitchy answers a match question and declines an off-topic one', () async {
     final now = DateTime.now().toUtc();
     final kickoff = DateTime.utc(now.year, now.month, now.day, now.hour).add(
       const Duration(hours: 4),

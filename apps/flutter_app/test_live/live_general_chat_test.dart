@@ -1,4 +1,4 @@
-// Live check of PitChyAT without a match (Task A, POST /conversation) against
+// Live check of Ask Pitchy without a match (Task A, POST /conversation) against
 // the deployed backend (not part of the normal test run):
 //   flutter test test_live/live_general_chat_test.dart
 // Uses the app's own HTTP client, models and ChatController. Creates one
@@ -17,7 +17,7 @@ import 'package:pitchy/shared/models/conversation.dart';
 void main() {
   final api = HttpPitchyApi(baseUrl: Uri.parse(AppConfig.defaultApiBaseUrl));
 
-  test('PitChyAT answers a general rules question and declines an off-topic one', () async {
+  test('Ask Pitchy answers a general rules question and declines an off-topic one', () async {
     final chat = ChatController(
       api: api,
       session: ChatSession(api: api),

@@ -224,7 +224,7 @@ void main() {
 
     testWidgets('entry screen: role first, match shown, then the chat', (tester) async {
       await openChat(tester);
-      expect(find.text('Welcome to PitChyAT'), findsOneWidget);
+      expect(find.text('Welcome to Ask Pitchy'), findsOneWidget);
       expect(find.text('Your match'), findsOneWidget);
       expect(find.text('Change'), findsOneWidget);
       expect(find.text('Choose your role to start'), findsOneWidget);
@@ -234,7 +234,7 @@ void main() {
       await tester.tap(find.text('Start chatting'));
       await tester.pumpAndSettle();
       expect(find.text('Try asking'), findsOneWidget);
-      expect(find.textContaining('not official decisions'), findsOneWidget);
+      expect(find.text('AI explanations, not decisions. Officials decide.'), findsOneWidget);
     });
 
     testWidgets('the remembered role is preselected', (tester) async {

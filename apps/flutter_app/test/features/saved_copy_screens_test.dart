@@ -57,6 +57,10 @@ void main() {
       expect(find.text('CURRENT'), findsNothing);
       expect(find.text('UPDATING'), findsNothing);
       expect(find.text('No official alerts for this venue'), findsNothing);
+      // F5 P2-1: a backend Stale card inside the copy says it is saved too, so
+      // it never reads like a live Stale pill. Its state is not changed.
+      expect(find.text('STALE · SAVED'), findsWidgets);
+      expect(find.text('STALE'), findsNothing);
       // The header is just "Alerts": the banner gives the time, the pill says saved.
       expect(find.textContaining('Alerts · checked'), findsNothing);
       expect(find.text('Alerts'), findsOneWidget);
@@ -139,6 +143,60 @@ void main() {
       expect(banner(), findsNothing);
       expect(find.text('SAVED COPY'), findsNothing);
       expect(find.textContaining('Alerts · checked'), findsOneWidget);
+    });
+
+    testWidgets('screen readers hear each card once: title, value, source, state', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final (api, _) = await pumpPitchyApp(
+        tester,
+        prefs: withActiveMatch(),
+        scenario: MockScenario.someStale,
+      );
+      api.scenario = MockScenario.offline;
+      await tester.tap(find.byTooltip('Refresh'));
+      await tester.pumpAndSettle();
+
+      final node = find.semantics
+          .byPredicate((n) => n.label.contains('Heat index (PAGASA): 40'))
+          .evaluate()
+          .single;
+      final label = node.label;
+      // Found on the phone: the title and the state were each said twice,
+      // and "Stale · saved" would be read with its dot.
+      expect(RegExp('Heat index').allMatches(label), hasLength(1), reason: label);
+      expect(RegExp('Stale, saved copy').allMatches(label), hasLength(1), reason: label);
+      expect(label, isNot(contains('·')));
+      expect(label, isNot(contains('Data state')));
+      // The rail says it the same way.
+      expect(
+        find.bySemanticsLabel('PAGASA ATMO (panahon.gov.ph): Stale, saved copy'),
+        findsOneWidget,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('a repeated failed Try again says so (F5 P2-2)', (tester) async {
+      final (api, _) = await pumpPitchyApp(tester, prefs: withActiveMatch());
+      api.scenario = MockScenario.offline;
+      await tester.tap(find.byTooltip('Refresh'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pitchy can’t reach its server.'), findsOneWidget);
+
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pitchy can’t reach its server.'), findsNothing);
+      expect(find.text('Still can’t reach its server (try 2, 12:00 PM PHT).'), findsOneWidget);
+
+      // Each try changes the words, so the live region speaks again.
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(find.text('Still can’t reach its server (try 3, 12:00 PM PHT).'), findsOneWidget);
+
+      // Back online: the count is gone with the copy.
+      api.scenario = MockScenario.allCurrent;
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(banner(), findsNothing);
     });
 
     testWidgets('cold start offline: the saved match and board, not an error', (tester) async {
@@ -251,6 +309,16 @@ void main() {
       expect(find.byType(NotCurrentLine), findsNothing);
       expect(find.byType(AssessmentFailureBanner), findsNothing);
       expect(find.text('NOT CURRENT'), findsWidgets);
+
+      // F5 P2-2: a second failed Try again changes the banner's words.
+      expect(find.text('Pitchy can’t reach its server.'), findsOneWidget);
+      // The banner's own Try again (lightning has one of its own).
+      await tester.tap(
+        find.descendant(of: find.byType(NoticeBanner), matching: find.text('Try again')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Still can’t reach its server (try 2, 12:00 PM PHT).'), findsOneWidget);
+      expect(banner(), findsOneWidget);
     });
   });
 }

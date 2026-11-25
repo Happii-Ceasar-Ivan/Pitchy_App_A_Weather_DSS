@@ -23,7 +23,7 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationDestination), findsNWidgets(3));
 
-    for (final tab in ['PitChyAT', 'Safety', 'Dashboard']) {
+    for (final tab in ['Ask Pitchy', 'Safety', 'Dashboard']) {
       await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(tab)));
       await tester.pumpAndSettle();
       final settingsX = tester.getCenter(_inBar(find.byTooltip('Quick settings'))).dx;
@@ -167,13 +167,13 @@ void main() {
     expect(_inBar(find.byTooltip('Quick settings')), findsNothing);
   });
 
-  testWidgets('PitChyAT without a match offers to set one up', (tester) async {
+  testWidgets('Ask Pitchy without a match offers to set one up', (tester) async {
     await pumpPitchyApp(tester);
     await tester.tap(
-      find.descendant(of: find.byType(NavigationBar), matching: find.text('PitChyAT')),
+      find.descendant(of: find.byType(NavigationBar), matching: find.text('Ask Pitchy')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Welcome to PitChyAT'), findsOneWidget);
+    expect(find.text('Welcome to Ask Pitchy'), findsOneWidget);
     expect(find.text('Set up a match'), findsOneWidget);
   });
 }

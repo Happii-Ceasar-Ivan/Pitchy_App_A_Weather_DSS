@@ -1,4 +1,4 @@
-// PitChyAT without a match (Task A): general questions to POST /conversation.
+// Ask Pitchy without a match (Task A): general questions to POST /conversation.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -144,7 +144,7 @@ void main() {
 
     testWidgets('entry: Start chatting and Set up a match are both offered', (tester) async {
       await open(tester);
-      expect(find.text('Welcome to PitChyAT'), findsOneWidget);
+      expect(find.text('Welcome to Ask Pitchy'), findsOneWidget);
       expect(find.text('Choose your role to start'), findsOneWidget);
       expect(find.text('Set up a match'), findsOneWidget);
       expect(find.text('Your match'), findsNothing);
