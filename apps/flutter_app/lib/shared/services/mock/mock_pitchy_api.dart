@@ -229,6 +229,25 @@ class MockPitchyApi implements PitchyApi {
     ConversationRequest request, {
     required String sessionToken,
   }) => _respond(() {
+    _checkChatLimits(sessionToken, withMatch: true);
+    return ConversationResponse.fromJson(
+      conversationJson(now: _now, role: request.role.wire, id: matchContextId, scenario: chat),
+    );
+  });
+
+  @override
+  Future<GeneralConversationResponse> askGeneralQuestion(
+    ConversationRequest request, {
+    required String sessionToken,
+  }) => _respond(() {
+    _checkChatLimits(sessionToken, withMatch: false);
+    return GeneralConversationResponse.fromJson(
+      generalConversationJson(now: _now, role: request.role.wire, scenario: chat),
+    );
+  });
+
+  /// The errors both chat routes share (session, rate limit); 404 only with a match.
+  void _checkChatLimits(String sessionToken, {required bool withMatch}) {
     tokensSeen.add(sessionToken);
     switch (chat) {
       case ChatScenario.rateLimited:
@@ -244,12 +263,10 @@ class MockPitchyApi implements PitchyApi {
         throw ApiError.fromEnvelope(401, errorJson('INVALID_SESSION', 'Session is not valid.'));
       case ChatScenario.sessionExpiredOnce when tokensSeen.length == 1:
         throw ApiError.fromEnvelope(401, errorJson('INVALID_SESSION', 'Session is not valid.'));
-      case ChatScenario.matchGone:
+      case ChatScenario.matchGone when withMatch:
         throw ApiError.fromEnvelope(404, errorJson('NOT_FOUND', 'Not found.'));
       case _:
-        return ConversationResponse.fromJson(
-          conversationJson(now: _now, role: request.role.wire, id: matchContextId, scenario: chat),
-        );
+        return;
     }
-  });
+  }
 }

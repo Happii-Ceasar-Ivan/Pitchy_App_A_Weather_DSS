@@ -247,14 +247,6 @@ void main() {
       expect(find.text('Start chatting'), findsOneWidget);
     });
 
-    testWidgets('no match: the role can be chosen, and Set up a match is offered', (tester) async {
-      await pumpPitchyApp(tester, location: Routes.chat, size: const Size(390, 1600));
-      expect(find.text('Welcome to PitChyAT'), findsOneWidget);
-      expect(find.text('Set up a match'), findsOneWidget);
-      expect(find.text('Your match'), findsNothing);
-      expect(find.text('Start chatting'), findsNothing);
-    });
-
     testWidgets('a question gets a reply with its sources and notice', (tester) async {
       await openChat(tester);
       await start(tester, 'Referee');

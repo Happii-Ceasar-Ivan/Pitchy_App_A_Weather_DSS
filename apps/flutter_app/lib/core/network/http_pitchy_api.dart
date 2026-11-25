@@ -166,4 +166,19 @@ class HttpPitchyApi implements PitchyApi {
     ),
     ConversationResponse.fromJson,
   );
+
+  @override
+  Future<GeneralConversationResponse> askGeneralQuestion(
+    ConversationRequest request, {
+    required String sessionToken,
+  }) async => _parse(
+    await _send(
+      'POST',
+      _uri(['conversation']),
+      body: request.toJson(),
+      headers: {'X-Session-Token': sessionToken},
+      ok: {200},
+    ),
+    GeneralConversationResponse.fromJson,
+  );
 }

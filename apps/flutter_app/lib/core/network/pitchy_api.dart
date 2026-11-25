@@ -45,13 +45,21 @@ abstract interface class PitchyApi {
   /// detection source at most once per venue per interval, only in the live window.
   Future<VenueLightning> getLightning(String matchContextId);
 
-  /// PROVISIONAL (501 until Sprint B6). `POST /sessions`
+  /// `POST /sessions` (live since B6).
   Future<SessionCreated> createSession();
 
-  /// PROVISIONAL (501 until Sprint B5). `POST /match-contexts/{id}/conversation`
-  /// with the `X-Session-Token` header.
+  /// `POST /match-contexts/{id}/conversation` with the `X-Session-Token`
+  /// header (live since B5).
   Future<ConversationResponse> askQuestion(
     String matchContextId,
+    ConversationRequest request, {
+    required String sessionToken,
+  });
+
+  /// `POST /conversation` with the `X-Session-Token` header (live since B6): a
+  /// general question without a match. Shares the per-session limit with
+  /// [askQuestion].
+  Future<GeneralConversationResponse> askGeneralQuestion(
     ConversationRequest request, {
     required String sessionToken,
   });

@@ -8,7 +8,6 @@ import '../../core/app_scope.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/state/loadable.dart';
-import '../../core/storage/preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/conversation.dart';
@@ -21,7 +20,8 @@ import 'chat_controller.dart';
 import 'chat_reply.dart';
 
 /// PitChyAT (P-14): questions about the active match's conditions and the
-/// approved guidance. Replies are the backend's, shown as plain text. The
+/// approved guidance, or, without a match, general questions answered from the
+/// approved guidance only (Task A, `POST /conversation`). Replies are the backend's, shown as plain text. The
 /// agent explains; it is never the safety authority.
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key, this.clock});
@@ -39,8 +39,8 @@ class ChatScreen extends StatelessWidget {
         Failed(:final failure) => _Frame(
           child: ErrorState(failure: failure, onRetry: match.restore),
         ),
-        Loaded(value: null) => const _Frame(child: _EntryWithoutMatch()),
-        Loaded(:final value?) => _MatchChat(key: ValueKey(value.id), match: value, clock: clock),
+        Loaded(value: null) => _Chat(key: const ValueKey('general'), match: null, clock: clock),
+        Loaded(:final value?) => _Chat(key: ValueKey(value.id), match: value, clock: clock),
       },
     );
   }
@@ -64,17 +64,19 @@ const _maxWidth = 720.0;
 double _sidePadding(BuildContext context) =>
     ((MediaQuery.sizeOf(context).width - _maxWidth) / 2).clamp(16, double.infinity);
 
-class _MatchChat extends StatefulWidget {
-  const _MatchChat({super.key, required this.match, this.clock});
+/// One conversation. [match] null: general questions only; it is replaced by a
+/// fresh match conversation once a match is set up.
+class _Chat extends StatefulWidget {
+  const _Chat({super.key, required this.match, this.clock});
 
-  final MatchContext match;
+  final MatchContext? match;
   final DateTime Function()? clock;
 
   @override
-  State<_MatchChat> createState() => _MatchChatState();
+  State<_Chat> createState() => _ChatState();
 }
 
-class _MatchChatState extends State<_MatchChat> {
+class _ChatState extends State<_Chat> {
   ChatController? _chatOrNull;
   ChatController get _chat => _chatOrNull!;
   final _input = TextEditingController();
@@ -95,7 +97,7 @@ class _MatchChatState extends State<_MatchChat> {
       api: scope.api,
       session: scope.chatSession,
       preferences: scope.preferences,
-      matchContextId: widget.match.id,
+      matchContextId: widget.match?.id,
       clock: widget.clock,
     )..addListener(_followNewEntries);
   }
@@ -168,7 +170,10 @@ class _MatchChatState extends State<_MatchChat> {
             _AgentNotice(match: widget.match),
             Expanded(
               child: entries.isEmpty && !_chat.sending
-                  ? _Welcome(onStarter: _useStarter)
+                  ? _Welcome(
+                      questions: _chat.isGeneral ? generalStarterQuestions : starterQuestions,
+                      onStarter: _useStarter,
+                    )
                   : ListView(
                       controller: _scroll,
                       padding: EdgeInsets.symmetric(
@@ -202,7 +207,8 @@ class _MatchChatState extends State<_MatchChat> {
 class _AgentNotice extends StatelessWidget {
   const _AgentNotice({required this.match});
 
-  final MatchContext match;
+  /// Null: general questions, said here with a way to set up a match.
+  final MatchContext? match;
 
   @override
   Widget build(BuildContext context) {
@@ -230,10 +236,29 @@ class _AgentNotice extends StatelessWidget {
                   style: text.bodyMedium,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  'About ${match.venue.name}, kickoff ${formatPhtDateTime(match.kickoffAt)}',
-                  style: text.bodySmall?.copyWith(color: palette.inkMuted),
-                ),
+                if (match case final m?)
+                  Text(
+                    'About ${m.venue.name}, kickoff ${formatPhtDateTime(m.kickoffAt)}',
+                    style: text.bodySmall?.copyWith(color: palette.inkMuted),
+                  )
+                else ...[
+                  Text(
+                    'No match selected: general guidance from approved documents only, '
+                    'not about current conditions.',
+                    style: text.bodySmall?.copyWith(color: palette.ink),
+                  ),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      onPressed: () => context.push(Routes.matchSetup),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 0),
+                        minimumSize: const Size(48, 40),
+                      ),
+                      child: const Text('Set up a match'),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -250,9 +275,17 @@ const starterQuestions = [
   'What should we do if lightning is detected nearby?',
 ];
 
-class _Welcome extends StatelessWidget {
-  const _Welcome({required this.onStarter});
+/// Fixed app text for the general chat (no match): rules questions only.
+const generalStarterQuestions = [
+  'When are cooling breaks used?',
+  'What should we do if lightning is near?',
+  'What does each heat level mean?',
+];
 
+class _Welcome extends StatelessWidget {
+  const _Welcome({required this.questions, required this.onStarter});
+
+  final List<String> questions;
   final ValueChanged<String> onStarter;
 
   @override
@@ -263,7 +296,7 @@ class _Welcome extends StatelessWidget {
       children: [
         Text('Try asking', style: text.titleSmall),
         const SizedBox(height: 8),
-        for (final q in starterQuestions)
+        for (final q in questions)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: _StarterButton(question: q, onTap: () => onStarter(q)),
@@ -273,38 +306,10 @@ class _Welcome extends StatelessWidget {
   }
 }
 
-/// The entry screen without a match: the role can be chosen already, but
-/// PitChyAT needs a match to answer (the backend's conversation is per match).
-class _EntryWithoutMatch extends StatefulWidget {
-  const _EntryWithoutMatch();
-
-  @override
-  State<_EntryWithoutMatch> createState() => _EntryWithoutMatchState();
-}
-
-class _EntryWithoutMatchState extends State<_EntryWithoutMatch> {
-  ConversationRole? _role;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final saved = AppScope.of(context).preferences.getString(PrefKeys.chatRole);
-    _role ??= ConversationRole.values.where((r) => r.wire == saved).firstOrNull;
-  }
-
-  void _setRole(ConversationRole role) {
-    setState(() => _role = role);
-    unawaited(AppScope.of(context).preferences.setString(PrefKeys.chatRole, role.wire));
-  }
-
-  @override
-  Widget build(BuildContext context) =>
-      _EntryScreen(role: _role, onRole: _setRole, match: null, onStart: null);
-}
-
 /// What the user sees when they open PitChyAT: who's asking, and which match
 /// the questions are about. The match part only appears once a match is set
-/// up; the stadium comes from it.
+/// up; the stadium comes from it. Without a match, Start chatting opens the
+/// general chat and Set up a match stays on offer for current conditions.
 class _EntryScreen extends StatelessWidget {
   const _EntryScreen({
     required this.role,
@@ -316,9 +321,7 @@ class _EntryScreen extends StatelessWidget {
   final ConversationRole? role;
   final ValueChanged<ConversationRole> onRole;
   final MatchContext? match;
-
-  /// Null without a match.
-  final VoidCallback? onStart;
+  final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) {
@@ -340,8 +343,11 @@ class _EntryScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Ask about the weather and the approved safety guidance for your match. '
-                'Answers are AI explanations, not official decisions.',
+                m != null
+                    ? 'Ask about the weather and the approved safety guidance for your match. '
+                          'Answers are AI explanations, not official decisions.'
+                    : 'Ask general questions about the approved safety guidance. '
+                          'Answers are AI explanations, not official decisions.',
                 style: text.bodyMedium?.copyWith(color: palette.inkMuted),
                 textAlign: TextAlign.center,
               ),
@@ -373,11 +379,7 @@ class _EntryScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 _MatchSummary(match: m),
                 const SizedBox(height: 32),
-                FilledButton.icon(
-                  onPressed: role == null ? null : onStart,
-                  icon: const Icon(Icons.forum_outlined),
-                  label: Text(role == null ? 'Choose your role to start' : 'Start chatting'),
-                ),
+                _StartButton(role: role, onStart: onStart),
               ] else ...[
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -393,8 +395,9 @@ class _EntryScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'No match set up yet. For now PitChyAT answers questions about one '
-                          'match, so set one up first.',
+                          'No match set up yet. You can ask general questions about the '
+                          'approved guidance. For advice about current conditions, set up a '
+                          'match.',
                           style: text.bodyMedium,
                         ),
                       ),
@@ -402,7 +405,9 @@ class _EntryScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                FilledButton.icon(
+                _StartButton(role: role, onStart: onStart),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
                   onPressed: () => context.push(Routes.matchSetup),
                   icon: const Icon(Icons.add),
                   label: const Text('Set up a match'),
@@ -414,6 +419,20 @@ class _EntryScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StartButton extends StatelessWidget {
+  const _StartButton({required this.role, required this.onStart});
+
+  final ConversationRole? role;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) => FilledButton.icon(
+    onPressed: role == null ? null : onStart,
+    icon: const Icon(Icons.forum_outlined),
+    label: Text(role == null ? 'Choose your role to start' : 'Start chatting'),
+  );
 }
 
 class _MatchSummary extends StatelessWidget {
@@ -617,7 +636,13 @@ class _StatusLine extends StatelessWidget {
 
 /// One icon-led line inside a reply (a limitation, a reference, the notice).
 class _ReplyLine extends StatelessWidget {
-  const _ReplyLine({required this.icon, required this.text, this.color, this.style});
+  const _ReplyLine({
+    super.key,
+    required this.icon,
+    required this.text,
+    this.color,
+    this.style,
+  });
 
   final IconData icon;
   final String text;
@@ -644,7 +669,7 @@ class _ReplyLine extends StatelessWidget {
 class _BotBubble extends StatelessWidget {
   const _BotBubble({super.key, required this.reply});
 
-  final ConversationResponse reply;
+  final ChatAnswer reply;
 
   @override
   Widget build(BuildContext context) {
@@ -680,6 +705,17 @@ class _BotBubble extends StatelessWidget {
               view.text,
               style: text.bodyLarge,
             ),
+            // Every general reply (no match) says so, right under the text.
+            if (view.generalOnly case final general?) ...[
+              const SizedBox(height: 10),
+              _ReplyLine(
+                key: const ValueKey('general-only'),
+                icon: Icons.event_busy_outlined,
+                text: general,
+                color: palette.ink,
+                style: text.bodyMedium,
+              ),
+            ],
             if (view.limitations.isNotEmpty) ...[
               const SizedBox(height: 10),
               for (final l in view.limitations)
@@ -823,6 +859,8 @@ class _Composer extends StatelessWidget {
         ? 'Choose who’s asking first'
         : waitUntil != null
         ? 'You can ask again at ${formatPhtTime(waitUntil)}'
+        : chat.isGeneral
+        ? 'Ask a general question'
         : 'Ask about this match';
     final side = _sidePadding(context);
     return Material(

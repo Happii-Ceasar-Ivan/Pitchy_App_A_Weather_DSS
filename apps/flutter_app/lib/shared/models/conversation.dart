@@ -1,6 +1,7 @@
 // Conversation and anonymous session (contract schemas ConversationRequest,
-// ConversationResponse, ConversationRole, SessionCreated), live since B5.
-// Checked field by field against backend/contract/openapi.v1.json (F4).
+// ConversationResponse, GeneralConversationResponse, ConversationRole,
+// SessionCreated), live since B5 (general questions since B6).
+// Checked field by field against backend/contract/openapi.v1.json (F4, Task A).
 //
 // A generated answer is an explanation, never an official decision.
 
@@ -46,7 +47,21 @@ enum Generation {
   static String wireOf(Generation g) => g.wire;
 }
 
-class ConversationResponse {
+/// What every PitChyAT reply has, with or without a match. The chat shows
+/// replies only through this, so both kinds read the same way.
+abstract interface class ChatAnswer {
+  ConversationRole get role;
+
+  /// `unavailable` when no AI provider can answer (FR-AGT-006).
+  Generation get generation;
+  String? get answer;
+  List<GuidanceReference> get references;
+  List<Limitation> get limitations;
+  DateTime get respondedAt;
+}
+
+/// Reply to a question about one match (`POST /match-contexts/{id}/conversation`).
+class ConversationResponse implements ChatAnswer {
   const ConversationResponse({
     required this.matchContextId,
     required this.assessmentId,
@@ -71,13 +86,56 @@ class ConversationResponse {
 
   final String matchContextId;
   final String? assessmentId;
+  @override
   final ConversationRole role;
 
   /// `unavailable` when no AI provider can answer; the assessment still works (FR-AGT-006).
+  @override
   final Generation generation;
+  @override
   final String? answer;
+  @override
   final List<GuidanceReference> references;
+  @override
   final List<Limitation> limitations;
+  @override
+  final DateTime respondedAt;
+}
+
+/// Reply to a general question asked without a match (`POST /conversation`,
+/// B6): approved guidance only, never about current conditions. The backend
+/// always puts `AGENT_NOT_AUTHORITY` and `GENERAL_GUIDANCE_ONLY` first in
+/// [limitations].
+class GeneralConversationResponse implements ChatAnswer {
+  const GeneralConversationResponse({
+    required this.role,
+    required this.generation,
+    required this.answer,
+    required this.references,
+    required this.limitations,
+    required this.respondedAt,
+  });
+
+  factory GeneralConversationResponse.fromJson(Json json) => GeneralConversationResponse(
+    role: readEnum(json, 'role', ConversationRole.values, ConversationRole.wireOf),
+    generation: readEnum(json, 'generation', Generation.values, Generation.wireOf),
+    answer: readStringOrNull(json, 'answer'),
+    references: readList(json, 'references', GuidanceReference.fromJson, optional: true),
+    limitations: readList(json, 'limitations', Limitation.fromJson, optional: true),
+    respondedAt: readTime(json, 'responded_at'),
+  );
+
+  @override
+  final ConversationRole role;
+  @override
+  final Generation generation;
+  @override
+  final String? answer;
+  @override
+  final List<GuidanceReference> references;
+  @override
+  final List<Limitation> limitations;
+  @override
   final DateTime respondedAt;
 }
 

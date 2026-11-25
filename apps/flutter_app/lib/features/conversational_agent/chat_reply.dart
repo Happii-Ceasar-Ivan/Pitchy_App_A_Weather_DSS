@@ -2,9 +2,15 @@ import '../../shared/models/assessment.dart';
 import '../../shared/models/conversation.dart';
 import '../../shared/models/weather.dart';
 
-/// Conversation limitation codes the backend sends (B5).
+/// Conversation limitation codes the backend sends (B5, B6).
 abstract final class ChatLimitationCodes {
   static const agentNotAuthority = 'AGENT_NOT_AUTHORITY';
+
+  /// On every reply without a match: general guidance, not about current conditions.
+  static const generalGuidanceOnly = 'GENERAL_GUIDANCE_ONLY';
+
+  /// General questions only: no approved passage matched (no AI call).
+  static const noGuidanceFound = 'NO_GUIDANCE_FOUND';
   static const aiUnavailable = 'AI_UNAVAILABLE';
   static const dailyLimitReached = 'DAILY_LIMIT_REACHED';
   static const answerCheckFailed = 'ANSWER_CHECK_FAILED';
@@ -13,7 +19,13 @@ abstract final class ChatLimitationCodes {
 
   /// Sent with `answer: null`. Their message is shown as the reply itself
   /// (backend note B5), in this order of preference.
-  static const reply = [offTopic, dailyLimitReached, aiUnavailable, answerCheckFailed];
+  static const reply = [
+    offTopic,
+    noGuidanceFound,
+    dailyLimitReached,
+    aiUnavailable,
+    answerCheckFailed,
+  ];
 }
 
 /// One approved document the reply drew on, with every section cited.
@@ -67,11 +79,12 @@ class ChatReplyView {
     required this.text,
     required this.isAnswer,
     required this.notAuthority,
+    required this.generalOnly,
     required this.limitations,
     required this.references,
   });
 
-  factory ChatReplyView.of(ConversationResponse r) {
+  factory ChatReplyView.of(ChatAnswer r) {
     final answer = r.answer?.trim();
     final hasAnswer = answer != null && answer.isNotEmpty;
 
@@ -85,14 +98,22 @@ class ChatReplyView {
     final notAuthority = r.limitations
         .where((l) => l.code == ChatLimitationCodes.agentNotAuthority)
         .firstOrNull;
+    final general = r is GeneralConversationResponse;
+    final generalOnly = general
+        ? r.limitations.where((l) => l.code == ChatLimitationCodes.generalGuidanceOnly).firstOrNull
+        : null;
 
     return ChatReplyView(
       text: hasAnswer ? answer : (replyLimitation?.message ?? fallbackNoAnswer),
       isAnswer: hasAnswer,
       notAuthority: notAuthority?.message ?? fallbackNotAuthority,
+      generalOnly: general ? (generalOnly?.message ?? fallbackGeneralOnly) : null,
       limitations: [
         for (final l in r.limitations)
-          if (!identical(l, replyLimitation) && !identical(l, notAuthority)) l,
+          if (!identical(l, replyLimitation) &&
+              !identical(l, notAuthority) &&
+              !identical(l, generalOnly))
+            l,
       ],
       references: groupReferences(r.references),
     );
@@ -106,16 +127,24 @@ class ChatReplyView {
   static const fallbackNotAuthority =
       'AI-generated explanation. It is not an official safety decision.';
 
+  /// App text used only if a general reply leaves out `GENERAL_GUIDANCE_ONLY`.
+  static const fallbackGeneralOnly =
+      'No match is selected: this is general guidance, not advice about current conditions.';
+
   /// The answer, or the message of the limitation that took its place.
   /// Untrusted text: shown as plain text only.
   final String text;
 
-  /// False when [text] is a limitation message (off-topic, daily limit, AI
-  /// unavailable, answer check failed) rather than an AI answer.
+  /// False when [text] is a limitation message (off-topic, no guidance found,
+  /// daily limit, AI unavailable, answer check failed) rather than an AI answer.
   final bool isAnswer;
 
   /// The backend's "not an authority" message, shown on every reply.
   final String notAuthority;
+
+  /// Set on every general reply (no match), never on a match reply: the
+  /// backend's "general guidance only" message, shown with the reply.
+  final String? generalOnly;
 
   /// The other limitations (assessment ones, keyword-only retrieval, ...).
   final List<Limitation> limitations;

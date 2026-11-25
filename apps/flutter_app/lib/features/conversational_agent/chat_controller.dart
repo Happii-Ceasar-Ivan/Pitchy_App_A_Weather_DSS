@@ -52,19 +52,23 @@ class UserQuestion extends ChatEntry {
 /// A reply exactly as the backend returned it. Never made up by the app.
 class BotReply extends ChatEntry {
   const BotReply(super.id, this.response);
-  final ConversationResponse response;
+
+  /// A [ConversationResponse] in a match chat, a [GeneralConversationResponse]
+  /// in the general one.
+  final ChatAnswer response;
 }
 
-/// One conversation with PitChyAT about one match. History is kept in memory
-/// only (team decision 2026-11-25) and is gone when the match changes or the
-/// app closes. The role is a remembered preference; it only changes wording on
+/// One conversation with PitChyAT: about one match, or general questions
+/// when [matchContextId] is null (`POST /conversation`, Task A). History is
+/// kept in memory only (team decision 2026-11-25) and is gone when the match
+/// changes or the app closes. The role is a remembered preference; it only changes wording on
 /// the backend (P-03).
 class ChatController extends ChangeNotifier {
   ChatController({
     required this.api,
     required this.session,
     required this.preferences,
-    required this.matchContextId,
+    this.matchContextId,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now {
     _role = ConversationRole.values
@@ -75,7 +79,10 @@ class ChatController extends ChangeNotifier {
   final PitchyApi api;
   final ChatSession session;
   final Preferences preferences;
-  final String matchContextId;
+
+  /// Null for general questions without a match.
+  final String? matchContextId;
+  bool get isGeneral => matchContextId == null;
   final DateTime Function() _clock;
 
   final List<ChatEntry> _entries = [];
@@ -163,16 +170,24 @@ class ChatController extends ChangeNotifier {
 
   /// One request with the current session. A 401 `INVALID_SESSION` gets one
   /// new session and one retry; a second 401 is returned as the failure.
-  Future<ConversationResponse> _askWithSession(ConversationRequest request) async {
+  /// Both routes share the session and its per-session limit.
+  Future<ChatAnswer> _askWithSession(ConversationRequest request) async {
     var token = await session.token();
     try {
-      return await api.askQuestion(matchContextId, request, sessionToken: token);
+      return await _route(request, token);
     } on ApiError catch (e) {
       if (e.code != ApiErrorCode.invalidSession && e.statusCode != 401) rethrow;
       session.invalidate(token);
       token = await session.token();
-      return api.askQuestion(matchContextId, request, sessionToken: token);
+      return _route(request, token);
     }
+  }
+
+  Future<ChatAnswer> _route(ConversationRequest request, String token) {
+    final id = matchContextId;
+    return id == null
+        ? api.askGeneralQuestion(request, sessionToken: token)
+        : api.askQuestion(id, request, sessionToken: token);
   }
 
   void _holdUntil(DateTime? retryAt) {

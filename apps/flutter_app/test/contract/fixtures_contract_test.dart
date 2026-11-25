@@ -45,6 +45,9 @@ void main() {
     for (final c in ChatScenario.values)
       'ConversationResponse#${c.name}': () =>
           conversationJson(now: now, role: 'coach', scenario: c),
+    for (final c in ChatScenario.values)
+      'GeneralConversationResponse#${c.name}': () =>
+          generalConversationJson(now: now, role: 'coach', scenario: c),
     'ErrorEnvelope': () => errorJson('RATE_LIMITED', 'Try later.', retryAt: now),
   };
 

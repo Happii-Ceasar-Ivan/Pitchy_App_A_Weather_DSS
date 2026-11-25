@@ -53,6 +53,7 @@ Future<void> _shot(
   PitchyThemeMode mode = PitchyThemeMode.light,
   ConversationRole? role,
   bool start = true,
+  bool withMatch = true,
   Future<void> Function(WidgetTester, MockPitchyApi)? act,
 }) async {
   tester.view.devicePixelRatio = 2;
@@ -66,7 +67,7 @@ Future<void> _shot(
       api: api,
       preferences: MemoryPreferences({
         PrefKeys.themeMode: mode.name,
-        PrefKeys.activeMatchId: rizalMemorialId,
+        PrefKeys.activeMatchId: ?(withMatch ? rizalMemorialId : null),
         PrefKeys.chatRole: ?role?.wire,
       }),
       initialLocation: Routes.chat,
@@ -150,6 +151,55 @@ void main() {
       size: desktop,
       role: ConversationRole.referee,
       act: (t, api) => _ask(t, api, ChatScenario.answered, 'Do we need cooling breaks?'),
+    ),
+  );
+
+  // Task A: no match, general questions.
+  testWidgets(
+    'taska phone entry no match',
+    (t) => _shot(
+      t,
+      'taska-phone-entry',
+      size: phone,
+      role: ConversationRole.coach,
+      start: false,
+      withMatch: false,
+    ),
+  );
+  testWidgets(
+    'taska phone general welcome',
+    (t) => _shot(
+      t,
+      'taska-phone-welcome',
+      size: phone,
+      role: ConversationRole.coach,
+      withMatch: false,
+    ),
+  );
+  testWidgets(
+    'taska phone general conversation',
+    (t) => _shot(
+      t,
+      'taska-phone-conversation',
+      size: tallPhone,
+      role: ConversationRole.coach,
+      withMatch: false,
+      act: (t, api) async {
+        await _ask(t, api, ChatScenario.answered, 'When are cooling breaks used?');
+        await _ask(t, api, ChatScenario.noGuidanceFound, 'What is the offside rule?');
+      },
+    ),
+  );
+  testWidgets(
+    'taska phone general conversation dark',
+    (t) => _shot(
+      t,
+      'taska-phone-conversation-dark',
+      size: tallPhone,
+      mode: PitchyThemeMode.dark,
+      role: ConversationRole.referee,
+      withMatch: false,
+      act: (t, api) => _ask(t, api, ChatScenario.answered, 'When are cooling breaks used?'),
     ),
   );
 }
