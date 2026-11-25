@@ -5,6 +5,7 @@ import 'package:pitchy/core/config/app_config.dart';
 import 'package:pitchy/core/config/app_info.dart';
 import 'package:pitchy/core/routing/app_router.dart';
 import 'package:pitchy/core/storage/preferences.dart';
+import 'package:pitchy/core/storage/saved_copies.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
 import 'package:pitchy/shared/services/mock/mock_pitchy_api.dart';
 
@@ -26,14 +27,21 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.reset);
-  final api = MockPitchyApi(scenario: scenario, clock: () => testNow, latency: latency);
   final preferences = MemoryPreferences(prefs);
+  final savedCopies = SavedCopyStore(preferences, clock: () => testNow);
+  final api = MockPitchyApi(
+    scenario: scenario,
+    clock: () => testNow,
+    latency: latency,
+    savedCopies: savedCopies,
+  );
   await tester.pumpWidget(
     PitchyApp(
       config: AppConfig(apiBaseUrl: Uri.parse('https://api.example.test'), useMocks: true),
       info: testInfo,
       api: api,
       preferences: preferences,
+      savedCopies: savedCopies,
       initialLocation: location,
       clock: () => testNow,
     ),

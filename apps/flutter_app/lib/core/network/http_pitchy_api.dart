@@ -13,6 +13,7 @@ import '../../shared/models/lightning.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
 import '../errors/api_failure.dart';
+import '../storage/saved_copies.dart';
 import 'pitchy_api.dart';
 
 /// [PitchyApi] over HTTPS against the real backend.
@@ -23,12 +24,17 @@ class HttpPitchyApi implements PitchyApi {
     required Uri baseUrl,
     http.Client? client,
     this.timeout = const Duration(seconds: 40),
+    this.savedCopies,
   }) : _base = baseUrl,
        _client = client ?? http.Client();
 
   final Uri _base;
   final http.Client _client;
   final Duration timeout;
+
+  /// Where successful reads are kept for the DEC-13 saved copy. Only the five
+  /// reads below are saved, and only after they parse; never chat or sessions.
+  final SavedCopyStore? savedCopies;
 
   static const _prefix = '/api/v1';
 
@@ -74,7 +80,10 @@ class HttpPitchyApi implements PitchyApi {
     try {
       decoded = response.body.isEmpty ? null : jsonDecode(utf8.decode(response.bodyBytes));
     } on FormatException {
-      throw ContractFailure('Response from ${uri.path} is not JSON (${response.statusCode})');
+      throw ContractFailure(
+        'Response from ${uri.path} is not JSON (${response.statusCode})',
+        statusCode: response.statusCode,
+      );
     }
 
     if (ok.contains(response.statusCode)) {
@@ -91,8 +100,16 @@ class HttpPitchyApi implements PitchyApi {
     }
   }
 
-  Future<T> _get<T>(Uri uri, T Function(Json) parse) async =>
-      _parse(await _send('GET', uri, ok: {200}), parse);
+  Future<T> _get<T>(Uri uri, T Function(Json) parse, {(String, SavedKind)? save}) async {
+    final json = await _send('GET', uri, ok: {200});
+    final value = _parse(json, parse);
+    if (save case (final matchId, final kind)) {
+      // Saved only once it parsed, so a copy is always a valid reply. A failed
+      // write never fails the live reply.
+      unawaited(savedCopies?.put(matchId, kind, json).catchError((Object _) {}));
+    }
+    return value;
+  }
 
   T _parse<T>(Json json, T Function(Json) parse) {
     try {
@@ -112,22 +129,33 @@ class HttpPitchyApi implements PitchyApi {
   );
 
   @override
-  Future<MatchContext> getMatchContext(String matchContextId) =>
-      _get(_uri(['match-contexts', matchContextId]), MatchContext.fromJson);
+  Future<MatchContext> getMatchContext(String matchContextId) => _get(
+    _uri(['match-contexts', matchContextId]),
+    MatchContext.fromJson,
+    save: (matchContextId, SavedKind.match),
+  );
 
   @override
-  Future<WeatherStatus> getWeatherStatus(String matchContextId) =>
-      _get(_uri(['match-contexts', matchContextId, 'weather-status']), WeatherStatus.fromJson);
+  Future<WeatherStatus> getWeatherStatus(String matchContextId) => _get(
+    _uri(['match-contexts', matchContextId, 'weather-status']),
+    WeatherStatus.fromJson,
+    save: (matchContextId, SavedKind.weatherStatus),
+  );
 
   @override
   Future<ConsolidatedWeather> getWeather(String matchContextId, {int? hours}) => _get(
     _uri(['match-contexts', matchContextId, 'weather'], hours == null ? null : {'hours': '$hours'}),
     ConsolidatedWeather.fromJson,
+    // Only the default window is what the dashboard shows offline.
+    save: hours == null ? (matchContextId, SavedKind.weather) : null,
   );
 
   @override
-  Future<VenueAlerts> getAlerts(String matchContextId) =>
-      _get(_uri(['match-contexts', matchContextId, 'alerts']), VenueAlerts.fromJson);
+  Future<VenueAlerts> getAlerts(String matchContextId) => _get(
+    _uri(['match-contexts', matchContextId, 'alerts']),
+    VenueAlerts.fromJson,
+    save: (matchContextId, SavedKind.alerts),
+  );
 
   @override
   Future<IngestionRequestResult> requestIngestion(String matchContextId) async => _parse(
@@ -140,8 +168,11 @@ class HttpPitchyApi implements PitchyApi {
       _get(_uri(['ingestions', jobId]), IngestionJob.fromJson);
 
   @override
-  Future<SafetyAssessment> getAssessment(String matchContextId) =>
-      _get(_uri(['match-contexts', matchContextId, 'assessment']), SafetyAssessment.fromJson);
+  Future<SafetyAssessment> getAssessment(String matchContextId) => _get(
+    _uri(['match-contexts', matchContextId, 'assessment']),
+    SafetyAssessment.fromJson,
+    save: (matchContextId, SavedKind.assessment),
+  );
 
   @override
   Future<VenueLightning> getLightning(String matchContextId) =>

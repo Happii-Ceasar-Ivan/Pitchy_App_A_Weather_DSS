@@ -4,14 +4,17 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/app_scope.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/state/loadable.dart';
+import '../../core/theme/app_theme.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
 import '../../shared/widgets/alerts_panel.dart';
+import '../../shared/widgets/data_state_badge.dart';
 import '../../shared/widgets/kickoff_strip.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 import '../../shared/widgets/request_states.dart';
 import '../../shared/widgets/source_rail.dart';
 import '../../shared/widgets/weather_value_card.dart';
+import '../match_management/match_controller.dart';
 import 'dashboard_controller.dart';
 import 'ingest_widgets.dart';
 import 'ingestion_controller.dart';
@@ -31,6 +34,12 @@ class DashboardScreen extends StatelessWidget {
         Loading() => const _Frame(
           strip: KickoffStripSkeleton(),
           child: _BoardList(children: _boardSkeleton),
+        ),
+        // Server unreachable at start: the match from the saved copy (DEC-13);
+        // its board then shows the saved weather with the banner.
+        Failed(saved: SavedCopy(:final value?)) => _MatchDashboard(
+          key: ValueKey(value.id),
+          match: value,
         ),
         Failed(:final failure) => _Frame(
           child: ErrorState(failure: failure, onRetry: match.restore),
@@ -86,6 +95,7 @@ class _MatchDashboard extends StatefulWidget {
 class _MatchDashboardState extends State<_MatchDashboard> {
   late final DashboardController _controller;
   late final IngestionController _ingest;
+  late final MatchController _match;
   bool _started = false;
 
   @override
@@ -94,8 +104,12 @@ class _MatchDashboardState extends State<_MatchDashboard> {
     if (_started) return;
     _started = true;
     final scope = AppScope.of(context);
-    _controller = DashboardController(api: scope.api, matchContextId: widget.match.id)
-      ..addListener(_watchRunningJobs);
+    _match = scope.match;
+    _controller = DashboardController(
+      api: scope.api,
+      matchContextId: widget.match.id,
+      savedCopies: scope.savedCopies,
+    )..addListener(_watchRunningJobs);
     _ingest = IngestionController(
       api: scope.api,
       matchContextId: widget.match.id,
@@ -111,6 +125,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
   void _watchRunningJobs() {
     final data = _controller.data;
     if (data is! Loaded<DashboardData> || _controller.refreshing) return;
+    _match.serverReachable();
     // Once per backend reply, so "Check again" (a reload) resumes watching but
     // other updates on screen don't.
     if (identical(data.value.status, _watchedStatus)) return;
@@ -171,6 +186,35 @@ class _MatchDashboardState extends State<_MatchDashboard> {
               _BoardList(
                 children: switch (_controller.data) {
                   Loading() => _boardSkeleton,
+                  // DEC-13: the server can't be reached, so the last saved
+                  // board shows under the banner. Never labelled live, and
+                  // Update stays off until the server answers again.
+                  Failed(saved: SavedCopy(:final value, :final savedAt)) => [
+                    _SavedCopyBanner(
+                      savedAt: savedAt,
+                      onRetry: _controller.refreshing ? null : _controller.load,
+                    ),
+                    const SizedBox(height: 12),
+                    AlertsPanel(alerts: _controller.alerts),
+                    const SizedBox(height: 12),
+                    SavedCopyScope(
+                      savedAt: savedAt,
+                      child: _Board(
+                        rail: SourceRail(
+                          sources: value.status.sources,
+                          checkedAt: value.status.checkedAt,
+                          coverage: value.status.coverage,
+                          kickoff: widget.match.kickoffAt,
+                          now: AppScope.of(context).match.now,
+                          action: const _UpdateOffWhileSaved(),
+                        ),
+                        cards: WeatherCardGrid(
+                          weather: value.weather,
+                          kickoff: widget.match.kickoffAt,
+                        ),
+                      ),
+                    ),
+                  ],
                   Failed(:final failure) => [
                     // The board's Try again reloads the alerts too: one button.
                     AlertsPanel(alerts: _controller.alerts),
@@ -230,6 +274,53 @@ class _MatchDashboardState extends State<_MatchDashboard> {
         ),
       );
     },
+  );
+}
+
+/// The DEC-13 banner in the board's measure, with "Try again".
+class _SavedCopyBanner extends StatelessWidget {
+  const _SavedCopyBanner({required this.savedAt, required this.onRetry});
+
+  final DateTime savedAt;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = context.stateColors.of(WeatherDataState.stale).foreground;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+      child: NoticeBanner.savedCopy(
+        context,
+        savedAt: savedAt,
+        action: TextButton(
+          style: TextButton.styleFrom(foregroundColor: fg),
+          onPressed: onRetry,
+          child: const Text('Try again'),
+        ),
+      ),
+    );
+  }
+}
+
+/// Update, shown but off while a saved copy is on screen: an update needs the
+/// server, and the reason is said rather than hiding the button.
+class _UpdateOffWhileSaved extends StatelessWidget {
+  const _UpdateOffWhileSaved();
+
+  static const reason = 'Update is off while Pitchy can’t reach its server.';
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: reason,
+    child: Semantics(
+      hint: reason,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14)),
+        onPressed: null,
+        icon: const Icon(Icons.sync, size: 18),
+        label: const Text('Update'),
+      ),
+    ),
   );
 }
 

@@ -7,6 +7,7 @@ import 'core/config/app_info.dart';
 import 'core/network/pitchy_api.dart';
 import 'core/routing/app_router.dart';
 import 'core/storage/preferences.dart';
+import 'core/storage/saved_copies.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/conversational_agent/chat_session.dart';
@@ -19,6 +20,7 @@ class PitchyApp extends StatefulWidget {
     required this.info,
     required this.api,
     required this.preferences,
+    this.savedCopies,
     this.initialLocation = Routes.dashboard,
     this.clock,
   });
@@ -27,6 +29,10 @@ class PitchyApp extends StatefulWidget {
   final AppInfo info;
   final PitchyApi api;
   final Preferences preferences;
+
+  /// The DEC-13 store. Pass the same instance the API client saves into;
+  /// defaults to one over [preferences].
+  final SavedCopyStore? savedCopies;
   final String initialLocation;
 
   /// For tests and previews; the device clock otherwise. Only used to word ages
@@ -40,10 +46,14 @@ class PitchyApp extends StatefulWidget {
 class _PitchyAppState extends State<PitchyApp> {
   late final GoRouter _router = buildRouter(initialLocation: widget.initialLocation);
   late final ThemeController _theme = ThemeController(preferences: widget.preferences);
+  late final SavedCopyStore _savedCopies =
+      (widget.savedCopies ?? SavedCopyStore(widget.preferences, clock: widget.clock))
+        ..purgeExpired();
   late final MatchController _match = MatchController(
     api: widget.api,
     preferences: widget.preferences,
     clock: widget.clock,
+    savedCopies: _savedCopies,
   )..restore();
   late final ChatSession _chatSession = ChatSession(api: widget.api);
 
@@ -61,6 +71,7 @@ class _PitchyAppState extends State<PitchyApp> {
     info: widget.info,
     api: widget.api,
     preferences: widget.preferences,
+    savedCopies: _savedCopies,
     theme: _theme,
     match: _match,
     chatSession: _chatSession,

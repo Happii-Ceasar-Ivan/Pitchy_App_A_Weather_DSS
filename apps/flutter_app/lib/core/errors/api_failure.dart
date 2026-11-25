@@ -100,9 +100,13 @@ class TimeoutFailure extends ApiFailure {
 
 /// The backend answered with something that doesn't match the contract.
 class ContractFailure extends ApiFailure {
-  const ContractFailure(this.reason);
+  const ContractFailure(this.reason, {this.statusCode});
 
   final String reason;
+
+  /// The HTTP status when the reply was not JSON at all (e.g. a host's 502
+  /// page while the server is down). Null when the JSON broke the contract.
+  final int? statusCode;
 
   @override
   String toString() => 'ContractFailure($reason)';

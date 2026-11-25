@@ -75,10 +75,11 @@ class WeatherValueCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final value = slot?.value;
     final state = slotState(slot, sources);
-    final notCurrent = state != WeatherDataState.current;
+    final savedLive = claimsLiveInSavedCopy(context, state);
+    final notCurrent = state != WeatherDataState.current || savedLive;
     final unit = quantity.unit;
     final used = _source(slot?.sourceId);
-    final stateLabel = context.stateColors.of(state).label;
+    final stateLabel = stateWord(context, state);
 
     final valueText = value == null ? 'No value' : number(value);
     final semantic = value == null

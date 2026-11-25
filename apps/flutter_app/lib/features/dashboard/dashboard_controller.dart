@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/errors/api_failure.dart';
 import '../../core/network/pitchy_api.dart';
 import '../../core/state/loadable.dart';
+import '../../core/storage/saved_copies.dart';
 import '../../shared/models/alerts.dart';
 import '../../shared/models/weather.dart';
 
@@ -17,10 +18,13 @@ class DashboardData {
 }
 
 class DashboardController extends ChangeNotifier {
-  DashboardController({required this.api, required this.matchContextId});
+  DashboardController({required this.api, required this.matchContextId, this.savedCopies});
 
   final PitchyApi api;
   final String matchContextId;
+
+  /// The DEC-13 saved copies; null turns the fallback off.
+  final SavedCopyStore? savedCopies;
 
   Loadable<DashboardData> _data = const Loading();
   Loadable<DashboardData> get data => _data;
@@ -67,9 +71,24 @@ class DashboardController extends ChangeNotifier {
         ),
       );
     } on ApiFailure catch (e) {
-      // A failed refresh never keeps showing older data as if it were fresh.
-      _data = Failed(e);
+      // A failed refresh never keeps showing older data as if it were fresh:
+      // at most the saved copy, labelled as one.
+      _data = Failed(e, saved: _savedBoard(e));
     }
+  }
+
+  /// The saved board, only when both halves were saved. Its time is the older
+  /// of the two, so the banner never makes the copy look newer than it is.
+  SavedCopy<DashboardData>? _savedBoard(ApiFailure e) {
+    final store = savedCopies;
+    if (store == null || !allowsSavedCopy(e)) return null;
+    final status = store.read(matchContextId, SavedKind.weatherStatus, WeatherStatus.fromJson);
+    final weather = store.read(matchContextId, SavedKind.weather, ConsolidatedWeather.fromJson);
+    if (status == null || weather == null) return null;
+    return SavedCopy(
+      DashboardData(status: status.value, weather: weather.value),
+      savedAt: status.savedAt.isBefore(weather.savedAt) ? status.savedAt : weather.savedAt,
+    );
   }
 
   /// Tries the official alerts again (after a failed check).
@@ -84,8 +103,14 @@ class DashboardController extends ChangeNotifier {
     try {
       _alerts = Loaded(await api.getAlerts(matchContextId));
     } on ApiFailure catch (e) {
-      // Older alerts are never kept on screen after a failed check.
-      _alerts = Failed(e);
+      // Older alerts are never kept on screen after a failed check, except as
+      // the labelled saved copy when the server can't be reached.
+      _alerts = Failed(
+        e,
+        saved: allowsSavedCopy(e)
+            ? savedCopies?.read(matchContextId, SavedKind.alerts, VenueAlerts.fromJson)
+            : null,
+      );
     }
     _notify();
   }

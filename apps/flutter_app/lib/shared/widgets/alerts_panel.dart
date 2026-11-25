@@ -37,6 +37,11 @@ class _AlertsPanelState extends State<AlertsPanel> {
   @override
   Widget build(BuildContext context) => switch (widget.alerts) {
     Loading() => const AlertsPanelSkeleton(),
+    // The DEC-13 saved copy (server unreachable): never worded as live.
+    Failed(saved: SavedCopy(:final value, :final savedAt)) => SavedCopyScope(
+      savedAt: savedAt,
+      child: Builder(builder: (context) => _loaded(context, value, savedAt: savedAt)),
+    ),
     Failed(:final failure) => _Frame(
       header: const _Header(title: 'Alerts'),
       row: _FailedRow(failure: failure, onRetry: widget.onRetry),
@@ -44,10 +49,14 @@ class _AlertsPanelState extends State<AlertsPanel> {
     Loaded(:final value) => _loaded(context, value),
   };
 
-  Widget _loaded(BuildContext context, VenueAlerts v) {
+  Widget _loaded(BuildContext context, VenueAlerts v, {DateTime? savedAt}) {
     final checked = v.status.lastCheckedAt;
     final header = _Header(
-      title: checked == null ? 'Alerts' : 'Alerts · checked ${formatPhtTime(checked)}',
+      title: savedAt != null
+          ? 'Alerts · saved copy from ${formatPhtTime(savedAt)}'
+          : checked == null
+          ? 'Alerts'
+          : 'Alerts · checked ${formatPhtTime(checked)}',
       state: v.status.state,
     );
     if (v.alerts.isEmpty) {
@@ -255,7 +264,9 @@ class _EmptyRow extends StatelessWidget {
   Widget build(BuildContext context) {
     // "No alerts" is said only when the backend's check is current; otherwise
     // the panel says the check is old or failed, never that all is clear.
-    final (icon, title, detail) = switch (state) {
+    // In a saved copy a Current check is old by now: say so, never all clear.
+    final shown = claimsLiveInSavedCopy(context, state) ? WeatherDataState.stale : state;
+    final (icon, title, detail) = switch (shown) {
       WeatherDataState.current => (
         Icons.campaign_outlined,
         'No official alerts for this venue',

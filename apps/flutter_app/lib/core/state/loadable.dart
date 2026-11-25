@@ -17,6 +17,20 @@ class Loaded<T> extends Loadable<T> {
 }
 
 class Failed<T> extends Loadable<T> {
-  const Failed(this.failure);
+  const Failed(this.failure, {this.saved});
   final ApiFailure failure;
+
+  /// The DEC-13 saved copy, set only when the backend could not be reached or
+  /// failed itself and a copy exists. Never current: screens show it with the
+  /// saved-copy banner and keep backend actions off.
+  final SavedCopy<T>? saved;
+}
+
+/// A last successful reply kept on the device (DEC-13), with the time the app
+/// received it.
+class SavedCopy<T> {
+  const SavedCopy(this.value, {required this.savedAt});
+
+  final T value;
+  final DateTime savedAt;
 }

@@ -154,8 +154,7 @@ class SourceSummaryRow extends StatelessWidget {
             Expanded(
               child: Semantics(
                 container: true,
-                label:
-                    '${sources[i].sourceName}: ${context.stateColors.of(sources[i].state).label}',
+                label: '${sources[i].sourceName}: ${stateWord(context, sources[i].state)}',
                 excludeSemantics: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +264,7 @@ class _SourceLine extends StatelessWidget {
     return Semantics(
       container: true,
       label:
-          '${source.sourceName}: ${context.stateColors.of(source.state).label}. ${_detail()}'
+          '${source.sourceName}: ${stateWord(context, source.state)}. ${_detail()}'
           '${p != null && !source.coversMatchTime ? '. Doesn’t cover the whole match.' : ''}',
       excludeSemantics: true,
       child: IntrinsicHeight(

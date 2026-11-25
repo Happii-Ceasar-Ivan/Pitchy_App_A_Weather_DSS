@@ -6,10 +6,13 @@ import '../../core/app_scope.dart';
 import '../../core/errors/api_failure.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/state/loadable.dart';
+import '../../core/theme/app_theme.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/match.dart';
+import '../../shared/models/weather.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 import '../../shared/widgets/request_states.dart';
+import '../match_management/match_controller.dart';
 import 'safety_cards.dart';
 import 'safety_controller.dart';
 import 'safety_widgets.dart';
@@ -27,6 +30,11 @@ class SafetyScreen extends StatelessWidget {
       listenable: match,
       builder: (context, _) => switch (match.active) {
         Loading() => const _Frame(child: _SafetyList(children: [SafetySkeleton()])),
+        // Server unreachable at start: the saved match (DEC-13).
+        Failed(saved: SavedCopy(:final value?)) => _MatchSafety(
+          key: ValueKey(value.id),
+          match: value,
+        ),
         Failed(:final failure) => _Frame(
           child: ErrorState(failure: failure, onRetry: match.restore),
         ),
@@ -94,7 +102,14 @@ class _MatchSafety extends StatefulWidget {
 
 class _MatchSafetyState extends State<_MatchSafety> {
   SafetyController? _controller;
+  late MatchController _match;
   late final AppLifecycleListener _lifecycle;
+
+  /// A live assessment means the server is back: refresh a saved match too.
+  void _confirmOnline() {
+    if (_controller?.assessment is Loaded) _match.serverReachable();
+  }
+
   bool _appResumed = true;
   bool _loadedOnce = false;
 
@@ -114,10 +129,13 @@ class _MatchSafetyState extends State<_MatchSafety> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final scope = AppScope.of(context);
+    _match = scope.match;
     _controller ??= SafetyController(
-      api: AppScope.of(context).api,
+      api: scope.api,
       matchContextId: widget.match.id,
-    );
+      savedCopies: scope.savedCopies,
+    )..addListener(_confirmOnline);
     _syncVisibility();
   }
 
@@ -140,7 +158,9 @@ class _MatchSafetyState extends State<_MatchSafety> {
   @override
   void dispose() {
     _lifecycle.dispose();
-    _controller?.dispose();
+    _controller
+      ?..removeListener(_confirmOnline)
+      ..dispose();
     super.dispose();
   }
 
@@ -223,7 +243,25 @@ class _Loaded extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (failure != null) ...[
+        if (controller.savedCopyAt case final savedAt?) ...[
+          // DEC-13: from the device, server unreachable. Lightning stays live
+          // only and shows its own state below.
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+            child: NoticeBanner.savedCopy(
+              context,
+              savedAt: savedAt,
+              action: TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: context.stateColors.of(WeatherDataState.stale).foreground,
+                ),
+                onPressed: controller.retryAssessment,
+                child: const Text('Try again'),
+              ),
+            ),
+          ),
+          const SizedBox(height: safetyCardGap),
+        ] else if (failure != null) ...[
           AssessmentFailureBanner(failure: failure!, onRetry: controller.retryAssessment),
           const SizedBox(height: safetyCardGap),
         ],
