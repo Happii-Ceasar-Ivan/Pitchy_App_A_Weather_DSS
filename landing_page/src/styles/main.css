@@ -669,17 +669,13 @@ figcaption,
   }
   .device-sticky img {
     grid-area: 1 / 1;
-    opacity: 0;
-    transform: scale(0.985);
-    transition:
-      opacity 420ms var(--ease-out),
-      transform 520ms var(--ease-out);
+    clip-path: inset(0 0 100% 0 round 31px);
+    transition: clip-path 560ms var(--ease-out);
   }
   .device-sticky img.is-active,
   .device-sticky img:first-child {
-    /* the first screen always sits underneath, so the frame is never empty mid-fade */
-    opacity: 1;
-    transform: none;
+    /* the first screen always sits underneath, so the frame is never empty mid-wipe */
+    clip-path: inset(0 0 0 0 round 31px);
   }
   .device-caption {
     text-align: center;
@@ -725,43 +721,18 @@ figcaption,
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
-  padding: 0 0 0 12px;
-  background: #f3f5f8;
+  height: 40px;
+  padding: 0 144px 0 14px;
   color: #33404f;
   font-size: 0.8125rem;
   border-bottom: 1px solid #e1e6ec;
 }
-.window-ctrls {
-  margin-left: auto;
-  display: flex;
-  height: 100%;
-}
-.window-ctrls i {
-  width: 44px;
-  height: 100%;
-  position: relative;
-}
-.window-ctrls i::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 10px;
-  transform: translate(-50%, -50%);
-  border-top: 1.25px solid #33404f;
-}
-.window-ctrls i:nth-child(2)::before {
-  height: 9px;
-  border: 1.25px solid #33404f;
-}
-.window-ctrls i:nth-child(3)::before {
-  width: 12px;
-  border: 0;
-  height: 12px;
+.window-bar {
+  /* minimise, maximise, close: drawn, not elements */
   background:
-    linear-gradient(45deg, transparent calc(50% - 0.7px), #33404f calc(50% - 0.7px) calc(50% + 0.7px), transparent calc(50% + 0.7px)),
-    linear-gradient(-45deg, transparent calc(50% - 0.7px), #33404f calc(50% - 0.7px) calc(50% + 0.7px), transparent calc(50% + 0.7px));
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='34' fill='none' stroke='%2333404f' stroke-width='1.25'%3E%3Cpath d='M17 17h10'/%3E%3Crect x='61.5' y='12.5' width='9' height='9'/%3E%3Cpath d='M104 11l12 12M116 11l-12 12'/%3E%3C/svg%3E")
+      right center / 132px 34px no-repeat,
+    #f3f5f8;
 }
 @media (min-width: 900px) {
   .windows-inner {
@@ -856,18 +827,13 @@ figcaption,
 
 .install {
   --focus: var(--teal);
-  position: relative;
   padding-block: clamp(80px, 12vw, var(--s10)) clamp(64px, 9vw, 112px);
-  background: var(--ground);
+  /* a strip of mown pitch where the night ends and the paper begins */
+  background:
+    repeating-linear-gradient(90deg, #2a6230 0 clamp(28px, 4vw, 56px), #327038 clamp(28px, 4vw, 56px) clamp(56px, 8vw, 112px))
+      top / 100% 10px no-repeat,
+    var(--ground);
   color: var(--ink);
-}
-/* a strip of mown pitch where the night ends and the paper begins */
-.install::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 10px;
-  background: repeating-linear-gradient(90deg, #2a6230 0 clamp(28px, 4vw, 56px), #327038 clamp(28px, 4vw, 56px) clamp(56px, 8vw, 112px));
 }
 .install .section-lede {
   color: var(--ink-muted);
