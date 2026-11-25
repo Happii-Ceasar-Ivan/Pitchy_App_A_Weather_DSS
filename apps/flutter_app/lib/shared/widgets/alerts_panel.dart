@@ -135,8 +135,8 @@ class _Header extends StatelessWidget {
               child: Text(
                 title,
                 style: text.labelLarge?.copyWith(color: context.palette.inkMuted),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                maxLines: AppTheme.isLargeText(context) ? null : 2,
+                overflow: AppTheme.isLargeText(context) ? null : TextOverflow.ellipsis,
               ),
             ),
           ),
@@ -176,14 +176,49 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final mark = SizedBox.square(
+      dimension: 24,
+      child: leading ?? Icon(icon, size: 24, color: context.palette.ink),
+    );
+    if (AppTheme.isLargeText(context)) {
+      // Large text: headline and detail wrap in full (an alert headline is
+      // never cut), and the trailing action goes under them.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(padding: const EdgeInsets.only(top: 4), child: mark),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: text.titleSmall),
+                      const SizedBox(height: 2),
+                      Text(detail, style: text.bodySmall),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: SizedBox(height: AppTheme.minTarget, child: trailing),
+            ),
+        ],
+      );
+    }
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
       child: Row(
         children: [
-          SizedBox.square(
-            dimension: 24,
-            child: leading ?? Icon(icon, size: 24, color: context.palette.ink),
-          ),
+          mark,
           const SizedBox(width: 12),
           Expanded(
             child: Column(

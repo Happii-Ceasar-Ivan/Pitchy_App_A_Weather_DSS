@@ -5,6 +5,8 @@ import 'package:pitchy/core/routing/app_router.dart';
 import 'package:pitchy/core/storage/saved_copies.dart';
 import 'package:pitchy/features/safety/safety_widgets.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
+import 'package:pitchy/shared/widgets/alerts_panel.dart';
+import 'package:pitchy/shared/widgets/kickoff_strip.dart';
 import 'package:pitchy/shared/widgets/request_states.dart';
 import 'package:pitchy/shared/widgets/source_rail.dart';
 import 'package:pitchy/shared/widgets/weather_value_card.dart';
@@ -92,7 +94,7 @@ void main() {
 
     for (final offline in [false, true]) {
       testWidgets('360 px at 200% text (${offline ? 'saved copy' : 'live'}): '
-          'no state word, value or title is cut', (tester) async {
+          'no state word, value, title, venue, kickoff or alert is cut', (tester) async {
         tester.platformDispatcher.textScaleFactorTestValue = 2;
         addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
         final (api, _) = await pumpPitchyApp(
@@ -107,7 +109,13 @@ void main() {
           await tester.pumpAndSettle();
           expect(banner(), findsOneWidget);
         }
-        for (final area in [find.byType(SourceRail), find.byType(WeatherCardGrid)]) {
+        expect(find.textContaining('SYNTHETIC'), findsWidgets, reason: 'an alert is shown');
+        for (final area in [
+          find.byType(KickoffStrip),
+          find.byType(AlertsPanel),
+          find.byType(SourceRail),
+          find.byType(WeatherCardGrid),
+        ]) {
           final cut = [
             for (final e in find.descendant(of: area, matching: find.byType(RichText)).evaluate())
               if ((e.renderObject! as RenderParagraph).didExceedMaxLines)

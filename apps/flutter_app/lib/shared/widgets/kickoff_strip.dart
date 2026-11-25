@@ -35,19 +35,22 @@ class KickoffStrip extends StatelessWidget {
                 // windows put venue left and kickoff right, as the contract shows.
                 child: LayoutBuilder(
                   builder: (context, c) {
+                    // Large text: venue and kickoff wrap rather than being cut
+                    // (the kickoff time must always be readable in full).
+                    final large = AppTheme.isLargeText(context);
                     final venue = Text(
                       match.venue.name,
                       style: text.bodyMedium?.copyWith(color: p.onShellMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: large ? null : 1,
+                      overflow: large ? null : TextOverflow.ellipsis,
                     );
                     final kickoff = Text(
                       'Kickoff ${formatPhtDateTime(match.kickoffAt)}',
                       style: text.titleMedium?.copyWith(color: p.onShell),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: large ? null : 1,
+                      overflow: large ? null : TextOverflow.ellipsis,
                     );
-                    return c.maxWidth >= wideWidth
+                    return c.maxWidth >= wideWidth && !large
                         ? Row(
                             children: [
                               Expanded(child: venue),
