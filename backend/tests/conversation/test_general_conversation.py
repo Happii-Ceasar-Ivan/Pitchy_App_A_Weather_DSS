@@ -52,6 +52,11 @@ GENERAL_CASES = [
     ("Can we play?", "Below 32 °C it is safe to play [D1].", "SAFETY_CLAIM"),
     ("How long?", "Cooling breaks last 5 minutes [D1].", "UNGROUNDED_NUMBER"),
     (HOT, "The 35 °C you mentioned is above the limit [D1].", "UNGROUNDED_NUMBER"),
+    # numbers in words, as seen in the live answer
+    ("When are breaks?", "Cooling breaks come at the thirtieth and seventy-fifth minutes [D1].",
+     "OK"),
+    ("When are breaks?", "FIFA measures the WBGT ninety minutes before kickoff [D1].",
+     "UNGROUNDED_NUMBER"),
 ]  # fmt: skip
 
 

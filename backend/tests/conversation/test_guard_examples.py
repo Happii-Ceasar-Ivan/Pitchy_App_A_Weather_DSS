@@ -71,6 +71,18 @@ CASES = [
     ("Is lightning at 10 km close?", "You mentioned 10 km. Lightning within about 10 km means "
      "play must stop [A].", "LEVEL_NOT_GIVEN"),
     (HOT, "Your 35 °C means cooling breaks are not required [A].", "LEVEL_DENIED"),
+    # --- numbers written as words are checked like digits (B6, seen live) -------------------
+    (PLAIN, "FIFA uses three-minute cooling breaks after about thirty and seventy-five minutes "
+     "of play [D1].", "OK"),
+    (PLAIN, "The breaks come at the thirtieth and seventy-fifth minutes [D1].", "OK"),
+    (PLAIN, "The WBGT estimate is about thirty-two degrees [A].", "OK"),
+    (PLAIN, "Cooling breaks last five minutes [D1].", "UNGROUNDED_NUMBER"),
+    (PLAIN, "The WBGT is thirty-five degrees, above the limit [A].", "UNGROUNDED_NUMBER"),
+    (PLAIN, "Expect forty degrees Celsius at kickoff [A].", "UNGROUNDED_NUMBER"),
+    (PLAIN, "Rest for ninety minutes before play [D1].", "UNGROUNDED_NUMBER"),
+    (PLAIN, "Lightning is within about ten kilometres [A].", "LEVEL_NOT_GIVEN"),
+    ("Is thirty-five degrees too hot?", "The 35 °C you mentioned is not what Pitchy "
+     "measured; the estimate is 32.5 °C [A].", "OK"),  # the user's number in words
 ]  # fmt: skip
 
 
@@ -78,3 +90,9 @@ CASES = [
 def test_example_replies(question, answer, expected) -> None:
     result = check_answer(reply(answer), ctx(), RULES, question)
     assert result.reason == expected, f"{answer!r} -> {result.reason}"
+
+
+def test_the_answer_shown_keeps_its_own_words() -> None:
+    answer = "FIFA uses three-minute cooling breaks after about thirty minutes [D1]."
+    result = check_answer(reply(answer, ("D1",)), ctx(), RULES, PLAIN)
+    assert result.ok and result.answer == answer

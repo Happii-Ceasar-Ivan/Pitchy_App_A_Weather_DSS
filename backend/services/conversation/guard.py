@@ -26,8 +26,9 @@ reply; the deterministic assessment is always shown by the app.
 import json
 import re
 import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
+from services.conversation.numerals import numerals
 from services.rag.context_builder.builder import AnswerContext
 from services.safety_engine.rules import RuleSet
 
@@ -265,6 +266,9 @@ def check_answer(
         return _reject("EMPTY")
     if len(answer) > MAX_ANSWER_CHARS:
         return _reject("TOO_LONG")
+    # The checks read number words as digits ("thirty minutes" is checked as "30 minutes"); the
+    # user sees the answer as written.
+    shown, answer = answer, numerals(answer)
 
     cited = set(_LABEL.findall(answer)) | {s for s in sources if s}
     if not cited:
@@ -273,7 +277,8 @@ def check_answer(
         return _reject("UNKNOWN_CITATION")
 
     if context.general:
-        return _check_general(answer, cited, context, rules, question)
+        result = _check_general(answer, cited, context, rules, question)
+        return replace(result, answer=shown) if result.ok else result
 
     lowered = _norm(answer)
     for hazard, levels in level_catalogue(rules).items():
@@ -282,7 +287,7 @@ def check_answer(
             same_id = given is not None and level_id == given[0]
             if same_id and _norm(label) == _norm(given[1]):
                 continue  # the engine's own level, in its own words
-            if _norm(label) in lowered or (not same_id and level_id in lowered):
+            if _norm(numerals(label)) in lowered or (not same_id and level_id in lowered):
                 return _reject("LEVEL_NOT_GIVEN")
     for hazard, level_id, pattern in _LEVEL_CLAIMS:
         given = context.classifications.get(hazard)
@@ -295,14 +300,14 @@ def check_answer(
     if any(_unnegated_match(p, answer) for p in _SAFE_CLAIMS):
         return _reject("SAFETY_CLAIM")
 
-    grounded = {_to_float(t) for t in _ANY_NUMBER.findall(context.grounding_text)}
+    grounded = {_to_float(t) for t in _ANY_NUMBER.findall(numerals(context.grounding_text))}
     if not _numbers_ok(answer, grounded, question):
         return _reject("UNGROUNDED_NUMBER")
-    return GuardResult(True, "OK", answer, cited)
+    return GuardResult(True, "OK", shown, cited)
 
 
 def _numbers_ok(answer: str, grounded: set[float], question: str) -> bool:
-    asked = {_to_float(t) for t in _ANY_NUMBER.findall(_canon(question))}
+    asked = {_to_float(t) for t in _ANY_NUMBER.findall(numerals(_canon(question)))}
     for match in _NUMBER_WITH_UNIT.finditer(answer):
         value = _to_float(match.group(1))
         if _allowed(value, grounded):
@@ -341,7 +346,7 @@ def _check_general(
 
     catalogue = level_catalogue(rules)
     ids = [level_id for levels in catalogue.values() for level_id, _ in levels]
-    labels = [_norm(label) for levels in catalogue.values() for _, label in levels]
+    labels = [_norm(numerals(label)) for levels in catalogue.values() for _, label in levels]
     if any(level_id in answer.lower() for level_id in ids):
         return _reject("LEVEL_NOT_GIVEN")  # raw rule ids are never the way to say it
     for sentence in _SENTENCE_END.split(answer):
@@ -356,7 +361,9 @@ def _check_general(
     if any(_unnegated_match(p, answer) for p in _SAFE_CLAIMS):
         return _reject("SAFETY_CLAIM")
 
-    grounded = {_to_float(t) for c in cited_docs for t in _ANY_NUMBER.findall(documents[c])}
+    grounded = {
+        _to_float(t) for c in cited_docs for t in _ANY_NUMBER.findall(numerals(documents[c]))
+    }
     if not _numbers_ok(answer, grounded, question):
         return _reject("UNGROUNDED_NUMBER")
     return GuardResult(True, "OK", answer, cited)
