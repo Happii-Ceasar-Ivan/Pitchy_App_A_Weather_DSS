@@ -47,7 +47,7 @@ enum Generation {
   static String wireOf(Generation g) => g.wire;
 }
 
-/// What every PitChyAT reply has, with or without a match. The chat shows
+/// What every Ask Pitchy reply has, with or without a match. The chat shows
 /// replies only through this, so both kinds read the same way.
 abstract interface class ChatAnswer {
   ConversationRole get role;

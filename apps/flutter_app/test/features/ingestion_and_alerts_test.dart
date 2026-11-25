@@ -358,6 +358,42 @@ void main() {
     });
   });
 
+  group('alert rows wrap on phones (review P1-2, user 2026-11-26)', () {
+    setUpAll(loadAppFonts);
+
+    for (final width in [347.0, 360.0, 390.0]) {
+      testWidgets('${width.toInt()} px at 100% text: headline, level, until and area are whole', (
+        tester,
+      ) async {
+        await pumpPitchyApp(
+          tester,
+          size: Size(width, 1600),
+          prefs: withActiveMatch(),
+          scenario: MockScenario.someStale, // has an official alert
+        );
+        final panel = find.byType(AlertsPanel);
+        expect(
+          find.descendant(
+            of: panel,
+            matching: find.text('SYNTHETIC: Thunderstorm advisory for Metro Manila'),
+          ),
+          findsOneWidget,
+        );
+        final detail = find.descendant(
+          of: panel,
+          matching: find.textContaining(RegExp(r'^Advisory · until .+ PHT · Metro Manila$')),
+        );
+        expect(detail, findsOneWidget);
+        final cut = [
+          for (final e in find.descendant(of: panel, matching: find.byType(RichText)).evaluate())
+            if ((e.renderObject! as RenderParagraph).didExceedMaxLines)
+              (e.widget as RichText).text.toPlainText(),
+        ];
+        expect(cut, isEmpty);
+      });
+    }
+  });
+
   group('skeletons (F2 parts)', () {
     setUpAll(loadAppFonts);
 
@@ -385,8 +421,17 @@ void main() {
         final alerts = tester.getRect(find.byType(AlertsPanel));
         final rail = tester.getRect(find.byType(SourceRail));
         expect(alerts.topLeft, alertsSkeleton.topLeft);
-        expect((alerts.height - alertsSkeleton.height).abs(), lessThan(1.5));
-        expect((rail.top - railSkeleton.top).abs(), lessThan(1.5));
+        if (scenario == MockScenario.someStale) {
+          // An official alert wraps in full on phones (its validity time and
+          // area are never cut; user 2026-11-26), so the panel may grow, but
+          // only downwards; the rail moves down by the same amount.
+          final grew = alerts.height - alertsSkeleton.height;
+          expect(grew, greaterThanOrEqualTo(-1.5));
+          expect((rail.top - railSkeleton.top - grew).abs(), lessThan(1.5));
+        } else {
+          expect((alerts.height - alertsSkeleton.height).abs(), lessThan(1.5));
+          expect((rail.top - railSkeleton.top).abs(), lessThan(1.5));
+        }
         expect((rail.height - railSkeleton.height).abs(), lessThan(1.5));
       });
     }

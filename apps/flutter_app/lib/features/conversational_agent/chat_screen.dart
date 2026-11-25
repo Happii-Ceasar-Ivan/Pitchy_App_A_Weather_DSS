@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/app_scope.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/routing/app_shell.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
@@ -19,7 +20,7 @@ import '../../shared/widgets/skeletons.dart';
 import 'chat_controller.dart';
 import 'chat_reply.dart';
 
-/// PitChyAT (P-14): questions about the active match's conditions and the
+/// Ask Pitchy (P-22, was Ask Pitchy under P-14): questions about the active match's conditions and the
 /// approved guidance, or, without a match, general questions answered from the
 /// approved guidance only (Task A, `POST /conversation`). Replies are the backend's, shown as plain text. The
 /// agent explains; it is never the safety authority.
@@ -53,7 +54,7 @@ class _Frame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: const PitchyTopBar(title: 'PitChyAT'),
+    appBar: const PitchyTopBar(title: 'Ask Pitchy'),
     body: child,
   );
 }
@@ -61,8 +62,13 @@ class _Frame extends StatelessWidget {
 /// Readable measure on wide windows.
 const _maxWidth = 720.0;
 
-double _sidePadding(BuildContext context) =>
-    ((MediaQuery.sizeOf(context).width - _maxWidth) / 2).clamp(16, double.infinity);
+/// Side padding that centres the [_maxWidth] column in the chat's own pane
+/// ([width]: the pane, not the window, so the rail is left out).
+double _sideFor(double width) => ((width - _maxWidth) / 2).clamp(16, double.infinity);
+
+/// Phones (no rail): the notice is one line and the role picker shares the
+/// input's row, so the conversation keeps most of the height (F4 P2).
+bool _isCompact(BuildContext context) => MediaQuery.sizeOf(context).width < AppShell.railBreakpoint;
 
 /// One conversation. [match] null: general questions only; it is replaced by a
 /// fresh match conversation once a match is set up.
@@ -152,7 +158,7 @@ class _ChatState extends State<_Chat> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: const PitchyTopBar(title: 'PitChyAT'),
+    appBar: const PitchyTopBar(title: 'Ask Pitchy'),
     body: ListenableBuilder(
       listenable: _chat,
       builder: (context, _) {
@@ -165,50 +171,80 @@ class _ChatState extends State<_Chat> {
             onStart: () => setState(() => _started = true),
           );
         }
-        return Column(
-          children: [
-            _AgentNotice(match: widget.match),
-            Expanded(
-              child: entries.isEmpty && !_chat.sending
-                  ? _Welcome(
-                      questions: _chat.isGeneral ? generalStarterQuestions : starterQuestions,
-                      onStarter: _useStarter,
-                    )
-                  : ListView(
-                      controller: _scroll,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: _sidePadding(context),
-                        vertical: 16,
-                      ),
-                      children: [
-                        for (final e in entries)
-                          switch (e) {
-                            UserQuestion() => _UserBubble(
-                              key: ValueKey('q${e.id}'),
-                              question: e,
-                              canResend: _chat.canSend,
-                              onResend: () => unawaited(_chat.resend(e)),
-                            ),
-                            BotReply() => _BotBubble(key: ValueKey('r${e.id}'), reply: e.response),
-                          },
-                        if (_chat.sending) const _Thinking(),
-                      ],
-                    ),
-            ),
-            _Composer(chat: _chat, input: _input, focus: _inputFocus, onSend: _send),
-          ],
+        return LayoutBuilder(
+          builder: (context, pane) {
+            final side = _sideFor(pane.maxWidth);
+            final compact = _isCompact(context);
+            return Column(
+              children: [
+                _AgentNotice(
+                  key: const ValueKey('chat-notice'),
+                  match: widget.match,
+                  side: side,
+                  compact: compact,
+                ),
+                Expanded(
+                  child: entries.isEmpty && !_chat.sending
+                      ? _Welcome(
+                          questions: _chat.isGeneral ? generalStarterQuestions : starterQuestions,
+                          onStarter: _useStarter,
+                          side: side,
+                        )
+                      : ListView(
+                          controller: _scroll,
+                          padding: EdgeInsets.symmetric(horizontal: side, vertical: 16),
+                          children: [
+                            for (final e in entries)
+                              switch (e) {
+                                UserQuestion() => _UserBubble(
+                                  key: ValueKey('q${e.id}'),
+                                  question: e,
+                                  canResend: _chat.canSend,
+                                  onResend: () => unawaited(_chat.resend(e)),
+                                ),
+                                BotReply() => _BotBubble(
+                                  key: ValueKey('r${e.id}'),
+                                  reply: e.response,
+                                ),
+                              },
+                            if (_chat.sending) const _Thinking(),
+                          ],
+                        ),
+                ),
+                _Composer(
+                  key: const ValueKey('chat-composer'),
+                  chat: _chat,
+                  input: _input,
+                  focus: _inputFocus,
+                  onSend: _send,
+                  side: side,
+                  compact: compact,
+                ),
+              ],
+            );
+          },
         );
       },
     ),
   );
 }
 
-/// Always visible above the conversation: what PitChyAT is, and what it isn't.
+/// Always visible above the conversation: what Ask Pitchy is, and what it isn't.
 class _AgentNotice extends StatelessWidget {
-  const _AgentNotice({required this.match});
+  const _AgentNotice({
+    super.key,
+    required this.match,
+    required this.side,
+    required this.compact,
+  });
 
   /// Null: general questions, said here with a way to set up a match.
   final MatchContext? match;
+  final double side;
+
+  /// Phones: the short safety line. Every reply still ends with the full
+  /// "follow the assessment and your match officials" line.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +256,7 @@ class _AgentNotice extends StatelessWidget {
         color: palette.surface,
         border: Border(bottom: BorderSide(color: palette.hairline)),
       ),
-      padding: EdgeInsets.symmetric(horizontal: _sidePadding(context), vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: side, vertical: compact ? 8 : 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -231,8 +267,10 @@ class _AgentNotice extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'AI explanations, not official decisions. The Safety tab and your match '
-                  'officials decide.',
+                  compact
+                      ? 'AI explanations, not decisions. Officials decide.'
+                      : 'AI explanations, not official decisions. The Safety tab and your '
+                            'match officials decide.',
                   style: text.bodyMedium,
                 ),
                 const SizedBox(height: 2),
@@ -283,16 +321,17 @@ const generalStarterQuestions = [
 ];
 
 class _Welcome extends StatelessWidget {
-  const _Welcome({required this.questions, required this.onStarter});
+  const _Welcome({required this.questions, required this.onStarter, required this.side});
 
   final List<String> questions;
   final ValueChanged<String> onStarter;
+  final double side;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: _sidePadding(context), vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: side, vertical: 20),
       children: [
         Text('Try asking', style: text.titleSmall),
         const SizedBox(height: 8),
@@ -306,7 +345,7 @@ class _Welcome extends StatelessWidget {
   }
 }
 
-/// What the user sees when they open PitChyAT: who's asking, and which match
+/// What the user sees when they open Ask Pitchy: who's asking, and which match
 /// the questions are about. The match part only appears once a match is set
 /// up; the stadium comes from it. Without a match, Start chatting opens the
 /// general chat and Set up a match stays on offer for current conditions.
@@ -337,7 +376,7 @@ class _EntryScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Welcome to PitChyAT',
+                'Welcome to Ask Pitchy',
                 style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
@@ -352,22 +391,9 @@ class _EntryScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              Text('What role are you?', style: text.titleSmall),
+              ExcludeSemantics(child: Text('What role are you?', style: text.titleSmall)),
               const SizedBox(height: 8),
-              DropdownMenu<ConversationRole>(
-                key: const ValueKey('role-menu'),
-                expandedInsets: EdgeInsets.zero,
-                hintText: 'Select your role',
-                initialSelection: role,
-                requestFocusOnTap: false,
-                onSelected: (r) {
-                  if (r != null) onRole(r);
-                },
-                dropdownMenuEntries: [
-                  for (final r in ConversationRole.values)
-                    DropdownMenuEntry(value: r, label: r.label),
-                ],
-              ),
+              _RoleMenu(role: role, onRole: onRole),
               const SizedBox(height: 6),
               Text(
                 'Only changes how answers are worded. It isn’t an account.',
@@ -419,6 +445,48 @@ class _EntryScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The entry screen's role menu. Its semantics carry the visible label and a
+/// tap that opens the menu: the plain [DropdownMenu] gave TalkBack no name and
+/// no action (found with uiautomator on Android, 2026-11-25).
+class _RoleMenu extends StatefulWidget {
+  const _RoleMenu({required this.role, required this.onRole});
+
+  final ConversationRole? role;
+  final ValueChanged<ConversationRole> onRole;
+
+  @override
+  State<_RoleMenu> createState() => _RoleMenuState();
+}
+
+class _RoleMenuState extends State<_RoleMenu> {
+  final _menu = MenuController();
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    button: true,
+    label: 'What role are you?',
+    value: widget.role?.label ?? 'None selected',
+    hint: 'Only changes how answers are worded',
+    onTap: () => _menu.isOpen ? _menu.close() : _menu.open(),
+    excludeSemantics: true,
+    child: DropdownMenu<ConversationRole>(
+      key: const ValueKey('role-menu'),
+      menuController: _menu,
+      expandedInsets: EdgeInsets.zero,
+      hintText: 'Select your role',
+      initialSelection: widget.role,
+      requestFocusOnTap: false,
+      onSelected: (r) {
+        if (r != null) widget.onRole(r);
+      },
+      dropdownMenuEntries: [
+        for (final r in ConversationRole.values) DropdownMenuEntry(value: r, label: r.label),
+      ],
+    ),
+  );
 }
 
 class _StartButton extends StatelessWidget {
@@ -549,7 +617,7 @@ class _UserBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final text = Theme.of(context).textTheme;
-    final errorColor = context.safetyColors.requestError;
+    final errorColor = context.safetyColors.requestErrorInk;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 48),
       child: Column(
@@ -682,7 +750,7 @@ class _BotBubble extends StatelessWidget {
       child: Semantics(
         container: true,
         liveRegion: true,
-        label: 'PitChyAT reply',
+        label: 'Ask Pitchy reply',
         child: _ReplyCard(
           children: [
             Row(
@@ -719,7 +787,12 @@ class _BotBubble extends StatelessWidget {
             if (view.limitations.isNotEmpty) ...[
               const SizedBox(height: 10),
               for (final l in view.limitations)
-                _ReplyLine(icon: Icons.warning_amber, text: l.message, color: palette.ink),
+                _ReplyLine(
+                  icon: Icons.warning_amber,
+                  text: l.message,
+                  color: palette.ink,
+                  style: text.bodyMedium,
+                ),
             ],
             if (view.references.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -732,6 +805,7 @@ class _BotBubble extends StatelessWidget {
                     '${g.title} (${g.authority}, ${g.version})',
                     if (g.sections.isNotEmpty) g.sections.join('; '),
                   ].join(' · '),
+                  style: text.bodyMedium?.copyWith(color: palette.inkMuted),
                 ),
             ],
             const SizedBox(height: 10),
@@ -806,12 +880,12 @@ class _ThinkingState extends State<_Thinking> {
       child: _ReplyCard(
         children: [
           Text(
-            'PitChyAT is answering…',
+            'Pitchy is answering…',
             style: text.labelMedium?.copyWith(color: palette.inkMuted),
           ),
           const SizedBox(height: 8),
           SkeletonPulse(
-            label: 'PitChyAT is answering',
+            label: 'Pitchy is answering',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -839,16 +913,24 @@ class _ThinkingState extends State<_Thinking> {
 
 class _Composer extends StatelessWidget {
   const _Composer({
+    super.key,
     required this.chat,
     required this.input,
     required this.focus,
     required this.onSend,
+    required this.side,
+    required this.compact,
   });
 
   final ChatController chat;
   final TextEditingController input;
   final FocusNode focus;
   final VoidCallback onSend;
+  final double side;
+
+  /// Phones: the role picker is a button on the input's row, and the hint
+  /// names the role, so the role stays in view without a row of its own.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -862,7 +944,6 @@ class _Composer extends StatelessWidget {
         : chat.isGeneral
         ? 'Ask a general question'
         : 'Ask about this match';
-    final side = _sidePadding(context);
     return Material(
       color: palette.surface,
       child: SafeArea(
@@ -871,14 +952,14 @@ class _Composer extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(top: BorderSide(color: palette.hairline)),
           ),
-          padding: EdgeInsets.fromLTRB(side, 4, side, 8),
+          padding: EdgeInsets.fromLTRB(side, compact ? 8 : 4, side, 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // The held question says when to try again; the input hint
               // repeats only the time, so the wait isn't announced twice.
-              _RolePicker(role: role, onRole: chat.setRole),
+              if (!compact) _RolePicker(role: role, onRole: chat.setRole),
               ValueListenableBuilder(
                 valueListenable: input,
                 builder: (context, value, _) {
@@ -887,6 +968,10 @@ class _Composer extends StatelessWidget {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      if (compact) ...[
+                        _RolePicker(role: role, onRole: chat.setRole, compact: true),
+                        const SizedBox(width: 4),
+                      ],
                       Expanded(
                         child: CallbackShortcuts(
                           // Enter sends on Windows; Shift+Enter adds a line.
@@ -944,33 +1029,76 @@ class _Composer extends StatelessWidget {
 }
 
 class _RolePicker extends StatelessWidget {
-  const _RolePicker({required this.role, required this.onRole});
+  const _RolePicker({required this.role, required this.onRole, this.compact = false});
 
   final ConversationRole? role;
   final ValueChanged<ConversationRole> onRole;
 
+  /// Phones: a 48 px chip on the input's row with a short role name and a
+  /// caret, so it is seen as a menu (review P1-1); the tooltip and spoken
+  /// label give the full name.
+  final bool compact;
+
+  /// Short names for the phone chip; the menu and spoken label use the full
+  /// [ConversationRole.label].
+  static String shortName(ConversationRole r) => switch (r) {
+    ConversationRole.matchOfficial => 'Official',
+    ConversationRole.medicalStaff => 'Medical',
+    _ => r.label,
+  };
+
+  List<PopupMenuEntry<ConversationRole>> _items(BuildContext context) => [
+    for (final r in ConversationRole.values) PopupMenuItem(value: r, child: Text(r.label)),
+  ];
+
   @override
-  Widget build(BuildContext context) => PopupMenuButton<ConversationRole>(
-    tooltip: 'Change who’s asking',
-    initialValue: role,
-    onSelected: onRole,
-    itemBuilder: (context) => [
-      for (final r in ConversationRole.values) PopupMenuItem(value: r, child: Text(r.label)),
-    ],
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.badge_outlined, size: 18, color: context.palette.inkMuted),
-          const SizedBox(width: 6),
-          Text(
-            role == null ? 'Who’s asking?' : 'Asking as ${role!.label}',
-            style: Theme.of(context).textTheme.labelLarge,
+  Widget build(BuildContext context) => compact
+      ? PopupMenuButton<ConversationRole>(
+          tooltip: role == null
+              ? 'Choose who’s asking'
+              : 'Asking as ${role!.label}. Change who’s asking',
+          initialValue: role,
+          onSelected: onRole,
+          itemBuilder: _items,
+          constraints: const BoxConstraints(minWidth: 200),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
+            padding: const EdgeInsetsDirectional.only(start: 12, end: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: context.palette.hairline),
+              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  role == null ? 'Role' : shortName(role!),
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const Icon(Icons.arrow_drop_down),
+              ],
+            ),
           ),
-          const Icon(Icons.arrow_drop_down),
-        ],
-      ),
-    ),
-  );
+        )
+      : PopupMenuButton<ConversationRole>(
+          tooltip: 'Change who’s asking',
+          initialValue: role,
+          onSelected: onRole,
+          itemBuilder: _items,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.badge_outlined, size: 18, color: context.palette.inkMuted),
+                const SizedBox(width: 6),
+                Text(
+                  role == null ? 'Who’s asking?' : 'Asking as ${role!.label}',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const Icon(Icons.arrow_drop_down),
+              ],
+            ),
+          ),
+        );
 }

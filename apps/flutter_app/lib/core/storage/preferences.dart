@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Small on-device preferences: theme choice, the active match, the match
-/// setup draft and the PitChyAT role. Never secrets (the chat session token
+/// setup draft and the Ask Pitchy role. Never secrets (the chat session token
 /// lives in memory only, F4) and never weather data (that is the DEC-13 saved
 /// copy, F5).
 abstract interface class Preferences {
@@ -19,7 +19,7 @@ abstract final class PrefKeys {
   static const activeMatchId = 'match.activeId';
   static const matchDraft = 'match.draft';
 
-  /// The PitChyAT role (P-03). A conversational context, not an account.
+  /// The Ask Pitchy role (P-03). A conversational context, not an account.
   static const chatRole = 'chat.role';
 }
 

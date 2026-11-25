@@ -21,7 +21,10 @@ class SafetyController extends ChangeNotifier {
     required this.matchContextId,
     this.refreshEvery = defaultRefresh,
     this.savedCopies,
-  });
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
+
+  final DateTime Function() _clock;
 
   /// How often the tab refreshes while it is visible and the match is in the
   /// live lightning window (team decision 2026-11-24). The backend calls the
@@ -44,6 +47,19 @@ class SafetyController extends ChangeNotifier {
   Loadable<VenueLightning> get lightning => _lightning;
 
   bool _refreshing = false;
+
+  /// How many loads in a row fell back to the saved copy, and when the last
+  /// one ended (F5 P2-2): the banner says "still" after a failed Try again,
+  /// so a second failure is seen and heard. Reset when the server answers.
+  int get savedCopyTries => _savedCopyTries;
+  int _savedCopyTries = 0;
+  DateTime? get lastTriedAt => _lastTriedAt;
+  DateTime? _lastTriedAt;
+
+  void _countTry(bool fellBack) {
+    _savedCopyTries = fellBack ? _savedCopyTries + 1 : 0;
+    _lastTriedAt = fellBack ? _clock().toUtc() : null;
+  }
 
   /// True while a refresh runs over data already on screen (no skeleton then).
   bool get refreshing => _refreshing;
@@ -109,6 +125,7 @@ class SafetyController extends ChangeNotifier {
       final a = await api.getAssessment(matchContextId);
       _previous = a;
       _assessment = Loaded(a);
+      _countTry(false);
     } on ApiFailure catch (e) {
       _assessment = Failed(
         e,
@@ -116,6 +133,7 @@ class SafetyController extends ChangeNotifier {
             ? savedCopies?.read(matchContextId, SavedKind.assessment, SafetyAssessment.fromJson)
             : null,
       );
+      _countTry(savedCopyAt != null);
     }
   }
 

@@ -295,12 +295,12 @@ class _Section extends StatelessWidget {
               liveRegion: true,
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, size: 18, color: context.safetyColors.requestError),
+                  Icon(Icons.error_outline, size: 18, color: context.safetyColors.requestErrorInk),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       error!,
-                      style: text.bodyMedium?.copyWith(color: context.safetyColors.requestError),
+                      style: text.bodyMedium?.copyWith(color: context.safetyColors.requestErrorInk),
                     ),
                   ),
                 ],
@@ -381,7 +381,7 @@ class _InlineFailure extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: context.safetyColors.requestError),
+            Icon(Icons.error_outline, color: context.safetyColors.requestErrorInk),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

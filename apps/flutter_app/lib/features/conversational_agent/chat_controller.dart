@@ -58,7 +58,7 @@ class BotReply extends ChatEntry {
   final ChatAnswer response;
 }
 
-/// One conversation with PitChyAT: about one match, or general questions
+/// One conversation with Ask Pitchy: about one match, or general questions
 /// when [matchContextId] is null (`POST /conversation`, Task A). History is
 /// kept in memory only (team decision 2026-11-25) and is gone when the match
 /// changes or the app closes. The role is a remembered preference; it only changes wording on

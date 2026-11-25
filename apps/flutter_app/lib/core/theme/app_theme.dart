@@ -26,14 +26,15 @@ abstract final class AppTheme {
 
   static ThemeData build(PitchyPalette p) {
     final isDark = p.brightness == Brightness.dark;
+    final safety = isDark ? SafetyColors.fixedDark : SafetyColors.fixed;
     final scheme = ColorScheme(
       brightness: p.brightness,
       primary: p.accent,
       onPrimary: p.onAccent,
       secondary: p.shell,
       onSecondary: p.onShell,
-      error: SafetyColors.fixed.requestError,
-      onError: SafetyColors.fixed.onRequestError,
+      error: safety.requestErrorInk,
+      onError: safety.onRequestErrorInk,
       surface: p.surface,
       onSurface: p.ink,
       onSurfaceVariant: p.inkMuted,
@@ -51,7 +52,7 @@ abstract final class AppTheme {
       colorScheme: scheme,
       fontFamily: fontFamily,
       scaffoldBackgroundColor: p.ground,
-      extensions: [p, isDark ? StateColors.dark : StateColors.light, SafetyColors.fixed],
+      extensions: [p, isDark ? StateColors.dark : StateColors.light, safety],
     );
 
     // Tabular figures everywhere so values line up and don't jitter on update.

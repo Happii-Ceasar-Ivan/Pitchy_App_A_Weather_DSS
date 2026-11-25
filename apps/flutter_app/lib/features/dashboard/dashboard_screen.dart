@@ -109,6 +109,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
       api: scope.api,
       matchContextId: widget.match.id,
       savedCopies: scope.savedCopies,
+      clock: () => scope.match.now,
     )..addListener(_watchRunningJobs);
     _ingest = IngestionController(
       api: scope.api,
@@ -192,6 +193,8 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                   Failed(saved: SavedCopy(:final value, :final savedAt)) => [
                     _SavedCopyBanner(
                       savedAt: savedAt,
+                      tries: _controller.savedCopyTries,
+                      lastTriedAt: _controller.lastTriedAt,
                       onRetry: _controller.refreshing ? null : _controller.load,
                     ),
                     const SizedBox(height: 12),
@@ -279,9 +282,16 @@ class _MatchDashboardState extends State<_MatchDashboard> {
 
 /// The DEC-13 banner in the board's measure, with "Try again".
 class _SavedCopyBanner extends StatelessWidget {
-  const _SavedCopyBanner({required this.savedAt, required this.onRetry});
+  const _SavedCopyBanner({
+    required this.savedAt,
+    required this.tries,
+    required this.lastTriedAt,
+    required this.onRetry,
+  });
 
   final DateTime savedAt;
+  final int tries;
+  final DateTime? lastTriedAt;
   final VoidCallback? onRetry;
 
   @override
@@ -292,6 +302,8 @@ class _SavedCopyBanner extends StatelessWidget {
       child: NoticeBanner.savedCopy(
         context,
         savedAt: savedAt,
+        tries: tries,
+        lastTriedAt: lastTriedAt,
         action: TextButton(
           style: TextButton.styleFrom(foregroundColor: fg),
           onPressed: onRetry,

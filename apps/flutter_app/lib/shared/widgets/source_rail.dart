@@ -195,7 +195,7 @@ class SourceSummaryRow extends StatelessWidget {
             for (final s in sources)
               Semantics(
                 container: true,
-                label: '${s.sourceName}: ${stateWord(context, s.state)}',
+                label: '${s.sourceName}: ${spokenStateWord(context, s.state)}',
                 excludeSemantics: true,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -237,7 +237,7 @@ class SourceSummaryRow extends StatelessWidget {
             Expanded(
               child: Semantics(
                 container: true,
-                label: '${sources[i].sourceName}: ${stateWord(context, sources[i].state)}',
+                label: '${sources[i].sourceName}: ${spokenStateWord(context, sources[i].state)}',
                 excludeSemantics: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +347,7 @@ class _SourceLine extends StatelessWidget {
     return Semantics(
       container: true,
       label:
-          '${source.sourceName}: ${stateWord(context, source.state)}. ${_detail()}'
+          '${source.sourceName}: ${spokenStateWord(context, source.state)}. ${_detail()}'
           '${p != null && !source.coversMatchTime ? '. Doesn’t cover the whole match.' : ''}',
       excludeSemantics: true,
       child: IntrinsicHeight(

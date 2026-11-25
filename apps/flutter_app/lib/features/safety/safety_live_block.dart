@@ -114,7 +114,11 @@ class _Failure extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Icon(Icons.error_outline, size: 18, color: context.safetyColors.requestError),
+              child: Icon(
+                Icons.error_outline,
+                size: 18,
+                color: context.safetyColors.requestErrorInk,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(

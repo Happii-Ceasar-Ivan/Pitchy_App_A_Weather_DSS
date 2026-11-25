@@ -135,6 +135,7 @@ class _MatchSafetyState extends State<_MatchSafety> {
       api: scope.api,
       matchContextId: widget.match.id,
       savedCopies: scope.savedCopies,
+      clock: () => scope.match.now,
     )..addListener(_confirmOnline);
     _syncVisibility();
   }
@@ -251,6 +252,8 @@ class _Loaded extends StatelessWidget {
             child: NoticeBanner.savedCopy(
               context,
               savedAt: savedAt,
+              tries: controller.savedCopyTries,
+              lastTriedAt: controller.lastTriedAt,
               action: TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: context.stateColors.of(WeatherDataState.stale).foreground,

@@ -112,7 +112,7 @@ void main() {
           .widgetList<NavigationDestination>(find.byType(NavigationDestination))
           .map((d) => d.label)
           .toList();
-      expect(labels, ['Dashboard', 'Safety', 'PitChyAT']);
+      expect(labels, ['Dashboard', 'Safety', 'Ask Pitchy']);
       await tester.tap(_tab('Safety'));
       await tester.pumpAndSettle();
       expect(
@@ -460,7 +460,7 @@ void main() {
     ) async {
       final api = _CountingApi(safety: SafetyScenario.lightningNear);
       await _pump(tester, api: api, size: const Size(390, 844));
-      await tester.tap(_tab('PitChyAT'));
+      await tester.tap(_tab('Ask Pitchy'));
       await tester.pumpAndSettle();
       final before = api.lightningCalls;
       await tester.pump(const Duration(seconds: 130));

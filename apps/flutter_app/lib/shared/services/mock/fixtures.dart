@@ -912,7 +912,7 @@ Json lightningJson({
 /// `POST /sessions` (live since B6).
 Json sessionJson({required DateTime now}) => {'token': 'mock-session-token', 'created_at': _t(now)};
 
-/// What the mock PitChyAT does with a question (F4). Replies are synthetic
+/// What the mock Ask Pitchy does with a question (F4). Replies are synthetic
 /// demo text, never real guidance.
 enum ChatScenario {
   /// A generated answer with references (one document cited twice) and the

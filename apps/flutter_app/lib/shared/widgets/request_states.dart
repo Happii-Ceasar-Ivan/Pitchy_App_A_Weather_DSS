@@ -130,7 +130,7 @@ class ErrorState extends StatelessWidget {
               : waiting
               ? Icons.hourglass_top
               : Icons.error_outline,
-          iconColor: notYet ? context.palette.inkMuted : context.safetyColors.requestError,
+          iconColor: notYet ? context.palette.inkMuted : context.safetyColors.requestErrorInk,
           title: limited && !waiting && retryAt != null ? 'You can try again now' : message.title,
           detail: !limited
               ? message.detail
@@ -203,16 +203,24 @@ class NoticeBanner extends StatelessWidget {
   }
 
   /// "Saved copy from 3:05 PM PHT, not live" (DEC-13). Uses the Stale colours.
+  /// After a failed Try again ([tries] 2 or more) the reason says "still" with
+  /// the try number and time, so the live region speaks again (F5 P2-2).
   factory NoticeBanner.savedCopy(
     BuildContext context, {
     required DateTime savedAt,
+    int tries = 1,
+    DateTime? lastTriedAt,
     Widget? action,
   }) {
     final s = context.stateColors.of(WeatherDataState.stale);
     return NoticeBanner(
       icon: Icons.cloud_off,
       message: 'Saved copy from ${formatPhtTime(savedAt)}, not live.',
-      detail: 'Pitchy can’t reach its server.',
+      detail: tries < 2
+          ? 'Pitchy can’t reach its server.'
+          : lastTriedAt == null
+          ? 'Still can’t reach its server (try $tries).'
+          : 'Still can’t reach its server (try $tries, ${formatPhtTime(lastTriedAt)}).',
       foreground: s.foreground,
       background: s.background,
       action: action,

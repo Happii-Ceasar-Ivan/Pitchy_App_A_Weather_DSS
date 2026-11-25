@@ -122,7 +122,7 @@ class IngestNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final errorColor = context.safetyColors.requestError;
+    final errorColor = context.safetyColors.requestErrorInk;
     final (
       IconData icon,
       Color iconColor,

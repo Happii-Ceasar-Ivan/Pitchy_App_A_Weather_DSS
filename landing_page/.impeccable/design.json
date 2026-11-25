@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-26T00:00:00Z",
+  "title": "Design System: Pitchy Landing Page",
+  "extensions": {
+    "colorMeta": {
+      "teal": {
+        "role": "primary",
+        "displayName": "Logo Teal",
+        "canonical": "#0e6b52",
+        "tonalRamp": [
+          "#04211a",
+          "#073528",
+          "#0a4a39",
+          "#0e6b52",
+          "#2f8d73",
+          "#52c7b4",
+          "#a6e3d8",
+          "#e1f3ec"
+        ]
+      },
+      "teal-bright": {
+        "role": "primary",
+        "displayName": "Bright Teal",
+        "canonical": "#52c7b4",
+        "tonalRamp": [
+          "#0e6b52",
+          "#1f8a72",
+          "#34a893",
+          "#52c7b4",
+          "#7fd6c8",
+          "#a6e3d8",
+          "#d0f0ea",
+          "#ecf9f6"
+        ]
+      },
+      "flood": {
+        "role": "secondary",
+        "displayName": "Floodlight Warm White",
+        "canonical": "#fff4d6",
+        "tonalRamp": [
+          "#4d4328",
+          "#7d6f42",
+          "#b3a26a",
+          "#d9c78f",
+          "#f0e0ae",
+          "#fff4d6",
+          "#fff8e6",
+          "#fffcf3"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "#07111f",
+        "tonalRamp": [
+          "#030811",
+          "#07111f",
+          "#0b1626",
+          "#0f2540",
+          "#16304f",
+          "#2b3e58",
+          "#4a5d77",
+          "#b4c2d3"
+        ]
+      },
+      "navy": {
+        "role": "neutral",
+        "displayName": "Match Navy / Ink",
+        "canonical": "#0f2540",
+        "tonalRamp": [
+          "#07111f",
+          "#0b1a2f",
+          "#0f2540",
+          "#16304f",
+          "#2b3e58",
+          "#45556b",
+          "#9aa8b8",
+          "#d3dae3"
+        ]
+      },
+      "pitch": {
+        "role": "neutral",
+        "displayName": "Mown Pitch",
+        "canonical": "#0e3b2e",
+        "tonalRamp": [
+          "#05140f",
+          "#09261e",
+          "#0e3b2e",
+          "#114634",
+          "#1a6048",
+          "#2a6230",
+          "#327038",
+          "#7fae6a"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Programme Paper",
+        "canonical": "#f5f7fa",
+        "tonalRamp": [
+          "#45556b",
+          "#9aa8b8",
+          "#d3dae3",
+          "#e6ecf4",
+          "#eef2f7",
+          "#f5f7fa",
+          "#fafbfd",
+          "#ffffff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Wordmark",
+        "purpose": "Hero wordmark only, flood white."
+      },
+      "headline": {
+        "displayName": "Section Title",
+        "purpose": "Section headings, max 16ch."
+      },
+      "title": {
+        "displayName": "Story and Panel Title",
+        "purpose": "Story steps, hero tagline, panel and step headings."
+      },
+      "body": {
+        "displayName": "Reading Text",
+        "purpose": "All running text; 34 to 44rem measure."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Chips, dock labels, captions, nav links, fact terms."
+      }
+    },
+    "shadows": [
+      {
+        "name": "paper-low",
+        "value": "0 1px 2px rgba(7,17,31,0.08), 0 2px 8px rgba(7,17,31,0.06)",
+        "purpose": "Platform picks, sheet download panel."
+      },
+      {
+        "name": "paper-high",
+        "value": "0 2px 4px rgba(7,17,31,0.05), 0 18px 44px rgba(7,17,31,0.12)",
+        "purpose": "Download panel, selected platform pick."
+      },
+      {
+        "name": "dark-device",
+        "value": "0 2px 6px rgba(0,0,0,0.3), 0 30px 70px rgba(0,0,0,0.45)",
+        "purpose": "Phone and window frames on dark."
+      },
+      {
+        "name": "dock",
+        "value": "0 10px 30px rgba(0,0,0,0.35)",
+        "purpose": "Scoreboard dock floating over the pitch."
+      },
+      {
+        "name": "sheet",
+        "value": "0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)",
+        "purpose": "Install dialog."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The only easing; all state and surface transitions."
+      },
+      {
+        "name": "t-fast",
+        "value": "140ms",
+        "purpose": "Hover, press, colour changes."
+      },
+      {
+        "name": "t-mid",
+        "value": "260ms",
+        "purpose": "Header solidify, chevrons, shadows."
+      },
+      {
+        "name": "sheet-in",
+        "value": "460ms",
+        "purpose": "Dialog entry (480ms bottom sheet on phones)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-narrow",
+        "value": "480px"
+      },
+      {
+        "name": "phone",
+        "value": "600px"
+      },
+      {
+        "name": "story-nav",
+        "value": "900px"
+      },
+      {
+        "name": "hero-install",
+        "value": "960px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Get Pitchy and every action: the one teal pill.",
+      "html": "<button class=\"ds-btn-primary\">Get Pitchy</button>",
+      "css": ".ds-btn-primary{min-height:48px;padding:0 22px;border:1.5px solid transparent;border-radius:999px;background:#0e6b52;color:#fff;font:700 1rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif;box-shadow:0 1px 0 rgba(255,255,255,.14) inset,0 4px 14px rgba(0,0,0,.3);cursor:pointer;transition:background-color 140ms cubic-bezier(.16,1,.3,1),transform 140ms cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#0b5a45}.ds-btn-primary:active{transform:translateY(1px) scale(.985)}.ds-btn-primary:focus-visible{outline:3px solid #52c7b4;outline-offset:3px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary link on dark, beside Get Pitchy.",
+      "html": "<button class=\"ds-btn-ghost\">See how it works</button>",
+      "css": ".ds-btn-ghost{min-height:48px;padding:0 22px;border:1.5px solid rgba(242,245,249,.38);border-radius:999px;background:#07111f;color:#f2f5f9;font:700 1rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif;cursor:pointer;transition:border-color 140ms,background-color 140ms}.ds-btn-ghost:hover{border-color:#f2f5f9;background:#101a29}.ds-btn-ghost:focus-visible{outline:3px solid #52c7b4;outline-offset:3px}"
+    },
+    {
+      "name": "Disabled Download Button",
+      "kind": "button",
+      "refersTo": "button-download-disabled",
+      "description": "Download action before a release exists: visibly inert, never starts a download.",
+      "html": "<button class=\"ds-btn-download\" aria-disabled=\"true\">Download coming soon</button>",
+      "css": ".ds-btn-download{width:100%;min-height:58px;border:1.5px solid #cfd7e1;border-radius:999px;background:#e4e9ef;color:#33404f;font:700 1.0625rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif;cursor:not-allowed}"
+    },
+    {
+      "name": "Scoreboard Dock",
+      "kind": "custom",
+      "refersTo": "scoreboard-dock",
+      "description": "Floating dark bar under the ball: goals, weather choice, sound.",
+      "html": "<div class=\"ds-dock\"><span class=\"ds-dock-label\">Goals</span><span class=\"ds-dock-num\">2</span><button class=\"ds-dock-btn is-on\" aria-label=\"Clear\">C</button><button class=\"ds-dock-btn\" aria-label=\"Wind\">W</button><button class=\"ds-dock-btn\" aria-label=\"Rain\">R</button></div>",
+      "css": ".ds-dock{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:16px;background:rgba(7,17,31,.9);border:1px solid #2b3e58;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#b4c2d3;font:700 .8125rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif}.ds-dock-num{font:800 1.75rem/1 'Big Shoulders Display','Arial Narrow',sans-serif;color:#fff4d6;min-width:1.2ch;text-align:center}.ds-dock-btn{width:44px;height:44px;border:0;border-radius:11px;background:transparent;color:#b4c2d3;cursor:pointer}.ds-dock-btn:hover{background:rgba(242,245,249,.07);color:#f2f5f9}.ds-dock-btn.is-on{background:rgba(255,244,214,.14);color:#fff4d6}.ds-dock-btn:focus-visible{outline:3px solid #52c7b4;outline-offset:1px}"
+    },
+    {
+      "name": "Platform Pick",
+      "kind": "card",
+      "refersTo": "platform-pick",
+      "description": "Android or Windows choice card on paper.",
+      "html": "<label class=\"ds-pick\"><span class=\"ds-pick-icon\">A</span><span><span class=\"ds-pick-name\">Android</span><span class=\"ds-pick-meta\">Phone and tablet</span></span></label>",
+      "css": ".ds-pick{position:relative;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:14px;min-height:84px;padding:14px 44px 14px 16px;border-radius:18px;background:#fff;border:1.5px solid #d3dae3;box-shadow:0 1px 2px rgba(7,17,31,.08),0 2px 8px rgba(7,17,31,.06);cursor:pointer;color:#0f2540;transition:border-color 140ms cubic-bezier(.16,1,.3,1)}.ds-pick:hover{border-color:#aab6c5}.ds-pick-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#e3f2ea;color:#157a4a;font-weight:800}.ds-pick-name{display:block;font:800 1.625rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-pick-meta{display:block;font:400 .875rem/1.35 'Atkinson Hyperlegible Next',system-ui,sans-serif;color:#45556b}"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "Coming-soon and live markers on the download panel.",
+      "html": "<span class=\"ds-chip\">Coming soon</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 12px;border-radius:999px;background:#e6ecf4;color:#16304f;font:700 .8125rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif}"
+    },
+    {
+      "name": "Download Panel",
+      "kind": "card",
+      "refersTo": "download-panel",
+      "description": "White programme-board panel with a hairline fact list.",
+      "html": "<section class=\"ds-dl\"><h3 class=\"ds-dl-title\">Android</h3><dl class=\"ds-facts\"><div><dt>Version</dt><dd>Listed at release</dd></div></dl></section>",
+      "css": ".ds-dl{padding:32px;border-radius:28px;background:#fff;border:1px solid #d3dae3;box-shadow:0 2px 4px rgba(7,17,31,.05),0 18px 44px rgba(7,17,31,.12);color:#0f2540}.ds-dl-title{margin:0;font:800 2.375rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-facts{margin:24px 0 0;border-top:1px solid #d3dae3}.ds-facts div{display:grid;grid-template-columns:9.5rem 1fr;gap:16px;padding:12px 0;border-bottom:1px solid #d3dae3}.ds-facts dt{font:700 .875rem/1.4 'Atkinson Hyperlegible Next',system-ui,sans-serif;color:#45556b}.ds-facts dd{margin:0;font:400 1rem/1.4 'Atkinson Hyperlegible Next',system-ui,sans-serif}"
+    },
+    {
+      "name": "Install Step",
+      "kind": "custom",
+      "refersTo": "steps",
+      "description": "Numbered step joined to the next by a hairline rail.",
+      "html": "<ol class=\"ds-steps\"><li class=\"ds-step\"><span class=\"ds-step-num\">1</span><div><p class=\"ds-step-title\">Download the file</p><p class=\"ds-step-detail\">Details appear with the first release.</p></div></li><li class=\"ds-step\"><span class=\"ds-step-num\">2</span><div><p class=\"ds-step-title\">Open it</p></div></li></ol>",
+      "css": ".ds-steps{list-style:none;margin:0;padding:0;color:#0f2540}.ds-step{position:relative;display:grid;grid-template-columns:36px 1fr;gap:16px;padding-bottom:24px}.ds-step:not(:last-child)::before{content:'';position:absolute;left:17px;top:40px;bottom:4px;width:2px;border-radius:2px;background:#d3dae3}.ds-step-num{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#0f2540;color:#fff;font:800 1.25rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-step-title{margin:0;padding-top:5px;font:700 1.0625rem/1.4 'Atkinson Hyperlegible Next',system-ui,sans-serif}.ds-step-detail{margin:4px 0 0;color:#45556b}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Under the Floodlights",
+    "overview": "The page is a night match. The hero is a canvas stadium the visitor lights up by scoring; the floodlights coming on is Pitchy's job made literal. Below the hero the page stays in night navy and mown-pitch green, then turns to match-programme paper (white panels, hairlines, ink numerals) where the visitor installs. Dark means \"look\", paper means \"do\".",
+    "keyCharacteristics": [
+      "Night navy grounds, pitch-green stripe bands, warm flood white for light only.",
+      "One action colour (teal, pill-shaped) on dark and on paper.",
+      "Condensed display type at weight 800 over a hyperlegible body, tabular numerals page-wide.",
+      "Dark sections flat and bordered; paper sections lifted with soft shadow.",
+      "Pitch-stripe strips mark the move from night to paper (full-width section band) and cap the sheet; never a rail on a rounded card.",
+      "44px minimum targets, 3px focus ring, reduced-motion honoured."
+    ],
+    "rules": [
+      {
+        "name": "The Light-Only Rule",
+        "body": "Flood white marks something lit or current. It is never a background, border or decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Action Rule",
+        "body": "Teal is the only button fill. Platform green and blue identify a platform and never act as buttons.",
+        "section": "colors"
+      },
+      {
+        "name": "The Paper Switch Rule",
+        "body": "Install, sheet and FAQ sit on paper with ink text; the focus ring changes to teal there. Night and paper do not mix inside one panel.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Numerals are tabular page-wide; scores, steps and times never shift width.",
+        "section": "typography"
+      },
+      {
+        "name": "The Condensed-Heads Rule",
+        "body": "Display face for headings and numerals only; never for running text or buttons.",
+        "section": "typography"
+      },
+      {
+        "name": "The Night Is Flat Rule",
+        "body": "On night grounds, structure comes from hairlines and tone steps, not shadows; shadows are for objects that float above the scene.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep teal (#0e6b52) as the only action fill and flood white (#fff4d6) for light only.",
+      "Do use the display face for headings and numerals and the body face for everything read.",
+      "Do switch to paper (#f5f7fa, white panels, hairlines, ink text) for install, sheet and FAQ, and swap the focus ring to teal there.",
+      "Do keep every target at least 44px and keep the 3px focus ring.",
+      "Do show real app screenshots with sample data in frames; keep downloads visibly \"coming soon\" until a real release exists.",
+      "Do keep the pitch-stripe strip as the night-to-paper marker."
+    ],
+    "donts": [
+      "Don't use a gradient-backed hero mockup plus a feature-card grid; the hero is the playable pitch.",
+      "Don't use safety colours (red, amber, green status) as decoration.",
+      "Don't invent testimonials, partners, versions, sizes or URLs.",
+      "Don't use flood white as a surface or border, or teal on a non-action.",
+      "Don't put shadows on dark section surfaces other than floating objects."
+    ]
+  }
+}

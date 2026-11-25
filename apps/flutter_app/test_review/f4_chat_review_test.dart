@@ -1,4 +1,4 @@
-// Review captures for the F4 PitChyAT chat (not part of the normal test run).
+// Review captures for the F4 Ask Pitchy chat (not part of the normal test run).
 //   flutter test test_review --plain-name f4 --update-goldens
 // Output: .impeccable/review/ (git-ignored working material).
 

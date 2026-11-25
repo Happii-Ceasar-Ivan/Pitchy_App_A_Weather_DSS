@@ -24,7 +24,40 @@ void main() {
 
   test('safety colours are identical in every theme (never themed)', () {
     for (final t in themes.values) {
-      expect(t.extension<SafetyColors>(), same(SafetyColors.fixed));
+      final s = t.extension<SafetyColors>()!;
+      // Only light/dark picks the set; the theme choice never does.
+      expect(
+        s,
+        same(t.brightness == Brightness.dark ? SafetyColors.fixedDark : SafetyColors.fixed),
+      );
+      // Hazard fills and the error fill are the same in both sets.
+      expect(s.advisory, SafetyColors.fixed.advisory);
+      expect(s.onAdvisory, SafetyColors.fixed.onAdvisory);
+      expect(s.warning, SafetyColors.fixed.warning);
+      expect(s.onWarning, SafetyColors.fixed.onWarning);
+      expect(s.danger, SafetyColors.fixed.danger);
+      expect(s.onDanger, SafetyColors.fixed.onDanger);
+      expect(s.requestError, SafetyColors.fixed.requestError);
+      expect(s.onRequestError, SafetyColors.fixed.onRequestError);
+    }
+  });
+
+  test('request-error text and icons are readable on surface and ground (AA, user 2026-11-25)', () {
+    for (final (palette, set) in [
+      (PitchyPalette.light, SafetyColors.fixed),
+      (PitchyPalette.pitchGreen, SafetyColors.fixed),
+      (PitchyPalette.dark, SafetyColors.fixedDark),
+    ]) {
+      expect(contrast(set.requestErrorInk, palette.surface), greaterThanOrEqualTo(4.5));
+      expect(contrast(set.requestErrorInk, palette.ground), greaterThanOrEqualTo(4.5));
+    }
+    for (final t in themes.values) {
+      final s = t.extension<SafetyColors>()!;
+      final p = t.extension<PitchyPalette>()!;
+      // Form error text uses the scheme's error colour.
+      expect(t.colorScheme.error, s.requestErrorInk);
+      expect(contrast(t.colorScheme.error, p.surface), greaterThanOrEqualTo(4.5));
+      expect(contrast(t.colorScheme.onError, t.colorScheme.error), greaterThanOrEqualTo(4.5));
     }
   });
 

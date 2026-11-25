@@ -72,6 +72,18 @@ List<ReferenceGroup> groupReferences(List<GuidanceReference> refs) {
   ];
 }
 
+/// The backend's citation labels: `[A]` (the match facts) and `[D1]`..
+/// (documents), alone, side by side (`[A][D1]`) or in one bracket (`[A, D1]`).
+const _markers = r'(?:\[(?:A|D\d{1,2})(?:\s*,\s*(?:A|D\d{1,2}))*\])+';
+final _leadingMarkers = RegExp('^$_markers[ \t]*', multiLine: true);
+final _innerMarkers = RegExp('[ \t]*$_markers');
+
+/// The answer without its citation labels. They exist for the backend's answer
+/// check and read as unfinished text on screen (user, 2026-11-25); the sources
+/// are listed under "Based on". Nothing else in the text is changed.
+String hideCitationMarkers(String text) =>
+    text.replaceAll(_leadingMarkers, '').replaceAll(_innerMarkers, '').trim();
+
 /// How one backend reply reads on screen. Everything comes from the reply;
 /// the app adds only fixed fallback wording when a field is missing.
 class ChatReplyView {
@@ -85,7 +97,8 @@ class ChatReplyView {
   });
 
   factory ChatReplyView.of(ChatAnswer r) {
-    final answer = r.answer?.trim();
+    final sent = r.answer;
+    final answer = sent == null ? null : hideCitationMarkers(sent);
     final hasAnswer = answer != null && answer.isNotEmpty;
 
     Limitation? replyLimitation;
@@ -121,7 +134,7 @@ class ChatReplyView {
 
   /// App text used only if the backend sends neither an answer nor a reply
   /// limitation.
-  static const fallbackNoAnswer = 'PitChyAT couldn’t answer this question.';
+  static const fallbackNoAnswer = 'Pitchy couldn’t answer this question.';
 
   /// App text used only if the backend leaves out `AGENT_NOT_AUTHORITY`.
   static const fallbackNotAuthority =

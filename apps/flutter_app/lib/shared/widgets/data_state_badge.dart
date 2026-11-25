@@ -28,10 +28,26 @@ bool claimsLiveInSavedCopy(BuildContext context, WeatherDataState state) =>
 /// Pill wording for a saved copy that held Current or Updating.
 const savedCopyLabel = 'Saved copy';
 
+/// Pill wording for a backend Stale state inside a saved copy: the same
+/// colours as [savedCopyLabel], so the word says it is both (F5 P2-1). The
+/// state itself is the backend's and is not changed.
+const staleSavedLabel = 'Stale · saved';
+
 /// The word for [state] as shown here: [savedCopyLabel] inside a saved copy
-/// when the state would claim live data, else the state's own label.
-String stateWord(BuildContext context, WeatherDataState state) =>
-    claimsLiveInSavedCopy(context, state) ? savedCopyLabel : context.stateColors.of(state).label;
+/// when the state would claim live data, [staleSavedLabel] for a saved Stale,
+/// else the state's own label.
+/// [stateWord] as a screen reader should say it: "Stale, saved copy" rather
+/// than reading the dot of "Stale · saved".
+String spokenStateWord(BuildContext context, WeatherDataState state) {
+  final word = stateWord(context, state);
+  return word == staleSavedLabel ? 'Stale, saved copy' : word;
+}
+
+String stateWord(BuildContext context, WeatherDataState state) {
+  if (claimsLiveInSavedCopy(context, state)) return savedCopyLabel;
+  if (state == WeatherDataState.stale && SavedCopyScope.isActive(context)) return staleSavedLabel;
+  return context.stateColors.of(state).label;
+}
 
 /// The state pill: icon + word on the fixed state colour. Stale is drawn as a
 /// dashed "stamp" so it reads differently from Current even in greyscale.
@@ -55,7 +71,7 @@ class DataStateBadge extends StatelessWidget {
     // A saved Current/Updating uses the Stale colours and stamp, so it never
     // looks like the live green.
     final style = context.stateColors.of(saved ? WeatherDataState.stale : state);
-    final label = saved ? savedCopyLabel : style.label;
+    final label = stateWord(context, state);
     final icon = saved ? Icons.cloud_off : style.icon;
     final textStyle =
         (dense ? Theme.of(context).textTheme.labelSmall : Theme.of(context).textTheme.labelMedium)
@@ -83,7 +99,7 @@ class DataStateBadge extends StatelessWidget {
       ),
     );
     return Semantics(
-      label: 'Data state: $label',
+      label: 'Data state: ${spokenStateWord(context, state)}',
       excludeSemantics: true,
       child: style.dashed
           ? DashedBorder(color: style.foreground, radius: AppTheme.radiusPill, child: pill)

@@ -79,7 +79,7 @@ class WeatherValueCard extends StatelessWidget {
     final notCurrent = state != WeatherDataState.current || savedLive;
     final unit = quantity.unit;
     final used = _source(slot?.sourceId);
-    final stateLabel = stateWord(context, state);
+    final stateLabel = spokenStateWord(context, state);
 
     final valueText = value == null ? 'No value' : number(value);
     final semantic = value == null
@@ -99,11 +99,14 @@ class WeatherValueCard extends StatelessWidget {
             children: [
               // One line: the label without its bracketed source (the full
               // label is in the details and the screen-reader text).
-              Text(
-                shortSourceName(quantity.label),
-                style: text.labelLarge?.copyWith(color: palette.inkMuted),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              // Screen readers hear the full label once, in the value's text.
+              ExcludeSemantics(
+                child: Text(
+                  shortSourceName(quantity.label),
+                  style: text.labelLarge?.copyWith(color: palette.inkMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(height: 6),
               Semantics(
@@ -165,7 +168,10 @@ class WeatherValueCard extends StatelessWidget {
                       child: notCurrent
                           ? Align(
                               alignment: Alignment.centerLeft,
-                              child: DataStateBadge(state: state, dense: true),
+                              // Said once already, in the value's text.
+                              child: ExcludeSemantics(
+                                child: DataStateBadge(state: state, dense: true),
+                              ),
                             )
                           : const SizedBox.shrink(),
                     ),

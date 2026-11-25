@@ -49,7 +49,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'It supports authorized decision-makers; it does not replace them. PitChyAT explains '
+            'It supports authorized decision-makers; it does not replace them. Ask Pitchy explains '
             'conditions and guidance, but its answers are not official decisions.',
             style: text.bodyLarge,
           ),

@@ -162,14 +162,14 @@ class _Row extends StatelessWidget {
     this.detailMaxLines = 1,
   });
 
-  /// Two only for the empty state ("No official alerts for this venue"); an
-  /// alert headline stays one line so the panel lands where its skeleton was
-  /// (the full text is in the details).
-
-  /// More than one only where the detail carries a caveat that must not be
-  /// cut ("Newer alerts may exist."). The row then grows downwards only.
-  final int detailMaxLines;
+  /// Title lines before "…". An alert headline gets two (its full text is in
+  /// the details); the empty state's title gets two.
   final int titleMaxLines;
+
+  /// Detail lines before "…"; null wraps in full. An alert's level · until ·
+  /// area line is never cut, because it carries the alert's validity time and
+  /// area (user, 2026-11-26). The row grows downwards only.
+  final int? detailMaxLines;
 
   final IconData? icon;
 
@@ -241,7 +241,7 @@ class _Row extends StatelessWidget {
                   detail,
                   style: text.bodySmall,
                   maxLines: detailMaxLines,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: detailMaxLines == null ? null : TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -288,6 +288,8 @@ class _AlertRow extends StatelessWidget {
         leading: AlertLevelMark(level: alertLevelOf(alert)),
         title: alert.headline,
         detail: detail,
+        titleMaxLines: 2,
+        detailMaxLines: null,
         // A visible word as well as the chevron, so the row reads as openable.
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

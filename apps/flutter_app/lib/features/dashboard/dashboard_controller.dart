@@ -18,7 +18,14 @@ class DashboardData {
 }
 
 class DashboardController extends ChangeNotifier {
-  DashboardController({required this.api, required this.matchContextId, this.savedCopies});
+  DashboardController({
+    required this.api,
+    required this.matchContextId,
+    this.savedCopies,
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
+
+  final DateTime Function() _clock;
 
   final PitchyApi api;
   final String matchContextId;
@@ -35,6 +42,19 @@ class DashboardController extends ChangeNotifier {
   Loadable<VenueAlerts> get alerts => _alerts;
 
   bool _refreshing = false;
+
+  /// How many loads in a row fell back to the saved copy, and when the last
+  /// one ended (F5 P2-2): the banner says "still" after a failed Try again,
+  /// so a second failure is seen and heard. Reset when the server answers.
+  int get savedCopyTries => _savedCopyTries;
+  int _savedCopyTries = 0;
+  DateTime? get lastTriedAt => _lastTriedAt;
+  DateTime? _lastTriedAt;
+
+  void _countTry(bool fellBack) {
+    _savedCopyTries = fellBack ? _savedCopyTries + 1 : 0;
+    _lastTriedAt = fellBack ? _clock().toUtc() : null;
+  }
 
   /// True while a refresh runs over data already on screen (no skeleton then).
   bool get refreshing => _refreshing;
@@ -70,10 +90,13 @@ class DashboardController extends ChangeNotifier {
           weather: results[1] as ConsolidatedWeather,
         ),
       );
+      _countTry(false);
     } on ApiFailure catch (e) {
       // A failed refresh never keeps showing older data as if it were fresh:
       // at most the saved copy, labelled as one.
-      _data = Failed(e, saved: _savedBoard(e));
+      final saved = _savedBoard(e);
+      _data = Failed(e, saved: saved);
+      _countTry(saved != null);
     }
   }
 

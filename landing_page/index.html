@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pitchy: Your Football Safety &amp; Weather Guide</title>
+    <meta
+      name="description"
+      content="Pitchy puts match-day weather from PAGASA and Open-Meteo, the guidance the approved safety rules give, and plain-language answers into one app for Android and Windows. Downloads coming soon."
+    />
+    <meta name="theme-color" content="#07111F" />
+    <meta property="og:title" content="Pitchy: Your Football Safety &amp; Weather Guide" />
+    <meta
+      property="og:description"
+      content="Match-day weather and safety guidance for football, with every value's source and age. For Android and Windows. Coming soon."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/png" href="/brand/favicon-64.png" />
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/big-shoulders-display-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-header>
+      <div class="wrap header-inner">
+        <a class="brand" href="#top" aria-label="Pitchy, back to top">
+          <img class="brand-logo" src="/brand/pitchy-logo.png" alt="" width="36" height="36" />
+          <span class="brand-name">Pitchy</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="#features">Features</a>
+          <a href="#trust">How it’s honest</a>
+          <a href="#install">Install</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <a class="btn btn-primary btn-sm" href="#install">Get Pitchy</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- HERO: the night pitch -->
+      <section class="hero" id="top" aria-labelledby="hero-title" data-hero>
+        <div class="hero-scene" data-scene>
+          <canvas class="pitch-canvas" data-pitch aria-hidden="true"></canvas>
+          <div class="hero-scrim" aria-hidden="true"></div>
+        </div>
+
+        <div class="wrap hero-inner">
+          <div class="hero-copy" data-hero-copy>
+            <h1 class="hero-title" id="hero-title">
+              <span class="hero-brand">Pitchy</span>
+              <span class="hero-tag">Your football safety &amp; weather guide</span>
+            </h1>
+            <p class="hero-lede">
+              Weather for your venue and kickoff from PAGASA and Open-Meteo, what the approved safety rules say, and
+              Ask Pitchy to explain it in plain words. Every value shows its source and how old it is.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary btn-lg" href="#install">Get Pitchy</a>
+              <a class="btn btn-ghost btn-lg" href="#features">See what it does</a>
+            </div>
+            <p class="hero-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              In development for Android and Windows. Downloads coming soon.
+            </p>
+          </div>
+        </div>
+
+        <button type="button" class="ball-handle" data-ball aria-label="Football. Press Enter to shoot at the goal. Left and right arrows move it."></button>
+        <div class="pitch-ui" data-pitch-ui>
+          <p class="pitch-hint" data-hint>Drag, flick or tap the ball into the goal</p>
+          <div class="dock" role="group" aria-label="Pitch game">
+            <div class="dock-score">
+              <span class="dock-score-label">Goals</span>
+              <output class="dock-score-num" data-score aria-live="polite">0</output>
+            </div>
+            <fieldset class="dock-weather">
+              <legend class="visually-hidden">Weather on the pitch (illustration, not live data)</legend>
+              <label class="dock-btn" title="Clear">
+                <input type="radio" name="pitch-weather" value="clear" checked />
+                <span class="visually-hidden">Clear</span><span data-icon="sun"></span>
+              </label>
+              <label class="dock-btn" title="Wind">
+                <input type="radio" name="pitch-weather" value="wind" />
+                <span class="visually-hidden">Wind</span><span data-icon="wind"></span>
+              </label>
+              <label class="dock-btn" title="Rain">
+                <input type="radio" name="pitch-weather" value="rain" />
+                <span class="visually-hidden">Rain</span><span data-icon="rain"></span>
+              </label>
+            </fieldset>
+            <button type="button" class="dock-btn dock-sound" data-sound aria-pressed="false" title="Sound">
+              <span class="visually-hidden">Sound</span><span data-icon="soundOff"></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES: scroll story with a sticky phone -->
+      <section class="features" id="features" aria-labelledby="features-title">
+        <div class="wrap">
+          <h2 class="section-title" id="features-title">Match conditions, nothing hidden</h2>
+          <p class="section-lede">
+            Pitchy is a weather and safety guide for football matches in the Philippines. It brings several sources
+            together for your venue and kickoff, and keeps the evidence one tap away.
+          </p>
+
+          <div class="story">
+            <div class="story-steps">
+              <article class="story-step" data-shot="0">
+                <h3 class="story-title">Conditions for your venue and kickoff</h3>
+                <p>
+                  Pick Rizal Memorial Stadium or New Clark City, and a kickoff time. Pitchy shows air temperature, heat
+                  index, humidity and rain, with more one tap away. Each value names its source and the hour it covers.
+                </p>
+                <ul class="source-list" aria-label="Weather sources">
+                  <li><span class="src-dot src-open-meteo" aria-hidden="true"></span>Open-Meteo</li>
+                  <li><span class="src-dot src-pagasa" aria-hidden="true"></span>PAGASA</li>
+                  <li><span class="src-dot src-dost" aria-hidden="true"></span>DOST-ASTI <span class="muted">(planned)</span></li>
+                </ul>
+                <figure class="story-shot">
+                  <div class="device-phone"><img src="/images/app/phone-a2-board.webp" alt="Pitchy dashboard on a phone: alerts, sources and weather cards for Rizal Memorial Stadium." width="600" height="1353" loading="lazy" decoding="async" /></div>
+                  <figcaption>App screen with sample data</figcaption>
+                </figure>
+              </article>
+
+              <article class="story-step" data-shot="1">
+                <h3 class="story-title">The safety status, from the rules</h3>
+                <p>
+                  Pitchy’s safety engine checks heat, lightning and rain against the approved rules. It shows what the
+                  rules say officials should do, and who decides. The decision always stays with the match officials.
+                </p>
+                <figure class="story-shot">
+                  <div class="device-phone"><img src="/images/app/phone-a3-safety.webp" alt="Pitchy safety screen on a phone: the heat level, what officials do and who decides." width="600" height="1353" loading="lazy" decoding="async" /></div>
+                  <figcaption>App screen with sample data</figcaption>
+                </figure>
+              </article>
+
+              <article class="story-step" data-shot="2">
+                <h3 class="story-title">Ask Pitchy, in plain words</h3>
+                <p>
+                  Ask about the weather and the guidance for your match. Pick your role, such as coach, referee, medical
+                  staff or spectator, and answers are worded for you. They’re AI explanations, never official decisions.
+                </p>
+                <figure class="story-shot">
+                  <div class="device-phone"><img src="/images/app/phone-a4-chat-entry.webp" alt="Ask Pitchy on a phone: choose your role and your match to start." width="600" height="1353" loading="lazy" decoding="async" /></div>
+                  <figcaption>App screen with sample data</figcaption>
+                </figure>
+              </article>
+            </div>
+
+            <div class="story-device" aria-hidden="true">
+              <div class="device-phone device-sticky">
+                <img class="is-active" src="/images/app/phone-a2-board.webp" alt="" width="600" height="1353" decoding="async" />
+                <img src="/images/app/phone-a3-safety.webp" alt="" width="600" height="1353" loading="lazy" decoding="async" />
+                <img src="/images/app/phone-a4-chat-entry.webp" alt="" width="600" height="1353" loading="lazy" decoding="async" />
+              </div>
+              <p class="device-caption">App screens with sample data</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WINDOWS: mown-stripe band -->
+      <section class="windows" aria-labelledby="windows-title">
+        <div class="wrap windows-inner">
+          <div class="windows-copy">
+            <h2 class="section-title" id="windows-title">On Windows, for planning ahead</h2>
+            <p>
+              The same app on a PC, with room to read the sources, the timestamps and the basis of each assessment
+              before match day.
+            </p>
+          </div>
+          <figure class="windows-shot">
+            <div class="device-window">
+              <div class="window-bar" aria-hidden="true">
+                <img src="/brand/pitchy-logo.png" alt="" width="16" height="16" />
+                <span>Pitchy</span>
+                <span class="window-ctrls"><i></i><i></i><i></i></span>
+              </div>
+              <img src="/images/app/desktop-board.webp" alt="Pitchy dashboard on Windows: alerts, sources and four weather cards side by side." width="1280" height="926" decoding="async" />
+            </div>
+            <figcaption>App screen with sample data</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- TRUST -->
+      <section class="trust" id="trust" aria-labelledby="trust-title">
+        <div class="wrap trust-inner">
+          <figure class="trust-shot">
+            <div class="device-phone"><img src="/images/app/phone-b1-board-saved-copy.webp" alt="Pitchy showing a saved copy from 12:00 PM PHT, clearly marked as not live because the server can’t be reached." width="600" height="1353" loading="lazy" decoding="async" /></div>
+            <figcaption>App screen with sample data</figcaption>
+          </figure>
+          <div class="trust-copy">
+            <h2 class="section-title" id="trust-title">Pitchy tells you how old the data is</h2>
+            <p class="section-lede">
+              A weather number without its age can mislead. Pitchy never shows old or missing data as if it were live.
+            </p>
+            <ul class="truths">
+              <li class="truth">
+                <span data-icon="source"></span>
+                <div><p class="truth-title">A source on every value</p><p>Each reading names where it came from and the time it covers.</p></div>
+              </li>
+              <li class="truth">
+                <span data-icon="clock"></span>
+                <div><p class="truth-title">Stale is never shown as current</p><p>Old or missing data is labelled Stale or Unavailable, never passed off as live.</p></div>
+              </li>
+              <li class="truth">
+                <span data-icon="cloudOff"></span>
+                <div><p class="truth-title">A saved copy when the signal drops</p><p>Weak signal at the venue? Pitchy shows its last good reply, clearly marked as a saved copy.</p></div>
+              </li>
+              <li class="truth">
+                <span data-icon="globeTime"></span>
+                <div><p class="truth-title">Philippine Time, always</p><p>Every time is shown in PHT, whatever time zone your device is set to.</p></div>
+              </li>
+            </ul>
+            <p class="trust-note">
+              <span data-icon="shield"></span>
+              <span>Pitchy supports the people who make match decisions. It doesn’t replace them.</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- INSTALL -->
+      <section class="install" id="install" aria-labelledby="install-title">
+        <div class="wrap">
+          <div class="install-head">
+            <h2 class="section-title" id="install-title">Install Pitchy</h2>
+            <p class="section-lede">
+              For Android phones and Windows PCs. Downloads open with the first release; until then, here’s what to
+              expect.
+            </p>
+          </div>
+          <div class="install-root" data-install-root>
+            <p class="noscript-note">Downloads are coming soon for Android (APK) and Windows (EXE).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section class="faq" id="faq" aria-labelledby="faq-title">
+        <div class="wrap faq-inner">
+          <h2 class="section-title" id="faq-title">Questions</h2>
+          <div class="faq-list">
+            <details>
+              <summary>Is Pitchy available yet?</summary>
+              <p>Not yet. It’s in development. This page will link the Android APK and the Windows installer as soon as the first release is published on GitHub Releases.</p>
+            </details>
+            <details>
+              <summary>Is there an iPhone or Mac version?</summary>
+              <p>No. Pitchy is planned for Android and Windows only.</p>
+            </details>
+            <details>
+              <summary>Why does Android ask me to allow the install?</summary>
+              <p>Pitchy for Android comes as an APK file from this page, not from the Google Play Store. Android asks you to allow installs from your browser for files like this.</p>
+            </details>
+            <details>
+              <summary>Do I need an account?</summary>
+              <p>No. There’s no sign-up or login. In Ask Pitchy you pick a role, which only changes how answers are worded.</p>
+            </details>
+            <details>
+              <summary>Where does the weather come from?</summary>
+              <p>From PAGASA and Open-Meteo, with DOST-ASTI planned. In the app, every value shows its source. <a href="https://open-meteo.com/" rel="noopener" target="_blank">Weather data by Open-Meteo.com</a>.</p>
+            </details>
+            <details>
+              <summary>Does Pitchy decide whether a match goes ahead?</summary>
+              <p>No. It shows the data and what the approved rules say. Match officials make the decision.</p>
+            </details>
+            <details>
+              <summary>Is the weather on this page real?</summary>
+              <p>No. The rain and wind on the pitch at the top of this page are just for fun. Real conditions are only in the app.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <div class="footer-brand">
+          <a class="brand" href="#top" aria-label="Pitchy, back to top">
+            <img class="brand-logo" src="/brand/pitchy-logo.png" alt="" width="36" height="36" />
+            <span class="brand-name">Pitchy</span>
+          </a>
+          <p>Your football safety &amp; weather guide.</p>
+          <p class="footer-disclaimer">Pitchy supports authorised decision-makers. It does not replace them, and it is not an official safety authority.</p>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="#features">Features</a>
+          <a href="#trust">How it’s honest</a>
+          <a href="#install">Install</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <div class="footer-credits">
+          <p>The weather effects on this page are illustrations, not live data.</p>
+          <p>The Android robot is reproduced or modified from work created and shared by Google and used according to terms described in the Creative Commons 3.0 Attribution License. Windows is a trademark of the Microsoft group of companies.</p>
+          <p>© <span data-year>2026</span> Pitchy</p>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
