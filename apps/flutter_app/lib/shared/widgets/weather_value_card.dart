@@ -326,6 +326,15 @@ class WeatherCardGrid extends StatefulWidget {
   final DateTime kickoff;
   final int maxVisible;
 
+  /// Columns for [maxWidth]: 4 on wide windows, else 2. At large text one
+  /// card per row on phones (two on wide windows), so labels, values and
+  /// state pills fit whole. The skeleton uses the same rule.
+  static int columns(BuildContext context, double maxWidth) {
+    final wide = maxWidth >= 720;
+    if (AppTheme.isLargeText(context)) return wide ? 2 : 1;
+    return wide ? 4 : 2;
+  }
+
   /// The slot containing kickoff, or the first slot.
   static ConsolidatedSlot? kickoffSlot(ConsolidatedQuantity q, DateTime kickoff) {
     for (final s in q.slots) {
@@ -372,7 +381,7 @@ class _WeatherCardGridState extends State<WeatherCardGrid> {
     final hidden = all.length - shown.length;
     return LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth >= 720 ? 4 : 2;
+        final cols = WeatherCardGrid.columns(context, c.maxWidth);
         // The expanded card takes its own full-width row, placed after the row
         // it came from; the other cards close up so no row has a hole.
         final expandedAt = shown.indexWhere((q) => q.quantity == _expanded);
@@ -446,7 +455,7 @@ class WeatherCardGridSkeleton extends StatelessWidget {
       label: 'Loading weather',
       child: LayoutBuilder(
         builder: (context, c) {
-          final cols = c.maxWidth >= 720 ? 4 : 2;
+          final cols = WeatherCardGrid.columns(context, c.maxWidth);
           const gap = 10.0;
           final rows = (cards / cols).ceil();
           return Column(

@@ -309,11 +309,19 @@ class _UpdateOffWhileSaved extends StatelessWidget {
 
   static const reason = 'Update is off while Pitchy can’t reach its server.';
 
+  /// What a screen reader says: touch and keyboard users can't reach the
+  /// tooltip, and the banner above gives the visible reason.
+  static const spoken = 'Update, unavailable while Pitchy can’t reach its server';
+
   @override
   Widget build(BuildContext context) => Tooltip(
     message: reason,
+    excludeFromSemantics: true,
     child: Semantics(
-      hint: reason,
+      button: true,
+      enabled: false,
+      label: spoken,
+      excludeSemantics: true,
       child: FilledButton.icon(
         style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14)),
         onPressed: null,

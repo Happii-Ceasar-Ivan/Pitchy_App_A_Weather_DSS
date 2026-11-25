@@ -17,6 +17,13 @@ abstract final class AppTheme {
   /// Minimum touch target (Material: 48dp).
   static const minTarget = 48.0;
 
+  /// Text scale from which layouts switch to their large-text form (one card
+  /// per row, stacked headers), so state words and values are never cut.
+  static const largeTextScale = 1.5;
+
+  static bool isLargeText(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(10) / 10 >= largeTextScale;
+
   static ThemeData build(PitchyPalette p) {
     final isDark = p.brightness == Brightness.dark;
     final scheme = ColorScheme(

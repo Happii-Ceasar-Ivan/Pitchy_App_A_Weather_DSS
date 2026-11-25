@@ -269,7 +269,9 @@ class _Loaded extends StatelessWidget {
           RulesBanner(message: draftMessage),
           const SizedBox(height: safetyCardGap),
         ],
-        if (notCurrent) ...[
+        // From the device: the banner already says not live and when, and the
+        // card gives the assessed time; the pills still say Not current.
+        if (notCurrent && controller.savedCopyAt == null) ...[
           NotCurrentLine(assessedAt: a.assessedAt, now: now),
           const SizedBox(height: safetyCardGap),
         ],

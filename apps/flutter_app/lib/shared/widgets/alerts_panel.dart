@@ -52,8 +52,9 @@ class _AlertsPanelState extends State<AlertsPanel> {
   Widget _loaded(BuildContext context, VenueAlerts v, {DateTime? savedAt}) {
     final checked = v.status.lastCheckedAt;
     final header = _Header(
+      // A saved copy: the banner gives its time and the pill says Saved copy.
       title: savedAt != null
-          ? 'Alerts · saved copy from ${formatPhtTime(savedAt)}'
+          ? 'Alerts'
           : checked == null
           ? 'Alerts'
           : 'Alerts · checked ${formatPhtTime(checked)}',
@@ -157,7 +158,12 @@ class _Row extends StatelessWidget {
     required this.title,
     required this.detail,
     this.trailing,
+    this.detailMaxLines = 1,
   });
+
+  /// More than one only where the detail carries a caveat that must not be
+  /// cut ("Newer alerts may exist."). The row then grows downwards only.
+  final int detailMaxLines;
 
   final IconData? icon;
 
@@ -185,7 +191,12 @@ class _Row extends StatelessWidget {
               children: [
                 Text(title, style: text.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text(detail, style: text.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  detail,
+                  style: text.bodySmall,
+                  maxLines: detailMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -289,7 +300,7 @@ class _EmptyRow extends StatelessWidget {
       container: true,
       label: '$title. $detail',
       excludeSemantics: true,
-      child: _Row(icon: icon, title: title, detail: detail),
+      child: _Row(icon: icon, title: title, detail: detail, detailMaxLines: 3),
     );
   }
 }

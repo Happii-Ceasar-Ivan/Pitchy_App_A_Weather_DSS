@@ -50,6 +50,7 @@ Future<void> _shot(
   PitchyThemeMode mode = PitchyThemeMode.light,
   MockScenario seededAs = MockScenario.someStale,
   double textScale = 1,
+  bool online = false,
 }) async {
   tester.view.devicePixelRatio = 2;
   tester.view.physicalSize = size * 2;
@@ -84,7 +85,7 @@ Future<void> _shot(
       config: AppConfig(apiBaseUrl: Uri.parse('https://api.example.test'), useMocks: true),
       info: const AppInfo(version: '1.0.0', buildNumber: '1'),
       api: MockPitchyApi(
-        scenario: MockScenario.offline,
+        scenario: online ? seededAs : MockScenario.offline,
         clock: () => _now,
         latency: Duration.zero,
         savedCopies: store,
@@ -132,6 +133,10 @@ void main() {
   testWidgets(
     'f5 narrow board offline large text',
     (t) => _shot(t, 'f5-narrow-board-offline-large-text', size: narrow, textScale: 2),
+  );
+  testWidgets(
+    'f5 narrow board live large text (comparison)',
+    (t) => _shot(t, 'f5-narrow-board-live-large-text', size: narrow, textScale: 2, online: true),
   );
   testWidgets(
     'f5 desktop board offline',

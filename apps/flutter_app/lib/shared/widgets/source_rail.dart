@@ -81,26 +81,35 @@ class _SourceRailState extends State<SourceRail> {
             // At least 48 px in every state, so the update button or progress
             // appearing never moves the board. Grows (two lines) only at large
             // text sizes, so the "checked ... PHT" time is never cut.
-            ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Semantics(
-                      header: true,
-                      child: Text(
-                        'Sources · checked ${formatPhtTime(checkedAt)}',
-                        style: text.labelLarge?.copyWith(color: context.palette.inkMuted),
-                        // Wraps as far as it needs at large text, beside the update
-                        // button and the details toggle, so the PHT time is never cut.
-                      ),
-                    ),
-                  ),
-                  if (action != null) ...[const SizedBox(width: 8), action],
-                  if (sources.isNotEmpty) toggle,
-                ],
+            if (AppTheme.isLargeText(context)) ...[
+              // Large text: the title gets the full width (never broken
+              // mid-word), the button and toggle go on their own row.
+              Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 4),
+                child: _RailTitle(checkedAt: checkedAt),
               ),
-            ),
+              if (action != null || sources.isNotEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
+                  child: Row(
+                    children: [
+                      ?action,
+                      const Spacer(),
+                      if (sources.isNotEmpty) toggle,
+                    ],
+                  ),
+                ),
+            ] else
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
+                child: Row(
+                  children: [
+                    Expanded(child: _RailTitle(checkedAt: checkedAt)),
+                    if (action != null) ...[const SizedBox(width: 8), action],
+                    if (sources.isNotEmpty) toggle,
+                  ],
+                ),
+              ),
             if (notice != null) ...[const SizedBox(height: 4), notice, const SizedBox(height: 4)],
             if (sources.isEmpty)
               Padding(
@@ -130,6 +139,21 @@ class _SourceRailState extends State<SourceRail> {
   }
 }
 
+class _RailTitle extends StatelessWidget {
+  const _RailTitle({required this.checkedAt});
+
+  final DateTime checkedAt;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Text(
+      'Sources · checked ${formatPhtTime(checkedAt)}',
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: context.palette.inkMuted),
+    ),
+  );
+}
+
 /// The collapsed rail: one equal column per source with its line dot (filled
 /// only when Current), short name and state pill (icon and word). One shape
 /// for every state, so the skeleton matches it.
@@ -144,6 +168,51 @@ class SourceSummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final text = Theme.of(context).textTheme;
+    // A filled dot means Current; a saved copy never shows one.
+    bool filled(SourceStatus s) =>
+        s.state == WeatherDataState.current && !claimsLiveInSavedCopy(context, s.state);
+    if (AppTheme.isLargeText(context)) {
+      // Large text: one line per source (name, then its pill), nothing cut.
+      return Padding(
+        padding: const EdgeInsets.only(top: 2, bottom: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final s in sources)
+              Semantics(
+                container: true,
+                label: '${s.sourceName}: ${stateWord(context, s.state)}',
+                excludeSemantics: true,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _Dot(
+                            color: palette.lineFor(s.sourceId),
+                            filled: filled(s),
+                            surface: palette.surface,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(shortSourceName(s.sourceName), style: text.labelMedium),
+                          ),
+                        ],
+                      ),
+                      DataStateBadge(state: s.state, dense: true),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 2, bottom: 6),
       child: Row(
@@ -163,7 +232,7 @@ class SourceSummaryRow extends StatelessWidget {
                       children: [
                         _Dot(
                           color: palette.lineFor(sources[i].sourceId),
-                          filled: sources[i].state == WeatherDataState.current,
+                          filled: filled(sources[i]),
                           surface: palette.surface,
                         ),
                         const SizedBox(width: 5),
@@ -577,47 +646,73 @@ class SourceRailSkeleton extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                height: AppTheme.minTarget,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: SkeletonLine(style: text.labelLarge, width: 190),
+              if (AppTheme.isLargeText(context)) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 4),
+                  child: SkeletonLine(style: text.labelLarge, widthFactor: 0.9),
                 ),
-              ),
-              // The collapsed summary row: one column per source.
-              Padding(
-                padding: const EdgeInsets.only(top: 2, bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (var i = 0; i < lines; i++) ...[
-                      if (i > 0) const SizedBox(width: SourceSummaryRow._gap),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const SkeletonBox(width: 10, height: 10, radius: 5),
-                                const SizedBox(width: 5),
-                                Expanded(
-                                  child: SkeletonLine(style: text.labelMedium, widthFactor: 0.8),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            SkeletonBox(
-                              width: 76,
-                              height: DataStateBadge.denseHeight(context),
-                              radius: AppTheme.radiusPill,
-                            ),
-                          ],
+                const SizedBox(height: AppTheme.minTarget),
+                for (var i = 0; i < lines; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        const SkeletonBox(width: 10, height: 10, radius: 5),
+                        const SizedBox(width: 6),
+                        SkeletonLine(style: text.labelMedium, width: 110),
+                        const SizedBox(width: 8),
+                        SkeletonBox(
+                          width: 120,
+                          height: DataStateBadge.denseHeight(context),
+                          radius: AppTheme.radiusPill,
                         ),
-                      ),
-                    ],
-                  ],
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 6),
+              ] else ...[
+                SizedBox(
+                  height: AppTheme.minTarget,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SkeletonLine(style: text.labelLarge, width: 190),
+                  ),
                 ),
-              ),
+                // The collapsed summary row: one column per source.
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < lines; i++) ...[
+                        if (i > 0) const SizedBox(width: SourceSummaryRow._gap),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const SkeletonBox(width: 10, height: 10, radius: 5),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: SkeletonLine(style: text.labelMedium, widthFactor: 0.8),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              SkeletonBox(
+                                width: 76,
+                                height: DataStateBadge.denseHeight(context),
+                                radius: AppTheme.radiusPill,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
