@@ -59,7 +59,9 @@ void main() {
     expect(retried, isTrue);
   });
 
-  testWidgets('a 429 says when to try again, in PHT, and offers no retry button', (tester) async {
+  testWidgets('a 429 says when to try again, in PHT, and offers retry only after it', (
+    tester,
+  ) async {
     final failure = ApiError.fromEnvelope(
       429,
       errorJson('RATE_LIMITED', 'Later.', retryAt: DateTime.utc(2026, 11, 23, 7, 15)),
@@ -68,11 +70,18 @@ void main() {
       tester,
       SizedBox(
         height: 400,
-        child: ErrorState(failure: failure, onRetry: () {}),
+        child: ErrorState(
+          failure: failure,
+          onRetry: () {},
+          clock: () => DateTime.utc(2026, 11, 23, 7, 5),
+        ),
       ),
     );
     expect(find.textContaining('3:15 PM PHT'), findsOneWidget);
     expect(find.text('Try again'), findsNothing);
+    await tester.pump(const Duration(minutes: 10, seconds: 2));
+    expect(find.text('You can try again now'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
   });
 
   testWidgets('a 501 reads as "Not available yet", not as a failure to retry', (tester) async {

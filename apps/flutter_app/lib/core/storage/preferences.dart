@@ -1,8 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Small on-device preferences: theme choice, the active match and the match
-/// setup draft. Never secrets (the session token goes to secure storage, F4)
-/// and never weather data (that is the DEC-13 saved copy, F5).
+/// Small on-device preferences: theme choice, the active match, the match
+/// setup draft and the PitChyAT role. Never secrets (the chat session token
+/// lives in memory only, F4) and never weather data (that is the DEC-13 saved
+/// copy, F5).
 abstract interface class Preferences {
   String? getString(String key);
   Future<void> setString(String key, String value);
@@ -17,6 +18,9 @@ abstract final class PrefKeys {
   static const customAccent = 'theme.customAccent';
   static const activeMatchId = 'match.activeId';
   static const matchDraft = 'match.draft';
+
+  /// The PitChyAT role (P-03). A conversational context, not an account.
+  static const chatRole = 'chat.role';
 }
 
 class SharedPreferencesStore implements Preferences {

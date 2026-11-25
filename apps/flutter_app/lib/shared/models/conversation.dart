@@ -1,7 +1,6 @@
-// PROVISIONAL. Conversation and anonymous session (contract schemas
-// ConversationRequest, ConversationResponse, ConversationRole, SessionCreated).
-// The backend returns 501 until Sprints B5 (conversation) and B6 (sessions);
-// these shapes follow the contract draft and may change. F4 starts after B6.
+// Conversation and anonymous session (contract schemas ConversationRequest,
+// ConversationResponse, ConversationRole, SessionCreated), live since B5.
+// Checked field by field against backend/contract/openapi.v1.json (F4).
 //
 // A generated answer is an explanation, never an official decision.
 
@@ -88,7 +87,7 @@ class SessionCreated {
   factory SessionCreated.fromJson(Json json) =>
       SessionCreated(token: readString(json, 'token'), createdAt: readTime(json, 'created_at'));
 
-  /// Stored only in secure storage (P-06, F4). Never logged.
+  /// Kept in memory only (F4 decision 2026-11-25). Never logged or shown.
   final String token;
   final DateTime createdAt;
 }

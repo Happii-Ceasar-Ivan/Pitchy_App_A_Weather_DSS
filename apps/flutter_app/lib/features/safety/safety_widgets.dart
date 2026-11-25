@@ -470,7 +470,7 @@ class LevelRow extends StatelessWidget {
       children: [
         l == null
             ? const SafetyLevelPill(levelId: null, label: 'No level', icon: Icons.help_outline)
-            : SafetyLevelPill(levelId: l.id, label: l.label),
+            : SafetyLevelPill(levelId: l.id, severity: l.severity, label: l.label),
         if (draft) const DraftRulesMarker(),
       ],
     );

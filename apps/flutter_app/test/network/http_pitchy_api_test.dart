@@ -161,6 +161,6 @@ void main() {
     );
     expect(seen.headers['X-Session-Token'], 'abc');
     expect(jsonDecode(seen.body), {'role': 'referee', 'question': 'Is it safe?'});
-    expect(response.generation, Generation.unavailable);
+    expect(response.generation, Generation.generated);
   });
 }

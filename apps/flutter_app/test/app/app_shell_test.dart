@@ -167,12 +167,13 @@ void main() {
     expect(_inBar(find.byTooltip('Quick settings')), findsNothing);
   });
 
-  testWidgets('PitChyAT states that answers are not official decisions', (tester) async {
+  testWidgets('PitChyAT without a match offers to set one up', (tester) async {
     await pumpPitchyApp(tester);
     await tester.tap(
       find.descendant(of: find.byType(NavigationBar), matching: find.text('PitChyAT')),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('not official decisions'), findsOneWidget);
+    expect(find.text('Welcome to PitChyAT'), findsOneWidget);
+    expect(find.text('Set up a match'), findsOneWidget);
   });
 }

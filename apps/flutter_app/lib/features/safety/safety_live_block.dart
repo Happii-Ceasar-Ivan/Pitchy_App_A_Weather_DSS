@@ -263,6 +263,7 @@ class _Loaded extends StatelessWidget {
               _LevelRow(
                 label: 'Assessment (${phtStamp(assessedAt!, now)}):',
                 levelId: assessmentLevel!.id,
+                severity: assessmentLevel!.severity,
                 levelLabel: assessmentLevel!.label,
               ),
             _LevelRow(
@@ -270,6 +271,7 @@ class _Loaded extends StatelessWidget {
                   'Live check'
                   '${v.status.lastCheckedAt == null ? '' : ' (${phtStamp(v.status.lastCheckedAt!, now)})'}:',
               levelId: level.id,
+              severity: level.severity,
               levelLabel: level.label,
             ),
           ],
@@ -307,10 +309,16 @@ class _Loaded extends StatelessWidget {
 
 /// "Live check (11:59 AM PHT):" and its level pill.
 class _LevelRow extends StatelessWidget {
-  const _LevelRow({required this.label, required this.levelId, required this.levelLabel});
+  const _LevelRow({
+    required this.label,
+    required this.levelId,
+    required this.severity,
+    required this.levelLabel,
+  });
 
   final String label;
   final String levelId;
+  final String? severity;
   final String levelLabel;
 
   @override
@@ -321,7 +329,7 @@ class _LevelRow extends StatelessWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 4),
-        SafetyLevelPill(levelId: levelId, label: levelLabel),
+        SafetyLevelPill(levelId: levelId, severity: severity, label: levelLabel),
       ],
     ),
   );

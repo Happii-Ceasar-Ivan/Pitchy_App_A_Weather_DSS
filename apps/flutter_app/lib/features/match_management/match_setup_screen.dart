@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/match.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import '../../shared/widgets/retry_at.dart';
 import '../../shared/widgets/skeletons.dart';
 import 'match_controller.dart';
 
@@ -237,15 +238,24 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                 const SizedBox(height: 12),
               ],
               const SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: m.submitting ? null : _submit,
-                icon: m.submitting
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      )
-                    : const Icon(Icons.check),
-                label: Text(m.submitting ? 'Setting up…' : 'Show conditions'),
+              RetryAtBuilder(
+                retryAt: rateLimitRetryAt(_submitError),
+                builder: (context, waiting) => FilledButton.icon(
+                  onPressed: m.submitting || waiting ? null : _submit,
+                  icon: m.submitting
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : Icon(waiting ? Icons.hourglass_top : Icons.check),
+                  label: Text(
+                    m.submitting
+                        ? 'Setting up…'
+                        : waiting
+                        ? 'Wait until ${formatPhtTime(rateLimitRetryAt(_submitError)!)}'
+                        : 'Show conditions',
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -342,7 +352,30 @@ class _InlineFailure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final m = describeFailure(failure);
+    final retryAt = rateLimitRetryAt(failure);
     final text = Theme.of(context).textTheme;
+    return RetryAtBuilder(
+      retryAt: retryAt,
+      builder: (context, waiting) => _card(context, m, text, retryAt, waiting),
+    );
+  }
+
+  Widget _card(
+    BuildContext context,
+    FailureMessage m,
+    TextTheme text,
+    DateTime? retryAt,
+    bool waiting,
+  ) {
+    final limited = isRateLimited(failure);
+    final detail = !limited
+        ? m.detail
+        : waiting
+        ? 'Pitchy’s server is limiting new matches. ${tryAgainAtText(retryAt!)}'
+        : retryAt == null
+        ? m.detail
+        : 'You can try again now.';
+    final canRetry = limited ? !waiting : m.canRetry;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -355,11 +388,11 @@ class _InlineFailure extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(m.title, style: text.titleSmall),
-                  Text(m.detail, style: text.bodySmall),
+                  Text(detail, style: text.bodySmall),
                 ],
               ),
             ),
-            if (m.canRetry) TextButton(onPressed: onRetry, child: const Text('Try again')),
+            if (canRetry) TextButton(onPressed: onRetry, child: const Text('Try again')),
           ],
         ),
       ),
