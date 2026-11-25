@@ -85,6 +85,7 @@ class AssessmentLevel {
     required this.action,
     required this.source,
     required this.alsoSupportedBy,
+    this.severity,
   });
 
   factory AssessmentLevel.fromJson(Json json) => AssessmentLevel(
@@ -98,6 +99,7 @@ class AssessmentLevel {
       GuidanceReference.fromJson,
       optional: true,
     ),
+    severity: readStringOrNull(json, 'severity'),
   );
 
   final String id;
@@ -105,6 +107,10 @@ class AssessmentLevel {
   final String action;
   final GuidanceReference source;
   final List<GuidanceReference> alsoSupportedBy;
+
+  /// How strongly to show the level: `advisory`, `warning` or `danger`, from
+  /// the backend's rules file (P-19). Display only; null when not given.
+  final String? severity;
 }
 
 /// One calculated value at one time (contract `IndicatorPoint`), e.g. WBGT at a

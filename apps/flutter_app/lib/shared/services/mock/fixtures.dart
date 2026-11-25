@@ -469,6 +469,7 @@ const _lightningAppliesNote =
     'unavailable or unreliable. It is judged on site by the officials.';
 const _lightningLevel = {
   'id': 'within_30_second_distance',
+  'severity': 'danger',
   'label': 'Lightning within about 10 km (AFC 30-second distance)',
   'action':
       'Under AFC\'s 30/30 procedure, players, officials and spectators take shelter; play '
@@ -510,6 +511,7 @@ Json _heatLevel(bool youth, double wbgt) {
     return cooling
         ? {
             'id': 'cooling_breaks_required',
+            'severity': 'warning',
             'label': 'At or above the youth cooling-break level (WBGT 28 °C)',
             'action': 'AFC: for under-20 and younger competitions, cooling breaks may be introduced from WBGT 28 °C (3 minutes, around the 30th and 75th minute, added as stoppage time), after consultation with the match officials; the referee implements them.',
             'source': _afc,
@@ -517,6 +519,7 @@ Json _heatLevel(bool youth, double wbgt) {
           }
         : {
             'id': 'below_cooling_break_level',
+            'severity': 'advisory',
             'label': 'Below the youth cooling-break level',
             'action': 'No AFC youth cooling-break trigger. This is not a statement that conditions are safe.',
             'source': _afc,
@@ -526,6 +529,7 @@ Json _heatLevel(bool youth, double wbgt) {
   return cooling
       ? {
           'id': 'cooling_breaks_required',
+          'severity': 'warning',
           'label': 'At or above the cooling-break level (WBGT 32 °C)',
           'action': 'FIFA: cooling breaks must be used (after about 30 and 75 minutes of play), or the match may be postponed or cancelled depending on the WBGT level and the match management team\'s decision. AFC: the venue medical officer recommends cooling breaks (3 minutes, around the 30th and 75th minute, added as stoppage time); the referee implements them.',
           'source': _fifa,
@@ -533,6 +537,7 @@ Json _heatLevel(bool youth, double wbgt) {
         }
       : {
           'id': 'below_cooling_break_level',
+          'severity': 'advisory',
           'label': 'Below the cooling-break level',
           'action': 'No FIFA or AFC cooling-break trigger. This is not a statement that conditions are safe. FIFA asks officials to consult when WBGT is near 32 °C (no number given), and AFC also weighs time of day, cloud cover and stadium location.',
           'source': _fifa,
@@ -907,20 +912,111 @@ Json lightningJson({
 /// PROVISIONAL (B5/B6 not built).
 Json sessionJson({required DateTime now}) => {'token': 'mock-session-token', 'created_at': _t(now)};
 
-/// PROVISIONAL (B5 not built).
-Json conversationJson({required DateTime now, required String role, String id = rizalMemorialId}) =>
-    {
+/// What the mock PitChyAT does with a question (F4). Replies are synthetic
+/// demo text, never real guidance.
+enum ChatScenario {
+  /// A generated answer with references (one document cited twice) and the
+  /// keyword-only retrieval limitation.
+  answered,
+
+  /// `answer: null` with the matching limitation, shown as the reply.
+  offTopic,
+  aiUnavailable,
+  dailyLimitReached,
+  answerCheckFailed,
+
+  /// 429 RATE_LIMITED with `retry_at` 20 minutes ahead.
+  rateLimited,
+
+  /// The first question gets 401 INVALID_SESSION, the retry works.
+  sessionExpiredOnce,
+
+  /// Every question gets 401 INVALID_SESSION.
+  sessionAlwaysInvalid,
+
+  /// 404: the match is gone.
+  matchGone,
+}
+
+const _notAuthority = {
+  'code': 'AGENT_NOT_AUTHORITY',
+  'message':
+      'This is an AI-generated explanation, not an official safety decision. Follow the '
+      'assessment and your match officials.',
+};
+
+Json conversationJson({
+  required DateTime now,
+  required String role,
+  String id = rizalMemorialId,
+  ChatScenario scenario = ChatScenario.answered,
+}) {
+  Json decline(String code, String message) => {
+    'match_context_id': id,
+    'assessment_id': null,
+    'role': role,
+    'generation': code == 'OFF_TOPIC' ? 'generated' : 'unavailable',
+    'answer': null,
+    'references': <Json>[],
+    'limitations': [
+      {'code': code, 'message': message},
+      _notAuthority,
+    ],
+    'responded_at': _t(now),
+  };
+  return switch (scenario) {
+    ChatScenario.offTopic => decline(
+      'OFF_TOPIC',
+      'I can only help with weather and safety questions about this match.',
+    ),
+    ChatScenario.aiUnavailable => decline(
+      'AI_UNAVAILABLE',
+      'The assistant is not available right now. The safety assessment still works.',
+    ),
+    ChatScenario.dailyLimitReached => decline(
+      'DAILY_LIMIT_REACHED',
+      'The assistant has reached its daily limit. Try again tomorrow; the safety '
+          'assessment still works.',
+    ),
+    ChatScenario.answerCheckFailed => decline(
+      'ANSWER_CHECK_FAILED',
+      'The answer could not be checked against the assessment, so it is not shown.',
+    ),
+    _ => {
       'match_context_id': id,
-      'assessment_id': null,
+      'assessment_id': 'b4000000-0000-4000-8000-000000000001',
       'role': role,
-      'generation': 'unavailable',
-      'answer': null,
-      'references': <Json>[],
+      'generation': 'generated',
+      'answer':
+          'Demo reply (mock mode). The Safety tab shows the assessment the backend made '
+          'for this match. This text is not real guidance.',
+      'references': [
+        {
+          'document_id': 'demo-heat-guide',
+          'title': 'Demo heat guidance',
+          'authority': 'Demo authority',
+          'version': '2026-01',
+          'section': '2.1 Cooling breaks',
+        },
+        {
+          'document_id': 'demo-heat-guide',
+          'title': 'Demo heat guidance',
+          'authority': 'Demo authority',
+          'version': '2026-01',
+          'section': '3 Hydration',
+        },
+      ],
       'limitations': [
-        {'code': 'AI_UNAVAILABLE', 'message': 'The assistant is not available in mock mode.'},
+        _notAuthority,
+        {
+          'code': 'RETRIEVAL_KEYWORD_ONLY',
+          'message': 'Guidance was found by keyword search only, so some passages may be missed.',
+        },
       ],
       'responded_at': _t(now),
-    };
+    },
+  };
+}
 
 Json errorJson(String code, String message, {DateTime? retryAt}) => {
   'error': {

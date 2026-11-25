@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../features/conversational_agent/chat_session.dart';
 import '../features/match_management/match_controller.dart';
 import 'config/app_config.dart';
 import 'config/app_info.dart';
@@ -18,6 +19,7 @@ class AppScope extends InheritedWidget {
     required this.preferences,
     required this.theme,
     required this.match,
+    required this.chatSession,
     required super.child,
   });
 
@@ -28,6 +30,9 @@ class AppScope extends InheritedWidget {
   final ThemeController theme;
   final MatchController match;
 
+  /// The anonymous chat session, shared by every chat in this app run.
+  final ChatSession chatSession;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing above this widget');
@@ -36,5 +41,9 @@ class AppScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(AppScope old) =>
-      old.api != api || old.theme != theme || old.match != match || old.config != config;
+      old.api != api ||
+      old.theme != theme ||
+      old.match != match ||
+      old.chatSession != chatSession ||
+      old.config != config;
 }

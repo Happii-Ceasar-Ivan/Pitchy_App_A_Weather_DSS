@@ -6,6 +6,7 @@ import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
+import 'retry_at.dart';
 
 /// Loading: a request is in flight and nothing is known yet.
 class LoadingState extends StatelessWidget {
@@ -101,32 +102,52 @@ class EmptyState extends StatelessWidget {
 }
 
 /// Error: the request failed. Shows a plain reason and, when it helps, Try again.
-/// A 429 shows when to try again (in PHT).
+/// A 429 shows when to try again (in PHT) and offers Try again only once that
+/// time has passed.
 class ErrorState extends StatelessWidget {
-  const ErrorState({super.key, required this.failure, this.onRetry});
+  const ErrorState({super.key, required this.failure, this.onRetry, this.clock});
 
   final ApiFailure failure;
   final VoidCallback? onRetry;
 
+  /// For tests; the device clock otherwise.
+  final DateTime Function()? clock;
+
   @override
   Widget build(BuildContext context) {
     final message = describeFailure(failure);
-    final retryAt = failure is ApiError ? (failure as ApiError).retryAt : null;
+    final limited = isRateLimited(failure);
+    final retryAt = rateLimitRetryAt(failure);
     final notYet = failure is ApiError && (failure as ApiError).code == ApiErrorCode.notImplemented;
-    return _MessageState(
-      icon: notYet ? Icons.construction : Icons.error_outline,
-      iconColor: notYet ? context.palette.inkMuted : context.safetyColors.requestError,
-      title: message.title,
-      detail: retryAt == null
-          ? message.detail
-          : '${message.detail} You can try again at ${formatPhtTime(retryAt)}.',
-      action: message.canRetry && onRetry != null
-          ? OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try again'),
-            )
-          : null,
+    return RetryAtBuilder(
+      retryAt: retryAt,
+      clock: clock,
+      builder: (context, waiting) {
+        final canRetry = limited ? !waiting : message.canRetry;
+        return _MessageState(
+          icon: notYet
+              ? Icons.construction
+              : waiting
+              ? Icons.hourglass_top
+              : Icons.error_outline,
+          iconColor: notYet ? context.palette.inkMuted : context.safetyColors.requestError,
+          title: limited && !waiting && retryAt != null ? 'You can try again now' : message.title,
+          detail: !limited
+              ? message.detail
+              : waiting
+              ? 'Pitchy’s server is limiting requests. ${tryAgainAtText(retryAt!)}'
+              : retryAt == null
+              ? 'Pitchy’s server is limiting requests. Wait a few minutes, then try again.'
+              : 'The server asked to wait until ${formatPhtTime(retryAt)}. That time has passed.',
+          action: canRetry && onRetry != null
+              ? OutlinedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Try again'),
+                )
+              : null,
+        );
+      },
     );
   }
 }

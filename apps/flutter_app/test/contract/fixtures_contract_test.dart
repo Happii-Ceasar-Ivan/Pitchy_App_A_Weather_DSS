@@ -42,7 +42,9 @@ void main() {
       'VenueLightning#${s.name}': () =>
           lightningJson(now: now, kickoff: safetyKickoff(s, now), scenario: s),
     'SessionCreated': () => sessionJson(now: now),
-    'ConversationResponse': () => conversationJson(now: now, role: 'coach'),
+    for (final c in ChatScenario.values)
+      'ConversationResponse#${c.name}': () =>
+          conversationJson(now: now, role: 'coach', scenario: c),
     'ErrorEnvelope': () => errorJson('RATE_LIMITED', 'Try later.', retryAt: now),
   };
 

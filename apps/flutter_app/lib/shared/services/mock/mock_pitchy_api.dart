@@ -16,6 +16,7 @@ class MockPitchyApi implements PitchyApi {
     this.scenario = MockScenario.allCurrent,
     this.safety = SafetyScenario.heatBelow,
     DateTime Function()? clock,
+    this.chat = ChatScenario.answered,
     this.latency = const Duration(milliseconds: 350),
   }) : _clock = clock ?? DateTime.now;
 
@@ -24,6 +25,13 @@ class MockPitchyApi implements PitchyApi {
 
   /// The safety situation served by the assessment and lightning endpoints.
   final SafetyScenario safety;
+
+  /// What PitChyAT does with a question (F4).
+  ChatScenario chat;
+
+  /// Sessions created and questions received, for tests.
+  int sessionsCreated = 0;
+  final List<String> tokensSeen = [];
   final DateTime Function() _clock;
   final Duration latency;
 
@@ -207,17 +215,41 @@ class MockPitchyApi implements PitchyApi {
   );
 
   @override
-  Future<SessionCreated> createSession() =>
-      _respond(() => SessionCreated.fromJson(sessionJson(now: _now)));
+  Future<SessionCreated> createSession() => _respond(() {
+    sessionsCreated++;
+    return SessionCreated.fromJson({
+      ...sessionJson(now: _now),
+      'token': 'mock-session-token-$sessionsCreated',
+    });
+  });
 
   @override
   Future<ConversationResponse> askQuestion(
     String matchContextId,
     ConversationRequest request, {
     required String sessionToken,
-  }) => _respond(
-    () => ConversationResponse.fromJson(
-      conversationJson(now: _now, role: request.role.wire, id: matchContextId),
-    ),
-  );
+  }) => _respond(() {
+    tokensSeen.add(sessionToken);
+    switch (chat) {
+      case ChatScenario.rateLimited:
+        throw ApiError.fromEnvelope(
+          429,
+          errorJson(
+            'RATE_LIMITED',
+            'Temporary usage limit reached. Try again after retry_at.',
+            retryAt: _now.add(const Duration(minutes: 20)),
+          ),
+        );
+      case ChatScenario.sessionAlwaysInvalid:
+        throw ApiError.fromEnvelope(401, errorJson('INVALID_SESSION', 'Session is not valid.'));
+      case ChatScenario.sessionExpiredOnce when tokensSeen.length == 1:
+        throw ApiError.fromEnvelope(401, errorJson('INVALID_SESSION', 'Session is not valid.'));
+      case ChatScenario.matchGone:
+        throw ApiError.fromEnvelope(404, errorJson('NOT_FOUND', 'Not found.'));
+      case _:
+        return ConversationResponse.fromJson(
+          conversationJson(now: _now, role: request.role.wire, id: matchContextId, scenario: chat),
+        );
+    }
+  });
 }

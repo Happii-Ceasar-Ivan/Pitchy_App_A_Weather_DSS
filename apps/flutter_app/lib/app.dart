@@ -9,6 +9,7 @@ import 'core/routing/app_router.dart';
 import 'core/storage/preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'features/conversational_agent/chat_session.dart';
 import 'features/match_management/match_controller.dart';
 
 class PitchyApp extends StatefulWidget {
@@ -44,6 +45,7 @@ class _PitchyAppState extends State<PitchyApp> {
     preferences: widget.preferences,
     clock: widget.clock,
   )..restore();
+  late final ChatSession _chatSession = ChatSession(api: widget.api);
 
   @override
   void dispose() {
@@ -61,6 +63,7 @@ class _PitchyAppState extends State<PitchyApp> {
     preferences: widget.preferences,
     theme: _theme,
     match: _match,
+    chatSession: _chatSession,
     child: ListenableBuilder(
       listenable: _theme,
       builder: (context, _) => MaterialApp.router(

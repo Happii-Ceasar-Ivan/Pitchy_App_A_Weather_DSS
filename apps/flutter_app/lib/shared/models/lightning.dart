@@ -63,6 +63,7 @@ class LightningLevel {
     required this.label,
     required this.action,
     required this.basis,
+    this.severity,
   });
 
   factory LightningLevel.fromJson(Json json) => LightningLevel(
@@ -70,12 +71,16 @@ class LightningLevel {
     label: readString(json, 'label'),
     action: readString(json, 'action'),
     basis: readString(json, 'basis'),
+    severity: readStringOrNull(json, 'severity'),
   );
 
   final String id;
   final String label;
   final String action;
   final String basis;
+
+  /// `advisory`, `warning` or `danger` from the backend (P-19). Display only.
+  final String? severity;
 }
 
 /// The official on-site procedure, shown verbatim when the backend says why.

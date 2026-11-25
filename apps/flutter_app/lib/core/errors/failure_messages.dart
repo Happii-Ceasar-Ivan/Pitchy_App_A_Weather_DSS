@@ -38,7 +38,7 @@ FailureMessage describeFailure(ApiFailure failure) => switch (failure) {
   ),
   ApiError(code: ApiErrorCode.rateLimited) => const FailureMessage(
     title: 'Too many requests',
-    detail: 'Wait until the time shown, then try again.',
+    detail: 'Pitchy’s server is limiting requests. Wait a few minutes, then try again.',
     canRetry: false,
   ),
   ApiError(code: ApiErrorCode.serviceUnavailable) => const FailureMessage(
