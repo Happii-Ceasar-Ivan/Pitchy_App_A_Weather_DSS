@@ -84,8 +84,20 @@ MESSAGES: dict[Code, str] = {
 }
 
 
-def _limit(code: Code) -> Limitation:
-    return Limitation(code=code.value, message=MESSAGES[code])
+# The no-match route has no match and no assessment, so these say neither (frontend note
+# 2026-11-25). Same codes: no contract change.
+GENERAL_MESSAGES: dict[Code, str] = {
+    Code.OFF_TOPIC: "I can only help with weather safety for football: heat, lightning, rain and "
+    "official alerts. Please ask about those.",
+    Code.AI_UNAVAILABLE: "The AI explanation is unavailable right now. Try again later.",
+    Code.DAILY_LIMIT_REACHED: "Pitchy's AI questions for today are used up. Try again tomorrow.",
+    Code.ANSWER_CHECK_FAILED: "No AI answer passed Pitchy's safety check, so none is shown.",
+}
+
+
+def _limit(code: Code, *, general: bool = False) -> Limitation:
+    message = GENERAL_MESSAGES.get(code) if general else None
+    return Limitation(code=code.value, message=message or MESSAGES[code])
 
 
 @router.post(
@@ -262,7 +274,7 @@ def ask_general_question(
             generation="generated" if generated else "unavailable",
             answer=answer,
             references=refs,
-            limitations=own + ([_limit(outcome)] if outcome else []) + list(extra),
+            limitations=own + ([_limit(outcome, general=True)] if outcome else []) + list(extra),
             responded_at=datetime.now(UTC),
         )
 

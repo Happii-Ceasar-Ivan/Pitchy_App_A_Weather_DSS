@@ -113,6 +113,15 @@ def codes(res):
     return [lim["code"] for lim in res.json()["limitations"]]
 
 
+def message(res, code):
+    """The message of one limitation; a no-match reply never mentions a match or assessment."""
+    texts = {lim["code"]: lim["message"] for lim in res.json()["limitations"]}
+    for text in texts.values():
+        low = text.lower()
+        assert "match's" not in low and "assessment still applies" not in low, text
+    return texts[code]
+
+
 def event(conn):
     return conn.execute(
         "select match_context_id, assessment_id, outcome_code, provider_called, provider"
@@ -153,6 +162,9 @@ def test_every_reply_about_today_fails_the_check(client, conn, ai, token, rules_
     ai["generators"] = [FakeGenerator("gemini", [TODAY_ANSWER])]
     res = ask(client, token)
     assert res.json()["answer"] is None and codes(res)[-1] == "ANSWER_CHECK_FAILED"
+    assert message(res, "ANSWER_CHECK_FAILED") == (
+        "No AI answer passed Pitchy's safety check, so none is shown."
+    )
     assert slots(conn) == 1  # a provider was called
 
 
@@ -171,6 +183,7 @@ def test_off_topic_never_reaches_the_ai(client, conn, ai, token, rules_doc) -> N
     res = ask(client, token, {"role": "spectator", "question": "Write me a poem about cats"})
     assert codes(res)[-1] == "OFF_TOPIC" and ai["generators"][0].calls == 0
     assert slots(conn) == 0
+    assert message(res, "OFF_TOPIC").startswith("I can only help with weather safety for football")
 
 
 @requires_db
@@ -202,6 +215,7 @@ def test_daily_cap_applies(client, conn, ai, token, rules_doc) -> None:
     )
     res = ask(client, token)
     assert "DAILY_LIMIT_REACHED" in codes(res) and ai["generators"][0].calls == 0
+    assert message(res, "DAILY_LIMIT_REACHED").endswith("Try again tomorrow.")
 
 
 @requires_db
@@ -215,3 +229,14 @@ def test_general_rows_are_purged_after_30_days(client, conn, connect, ai, token,
     conn.execute("update public.conversation_events set occurred_at = now() - interval '31 days'")
     deleted = PgConversationEventRepository(connect).purge(timedelta(days=30))
     assert deleted["conversation_events_deleted"] == 1
+
+
+@requires_db
+def test_provider_failure_message_has_no_assessment(client, ai, token, rules_doc) -> None:
+    from services.ai_providers.base import ProviderError
+
+    ai["generators"] = [FakeGenerator("gemini", [ProviderError("TIMEOUT")])]
+    res = ask(client, token)
+    assert message(res, "AI_UNAVAILABLE") == (
+        "The AI explanation is unavailable right now. Try again later."
+    )
