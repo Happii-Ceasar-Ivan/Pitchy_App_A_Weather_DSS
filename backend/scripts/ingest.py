@@ -145,6 +145,16 @@ def _run(args, settings: Settings, connect) -> int:
     except Exception as exc:  # noqa: BLE001 - reported, then the run still succeeds
         print(f"  retention     failed ({type(exc).__name__})", file=sys.stderr)
 
+    # Retention (B6, DEC-14): matches 135 days after kickoff, with assessments and chat events.
+    try:
+        deleted = PgRetentionRepository(connect).purge_matches(
+            timedelta(days=settings.retention_match_days)
+        )
+        print("  match cleanup " + ", ".join(f"{k.removesuffix('_deleted')}={v}"
+                                             for k, v in deleted.items()))  # fmt: skip
+    except Exception as exc:  # noqa: BLE001 - reported, then the run still succeeds
+        print(f"  match cleanup failed ({type(exc).__name__})", file=sys.stderr)
+
     # Retention (P-06, DEC-14): conversation rows and idle anonymous sessions after 30 days.
     try:
         deleted = PgConversationEventRepository(connect).purge(
