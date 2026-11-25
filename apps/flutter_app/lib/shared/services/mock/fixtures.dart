@@ -909,7 +909,7 @@ Json lightningJson({
   };
 }
 
-/// PROVISIONAL (B5/B6 not built).
+/// `POST /sessions` (live since B6).
 Json sessionJson({required DateTime now}) => {'token': 'mock-session-token', 'created_at': _t(now)};
 
 /// What the mock PitChyAT does with a question (F4). Replies are synthetic
@@ -925,6 +925,10 @@ enum ChatScenario {
   dailyLimitReached,
   answerCheckFailed,
 
+  /// General questions only (`POST /conversation`): no approved passage
+  /// matched, so no AI call. The match chat treats it like [answered].
+  noGuidanceFound,
+
   /// 429 RATE_LIMITED with `retry_at` 20 minutes ahead.
   rateLimited,
 
@@ -934,7 +938,7 @@ enum ChatScenario {
   /// Every question gets 401 INVALID_SESSION.
   sessionAlwaysInvalid,
 
-  /// 404: the match is gone.
+  /// 404: the match is gone. The general chat treats it like [answered].
   matchGone,
 }
 
@@ -1013,6 +1017,74 @@ Json conversationJson({
           'message': 'Guidance was found by keyword search only, so some passages may be missed.',
         },
       ],
+      'responded_at': _t(now),
+    },
+  };
+}
+
+const _generalOnly = {
+  'code': 'GENERAL_GUIDANCE_ONLY',
+  'message':
+      'No match is selected: this is general guidance from approved documents, not advice '
+      'about current conditions. Set up a match for a safety assessment.',
+};
+
+/// `GeneralConversationResponse` (`POST /conversation`, B6). Like the backend,
+/// `AGENT_NOT_AUTHORITY` and `GENERAL_GUIDANCE_ONLY` always come first.
+Json generalConversationJson({
+  required DateTime now,
+  required String role,
+  ChatScenario scenario = ChatScenario.answered,
+}) {
+  Json decline(String code, String message) => {
+    'role': role,
+    'generation': 'unavailable',
+    'answer': null,
+    'references': <Json>[],
+    'limitations': [
+      _notAuthority,
+      _generalOnly,
+      {'code': code, 'message': message},
+    ],
+    'responded_at': _t(now),
+  };
+  return switch (scenario) {
+    ChatScenario.offTopic => decline(
+      'OFF_TOPIC',
+      'I can only help with weather and safety questions for football matches.',
+    ),
+    ChatScenario.noGuidanceFound => decline(
+      'NO_GUIDANCE_FOUND',
+      'No approved guidance covers this question, so there is no answer.',
+    ),
+    ChatScenario.aiUnavailable => decline(
+      'AI_UNAVAILABLE',
+      'The assistant is not available right now. Try again later.',
+    ),
+    ChatScenario.dailyLimitReached => decline(
+      'DAILY_LIMIT_REACHED',
+      'The assistant has reached its daily limit. Try again tomorrow.',
+    ),
+    ChatScenario.answerCheckFailed => decline(
+      'ANSWER_CHECK_FAILED',
+      'The answer could not be checked against the approved documents, so it is not shown.',
+    ),
+    _ => {
+      'role': role,
+      'generation': 'generated',
+      'answer':
+          'Demo reply (mock mode). General guidance from the approved documents would appear '
+          'here. This text is not real guidance.',
+      'references': [
+        {
+          'document_id': 'demo-heat-guide',
+          'title': 'Demo heat guidance',
+          'authority': 'Demo authority',
+          'version': '2026-01',
+          'section': '2.1 Cooling breaks',
+        },
+      ],
+      'limitations': [_notAuthority, _generalOnly],
       'responded_at': _t(now),
     },
   };

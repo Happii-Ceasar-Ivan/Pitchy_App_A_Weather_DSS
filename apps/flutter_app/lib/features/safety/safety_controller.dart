@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/errors/api_failure.dart';
 import '../../core/network/pitchy_api.dart';
 import '../../core/state/loadable.dart';
+import '../../core/storage/saved_copies.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/lightning.dart';
 
@@ -19,6 +20,7 @@ class SafetyController extends ChangeNotifier {
     required this.api,
     required this.matchContextId,
     this.refreshEvery = defaultRefresh,
+    this.savedCopies,
   });
 
   /// How often the tab refreshes while it is visible and the match is in the
@@ -30,6 +32,10 @@ class SafetyController extends ChangeNotifier {
   final PitchyApi api;
   final String matchContextId;
   final Duration refreshEvery;
+
+  /// The DEC-13 saved copies; null turns the fallback off. Lightning is live
+  /// only and never saved.
+  final SavedCopyStore? savedCopies;
 
   Loadable<SafetyAssessment> _assessment = const Loading();
   Loadable<SafetyAssessment> get assessment => _assessment;
@@ -83,7 +89,20 @@ class SafetyController extends ChangeNotifier {
   /// it failed (team decision 2026-11-24). The screen must show it as Not
   /// current with its own "assessed" time, under the error; never as current.
   /// Null while the assessment is loaded, or when there never was one.
-  SafetyAssessment? get notCurrentAssessment => _assessment is Failed ? _previous : null;
+  ///
+  /// When this run has none and the server can't be reached, the DEC-13 saved
+  /// copy from the device takes its place; [savedCopyAt] is then set.
+  SafetyAssessment? get notCurrentAssessment => switch (_assessment) {
+    Failed(:final saved) => _previous ?? saved?.value,
+    _ => null,
+  };
+
+  /// When the app received the saved copy shown as [notCurrentAssessment];
+  /// null when nothing comes from the device.
+  DateTime? get savedCopyAt => switch (_assessment) {
+    Failed(:final saved?) when _previous == null => saved.savedAt,
+    _ => null,
+  };
 
   Future<void> _loadAssessment() async {
     try {
@@ -91,7 +110,12 @@ class SafetyController extends ChangeNotifier {
       _previous = a;
       _assessment = Loaded(a);
     } on ApiFailure catch (e) {
-      _assessment = Failed(e);
+      _assessment = Failed(
+        e,
+        saved: allowsSavedCopy(e)
+            ? savedCopies?.read(matchContextId, SavedKind.assessment, SafetyAssessment.fromJson)
+            : null,
+      );
     }
   }
 

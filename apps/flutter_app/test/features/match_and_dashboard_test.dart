@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/core/storage/preferences.dart';
+import 'package:pitchy/core/storage/saved_copies.dart';
 import 'package:pitchy/features/match_management/match_controller.dart';
 import 'package:pitchy/shared/models/match.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
@@ -228,23 +229,17 @@ void main() {
       expect(find.textContaining('PHT'), findsWidgets);
     });
 
-    testWidgets('a server error shows a recoverable error, never old data as current', (
-      tester,
-    ) async {
-      final (api, _) = await pumpPitchyApp(tester, prefs: withActiveMatch());
-      expect(find.byType(SourceRail), findsOneWidget);
-      api.scenario = MockScenario.serviceError;
-      await tester.tap(find.byTooltip('Refresh'));
-      await tester.pumpAndSettle();
+    testWidgets('a server error with no saved copy shows a recoverable error', (tester) async {
+      final (api, prefs) = await pumpPitchyApp(
+        tester,
+        prefs: withActiveMatch(),
+        scenario: MockScenario.serviceError,
+      );
+      // Nothing was ever saved, so there is no copy to fall back to.
+      expect(prefs.getString(SavedCopyStore.prefKey), isNull);
       expect(find.byType(SourceRail), findsNothing);
       expect(find.byType(ErrorState), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(ErrorState),
-          matching: find.text('Server temporarily unavailable'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Server temporarily unavailable'), findsOneWidget);
       api.scenario = MockScenario.allCurrent;
       await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();

@@ -37,6 +37,11 @@ class _AlertsPanelState extends State<AlertsPanel> {
   @override
   Widget build(BuildContext context) => switch (widget.alerts) {
     Loading() => const AlertsPanelSkeleton(),
+    // The DEC-13 saved copy (server unreachable): never worded as live.
+    Failed(saved: SavedCopy(:final value, :final savedAt)) => SavedCopyScope(
+      savedAt: savedAt,
+      child: Builder(builder: (context) => _loaded(context, value, savedAt: savedAt)),
+    ),
     Failed(:final failure) => _Frame(
       header: const _Header(title: 'Alerts'),
       row: _FailedRow(failure: failure, onRetry: widget.onRetry),
@@ -44,10 +49,15 @@ class _AlertsPanelState extends State<AlertsPanel> {
     Loaded(:final value) => _loaded(context, value),
   };
 
-  Widget _loaded(BuildContext context, VenueAlerts v) {
+  Widget _loaded(BuildContext context, VenueAlerts v, {DateTime? savedAt}) {
     final checked = v.status.lastCheckedAt;
     final header = _Header(
-      title: checked == null ? 'Alerts' : 'Alerts · checked ${formatPhtTime(checked)}',
+      // A saved copy: the banner gives its time and the pill says Saved copy.
+      title: savedAt != null
+          ? 'Alerts'
+          : checked == null
+          ? 'Alerts'
+          : 'Alerts · checked ${formatPhtTime(checked)}',
       state: v.status.state,
     );
     if (v.alerts.isEmpty) {
@@ -125,8 +135,8 @@ class _Header extends StatelessWidget {
               child: Text(
                 title,
                 style: text.labelLarge?.copyWith(color: context.palette.inkMuted),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                maxLines: AppTheme.isLargeText(context) ? null : 2,
+                overflow: AppTheme.isLargeText(context) ? null : TextOverflow.ellipsis,
               ),
             ),
           ),
@@ -148,7 +158,18 @@ class _Row extends StatelessWidget {
     required this.title,
     required this.detail,
     this.trailing,
+    this.titleMaxLines = 1,
+    this.detailMaxLines = 1,
   });
+
+  /// Two only for the empty state ("No official alerts for this venue"); an
+  /// alert headline stays one line so the panel lands where its skeleton was
+  /// (the full text is in the details).
+
+  /// More than one only where the detail carries a caveat that must not be
+  /// cut ("Newer alerts may exist."). The row then grows downwards only.
+  final int detailMaxLines;
+  final int titleMaxLines;
 
   final IconData? icon;
 
@@ -161,22 +182,67 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final mark = SizedBox.square(
+      dimension: 24,
+      child: leading ?? Icon(icon, size: 24, color: context.palette.ink),
+    );
+    if (AppTheme.isLargeText(context)) {
+      // Large text: headline and detail wrap in full (an alert headline is
+      // never cut), and the trailing action goes under them.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(padding: const EdgeInsets.only(top: 4), child: mark),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: text.titleSmall),
+                      const SizedBox(height: 2),
+                      Text(detail, style: text.bodySmall),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: SizedBox(height: AppTheme.minTarget, child: trailing),
+            ),
+        ],
+      );
+    }
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
       child: Row(
         children: [
-          SizedBox.square(
-            dimension: 24,
-            child: leading ?? Icon(icon, size: 24, color: context.palette.ink),
-          ),
+          mark,
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: text.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: text.titleSmall,
+                  maxLines: titleMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
-                Text(detail, style: text.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  detail,
+                  style: text.bodySmall,
+                  maxLines: detailMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -255,7 +321,9 @@ class _EmptyRow extends StatelessWidget {
   Widget build(BuildContext context) {
     // "No alerts" is said only when the backend's check is current; otherwise
     // the panel says the check is old or failed, never that all is clear.
-    final (icon, title, detail) = switch (state) {
+    // In a saved copy a Current check is old by now: say so, never all clear.
+    final shown = claimsLiveInSavedCopy(context, state) ? WeatherDataState.stale : state;
+    final (icon, title, detail) = switch (shown) {
       WeatherDataState.current => (
         Icons.campaign_outlined,
         'No official alerts for this venue',
@@ -278,7 +346,13 @@ class _EmptyRow extends StatelessWidget {
       container: true,
       label: '$title. $detail',
       excludeSemantics: true,
-      child: _Row(icon: icon, title: title, detail: detail),
+      child: _Row(
+        icon: icon,
+        title: title,
+        detail: detail,
+        titleMaxLines: 2,
+        detailMaxLines: 3,
+      ),
     );
   }
 }

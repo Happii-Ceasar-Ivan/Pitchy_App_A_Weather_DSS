@@ -163,4 +163,41 @@ void main() {
     expect(jsonDecode(seen.body), {'role': 'referee', 'question': 'Is it safe?'});
     expect(response.generation, Generation.generated);
   });
+
+  test('general conversation posts to /conversation with the session token', () async {
+    late http.Request seen;
+    final client = MockClient((r) async {
+      seen = r;
+      return json(generalConversationJson(now: now, role: 'coach'), 200);
+    });
+    final response = await api(client).askGeneralQuestion(
+      const ConversationRequest(
+        role: ConversationRole.coach,
+        question: 'When are cooling breaks used?',
+      ),
+      sessionToken: 'abc',
+    );
+    expect(seen.method, 'POST');
+    expect(seen.url.toString(), 'https://api.example.test/api/v1/conversation');
+    expect(seen.headers['X-Session-Token'], 'abc');
+    expect(jsonDecode(seen.body), {'role': 'coach', 'question': 'When are cooling breaks used?'});
+    expect(response.limitations.take(2).map((l) => l.code), [
+      'AGENT_NOT_AUTHORITY',
+      'GENERAL_GUIDANCE_ONLY',
+    ]);
+  });
+
+  test('general conversation: 429 keeps retry_at', () async {
+    final retry = now.add(const Duration(minutes: 20));
+    final client = MockClient(
+      (r) async => json(errorJson('RATE_LIMITED', 'Later.', retryAt: retry), 429),
+    );
+    await expectLater(
+      api(client).askGeneralQuestion(
+        const ConversationRequest(role: ConversationRole.coach, question: 'Hi?'),
+        sessionToken: 'abc',
+      ),
+      throwsA(isA<ApiError>().having((e) => e.retryAt, 'retryAt', retry)),
+    );
+  });
 }

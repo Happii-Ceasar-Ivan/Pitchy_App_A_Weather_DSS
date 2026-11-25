@@ -187,6 +187,7 @@ class NoticeBanner extends StatelessWidget {
     required this.background,
     this.busy = false,
     this.action,
+    this.detail,
   });
 
   /// "Updating weather data..." while an ingestion job runs.
@@ -210,9 +211,8 @@ class NoticeBanner extends StatelessWidget {
     final s = context.stateColors.of(WeatherDataState.stale);
     return NoticeBanner(
       icon: Icons.cloud_off,
-      message:
-          'Saved copy from ${formatPhtTime(savedAt)}, not live. '
-          'Pitchy can’t reach its server.',
+      message: 'Saved copy from ${formatPhtTime(savedAt)}, not live.',
+      detail: 'Pitchy can’t reach its server.',
       foreground: s.foreground,
       background: s.background,
       action: action,
@@ -226,40 +226,68 @@ class NoticeBanner extends StatelessWidget {
   final bool busy;
   final Widget? action;
 
+  /// A second, lighter line under [message] (the reason).
+  final String? detail;
+
+  /// Below this width, or at large text, the action goes under the text so
+  /// the message keeps the full width.
+  static const stackBelow = 400.0;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-    liveRegion: true,
-    container: true,
-    child: Container(
-      width: double.infinity,
-      color: background,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          if (busy)
-            SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                color: foreground,
-                backgroundColor: foreground.withValues(alpha: 0.2),
-              ),
-            )
-          else
-            Icon(icon, size: 20, color: foreground),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: foreground,
-                fontWeight: FontWeight.w700,
-              ),
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final lead = busy
+        ? SizedBox.square(
+            dimension: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: foreground,
+              backgroundColor: foreground.withValues(alpha: 0.2),
             ),
-          ),
-          ?action,
-        ],
+          )
+        : Icon(icon, size: 20, color: foreground);
+    final words = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          message,
+          style: text.bodyMedium?.copyWith(color: foreground, fontWeight: FontWeight.w700),
+        ),
+        if (detail != null) Text(detail!, style: text.bodySmall?.copyWith(color: foreground)),
+      ],
+    );
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        color: background,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final stacked =
+                action != null && (c.maxWidth < stackBelow || AppTheme.isLargeText(context));
+            // The icon sits on the first line, not centred on a tall block.
+            final body = Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(padding: const EdgeInsets.only(top: 1), child: lead),
+                const SizedBox(width: 12),
+                Expanded(child: words),
+                if (!stacked) ?action,
+              ],
+            );
+            if (!stacked) return body;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                body,
+                Align(alignment: AlignmentDirectional.centerEnd, child: action),
+              ],
+            );
+          },
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

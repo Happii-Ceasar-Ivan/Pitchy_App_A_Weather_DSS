@@ -7,6 +7,7 @@ import '../../core/errors/api_failure.dart';
 import '../../core/network/pitchy_api.dart';
 import '../../core/state/loadable.dart';
 import '../../core/storage/preferences.dart';
+import '../../core/storage/saved_copies.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/match.dart';
 
@@ -113,6 +114,7 @@ class MatchController extends ChangeNotifier {
     required this.api,
     required Preferences preferences,
     DateTime Function()? clock,
+    this.savedCopies,
   }) : _prefs = preferences,
        _clock = clock ?? DateTime.now {
     final raw = _prefs.getString(PrefKeys.matchDraft);
@@ -127,6 +129,9 @@ class MatchController extends ChangeNotifier {
 
   final PitchyApi api;
   final Preferences _prefs;
+
+  /// The DEC-13 saved copies; null turns the fallback off.
+  final SavedCopyStore? savedCopies;
   final DateTime Function() _clock;
 
   DateTime get now => _clock().toUtc();
@@ -144,23 +149,48 @@ class MatchController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    _active = const Loading();
-    notifyListeners();
+    // A saved copy already on screen stays there while the server is tried
+    // again (no skeleton flash); everything else shows the skeleton.
+    if (!showingSavedCopy) {
+      _active = const Loading();
+      notifyListeners();
+    }
     try {
       _active = Loaded(await api.getMatchContext(id));
     } on ApiError catch (e) {
       if (e.code == ApiErrorCode.notFound) {
-        // The match is gone on the server (e.g. retention); start fresh.
+        // The match is gone on the server (e.g. retention); start fresh and
+        // delete its saved copies.
         unawaited(_prefs.remove(PrefKeys.activeMatchId));
+        unawaited(savedCopies?.removeMatch(id));
         _active = const Loaded(null);
       } else {
-        _active = Failed(e);
+        _active = _failed(id, e);
       }
     } on ApiFailure catch (e) {
-      _active = Failed(e);
+      _active = _failed(id, e);
     }
     notifyListeners();
   }
+
+  Failed<MatchContext?> _failed(String id, ApiFailure e) => Failed(
+    e,
+    saved: allowsSavedCopy(e)
+        ? savedCopies?.read(id, SavedKind.match, MatchContext.fromJson)
+        : null,
+  );
+
+  /// A screen got a live reply: if the match itself is still the saved copy,
+  /// fetch it live too (quietly, the copy stays on screen meanwhile).
+  void serverReachable() {
+    if (showingSavedCopy) unawaited(restore());
+  }
+
+  /// True while the match shown is the DEC-13 saved copy (server unreachable).
+  bool get showingSavedCopy => switch (_active) {
+    Failed(saved: _?) => true,
+    _ => false,
+  };
 
   // ---- Venues ----
 
@@ -219,6 +249,8 @@ class MatchController extends ChangeNotifier {
       );
       _active = Loaded(match);
       unawaited(_prefs.setString(PrefKeys.activeMatchId, match.id));
+      // The previous match is no longer reachable in the app: drop its copies.
+      unawaited(savedCopies?.keepOnly(match.id));
       _draft = const MatchDraft();
       unawaited(_prefs.remove(PrefKeys.matchDraft));
       return match;
