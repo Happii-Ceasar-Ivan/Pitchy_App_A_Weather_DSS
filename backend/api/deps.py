@@ -91,17 +91,39 @@ def session_secret(settings: Settings) -> bytes:
     return secret.get_secret_value().encode("utf-8")
 
 
-def get_session_ip_limiter(request: Request):
-    """The in-memory per-IP limiter for session creation (one per app)."""
-    from services.chat_sessions.ip_limit import SessionIpLimiter
+def _ip_hash_secret(request: Request) -> bytes:
+    """Key for hashing client IPs: the session secret, so every replica hashes alike.
 
+    Without it (only outside a complete deployment) a random per-process key is used: IPs stay
+    hashed and limits still apply, but each replica then counts on its own.
+    """
+    secret = request.app.state.settings.session_token_secret
+    if secret is not None and secret.get_secret_value():
+        return secret.get_secret_value().encode("utf-8")
     state = request.app.state
     with _pool_lock:
-        if getattr(state, "session_ip_limiter", None) is None:
-            state.session_ip_limiter = SessionIpLimiter(
-                state.settings.chat_sessions_per_ip_per_hour
-            )
-    return state.session_ip_limiter
+        if getattr(state, "ip_hash_fallback", None) is None:
+            import secrets
+
+            state.ip_hash_fallback = secrets.token_bytes(32)
+    return state.ip_hash_fallback
+
+
+def enforce_ip_limit(request: Request, connect: ConnectionFactory, scope: str) -> None:
+    """Count this request against the shared per-IP limit for ``scope``; 429 when over it (B6).
+
+    Called inside route bodies, after request validation, so rejected input is not counted.
+    """
+    from api.errors import rate_limited
+    from services.chat_sessions.tokens import ip_key
+    from services.ip_limits import IpRateLimiter, client_ip, rules_from_settings
+
+    settings: Settings = request.app.state.settings
+    rule = rules_from_settings(settings)[scope]
+    key = ip_key(client_ip(request, settings.forwarded_hops), _ip_hash_secret(request))
+    retry_at = IpRateLimiter(connect).hit(rule, key)
+    if retry_at is not None:
+        raise rate_limited(retry_at)
 
 
 def require_session(

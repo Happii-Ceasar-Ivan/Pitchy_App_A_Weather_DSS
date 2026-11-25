@@ -24,6 +24,7 @@ from urllib.parse import urlsplit
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
+from services.ip_limits import IpRateLimiter  # noqa: E402
 from services.weather_ingestion import registry  # noqa: E402
 from services.weather_ingestion.jobs.alerts import (  # noqa: E402
     pagasa_alert_fetcher,
@@ -153,6 +154,12 @@ def _run(args, settings: Settings, connect) -> int:
                                              for k, v in deleted.items()))  # fmt: skip
     except Exception as exc:  # noqa: BLE001 - reported, then the run still succeeds
         print(f"  chat cleanup  failed ({type(exc).__name__})", file=sys.stderr)
+
+    # Retention (B6): per-IP limit rows idle for more than a day.
+    try:
+        print(f"  ip limits     deleted={IpRateLimiter(connect).purge()}")
+    except Exception as exc:  # noqa: BLE001 - reported, then the run still succeeds
+        print(f"  ip limits     failed ({type(exc).__name__})", file=sys.stderr)
     return 0
 
 

@@ -119,7 +119,7 @@ def conn(db_url: str):
     with psycopg.connect(db_url, autocommit=True) as c:
         c.execute(
             "truncate public.ingestion_jobs, public.locations, public.anonymous_sessions,"
-            " public.alert_checks, public.protocol_documents cascade"
+            " public.alert_checks, public.protocol_documents, public.ip_rate_limits cascade"
         )
         _restore_seeded_locations(c)
         yield c

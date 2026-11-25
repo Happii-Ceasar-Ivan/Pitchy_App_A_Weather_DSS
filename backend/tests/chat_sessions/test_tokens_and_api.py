@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 from api.app import API_V1_PREFIX, create_app
 from api.deps import get_connect, require_session
 from services.chat_sessions import tokens
-from services.chat_sessions.ip_limit import SessionIpLimiter
 from shared.settings import Settings
 from tests.conftest import requires_db
 
@@ -67,19 +66,6 @@ def test_bad_tokens_rejected():
 def test_ip_key_hides_ip():
     assert b"10.0.0.1" not in tokens.ip_key("10.0.0.1", KEY)
     assert tokens.ip_key("10.0.0.1", KEY) != tokens.ip_key("10.0.0.2", KEY)
-
-
-def test_ip_limiter_window_and_bound():
-    now = [1000.0]
-    lim = SessionIpLimiter(2, max_keys=3, clock=lambda: now[0])
-    assert lim.hit(b"a") is None and lim.hit(b"a") is None
-    retry = lim.hit(b"a")
-    assert retry is not None and retry.timestamp() > 1000 + 3600
-    now[0] += 3601
-    assert lim.hit(b"a") is None
-    for k in (b"b", b"c", b"d", b"e"):
-        lim.hit(k)
-    assert len(lim._hits) <= 3
 
 
 # -- missing secret ------------------------------------------------------------------------
@@ -144,8 +130,10 @@ def test_per_ip_limit_30_then_429(connect):
 
 
 @requires_db
-def test_forwarded_for_hops(connect):
+def test_forwarded_for_hops(connect, conn):
     def fresh(hops):
+        # The count is shared in the database (B6), so each case starts from an empty table.
+        conn.execute("truncate public.ip_rate_limits")
         return make_client(connect, forwarded_hops=hops, chat_sessions_per_ip_per_hour=1)
 
     # hops 0: header ignored, everyone is the direct peer
@@ -165,6 +153,17 @@ def test_forwarded_for_hops(connect):
     c = fresh(2)
     assert c.post(URL, headers={"X-Forwarded-For": "3.3.3.3"}).status_code == 201
     assert c.post(URL).status_code == 429
+
+
+@requires_db
+def test_session_limit_is_shared_between_app_instances(connect):
+    """Two app instances (like two replicas) share one count, and a restart keeps it."""
+    a = make_client(connect, chat_sessions_per_ip_per_hour=2)
+    b = make_client(connect, chat_sessions_per_ip_per_hour=2)
+    assert a.post(URL).status_code == 201
+    assert b.post(URL).status_code == 201
+    assert a.post(URL).status_code == 429
+    assert make_client(connect, chat_sessions_per_ip_per_hour=2).post(URL).status_code == 429
 
 
 @requires_db

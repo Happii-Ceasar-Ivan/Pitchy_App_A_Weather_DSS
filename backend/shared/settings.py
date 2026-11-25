@@ -116,7 +116,20 @@ class Settings(BaseSettings):
     # Values confirmed by the user 2026-11-24 (B5 plan section 7).
     chat_sessions_per_ip_per_hour: int = Field(
         default=30, ge=1, validation_alias="PITCHY_CHAT_SESSIONS_PER_IP_PER_HOUR"
-    )  # new sessions per client IP (in memory, hashed IP, never stored)
+    )  # new sessions per client IP (shared in the database since B6; hashed IP only)
+    # B6 per-IP limits (values approved by the user 2026-11-25). Usage limits, not safety values.
+    ip_limit_assessment_requests: int = Field(
+        default=120, ge=1, validation_alias="PITCHY_IP_LIMIT_ASSESSMENT_REQUESTS"
+    )  # GET /assessment per client IP per window (loose: a team may share one Wi-Fi)
+    ip_limit_assessment_window_minutes: int = Field(
+        default=10, ge=1, le=60, validation_alias="PITCHY_IP_LIMIT_ASSESSMENT_WINDOW_MINUTES"
+    )
+    ip_limit_match_creates_per_hour: int = Field(
+        default=20, ge=1, validation_alias="PITCHY_IP_LIMIT_MATCH_CREATES_PER_HOUR"
+    )  # POST /match-contexts per client IP
+    ip_limit_ingestion_requests_per_hour: int = Field(
+        default=10, ge=1, validation_alias="PITCHY_IP_LIMIT_INGESTION_REQUESTS_PER_HOUR"
+    )  # POST /match-contexts/{id}/ingestions per client IP (source limits still apply)
     chat_daily_ai_cap: int = Field(
         default=500, ge=0, validation_alias="PITCHY_CHAT_DAILY_AI_CAP"
     )  # questions per day (from midnight Asia/Manila) that may call an AI provider, all users

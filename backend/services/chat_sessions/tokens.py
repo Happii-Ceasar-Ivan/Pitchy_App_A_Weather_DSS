@@ -50,5 +50,5 @@ def token_hash(token: str, secret: bytes) -> bytes:
 
 
 def ip_key(ip: str, secret: bytes) -> bytes:
-    """Keyed hash of a client IP for the in-memory limiter; the raw IP is never kept."""
+    """Keyed hash of a client IP for the per-IP limits; the raw IP is never kept."""
     return hmac.new(secret, _IP_PREFIX + ip.encode("utf-8", "replace"), hashlib.sha256).digest()

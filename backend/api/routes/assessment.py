@@ -6,11 +6,18 @@ The assessment is built by services.safety_engine.assessment_service (shared wit
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
-from api.deps import get_adapter_groups, get_connect, get_lightning_fetcher, get_settings_dep
+from api.deps import (
+    enforce_ip_limit,
+    get_adapter_groups,
+    get_connect,
+    get_lightning_fetcher,
+    get_settings_dep,
+)
 from api.schemas.assessment import SafetyAssessment
 from api.schemas.common import ERROR_RESPONSES, NOT_FOUND_RESPONSE
+from services.ip_limits import ASSESSMENT_READ
 from services.safety_engine.assessment_service import current_assessment
 from shared.db.pool import ConnectionFactory
 from shared.settings import Settings
@@ -24,6 +31,7 @@ router = APIRouter(prefix="/match-contexts", tags=["assessment"], responses=ERRO
     responses=NOT_FOUND_RESPONSE,
 )
 def get_assessment(
+    request: Request,
     match_context_id: UUID,
     connect: Annotated[ConnectionFactory, Depends(get_connect)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
@@ -36,4 +44,5 @@ def get_assessment(
     approved rules for the match's age group, only from current forecast data. Lightning: the
     latest shared Xweather check and the AFC 10 km level. Rain: no approved rule. Official PAGASA
     alerts are listed as issued. Pitchy never makes the official decision."""
+    enforce_ip_limit(request, connect, ASSESSMENT_READ)
     return current_assessment(connect, settings, groups, fetch_lightning, match_context_id)

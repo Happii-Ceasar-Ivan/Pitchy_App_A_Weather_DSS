@@ -15,7 +15,7 @@ TABLES = {
     "weather_sources", "locations", "match_contexts", "ingestion_jobs", "source_fetches",
     "forecast_values", "safety_assessments", "assessment_inputs", "protocol_documents",
     "protocol_chunks", "anonymous_sessions", "alert_checks", "official_alerts",
-    "lightning_checks", "conversation_events",
+    "lightning_checks", "conversation_events", "ip_rate_limits",
 }  # fmt: skip
 
 pytestmark = requires_db

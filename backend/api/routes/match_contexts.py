@@ -10,9 +10,10 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from api.deps import (
+    enforce_ip_limit,
     get_adapter_groups,
     get_connect,
     get_ingestion_executor,
@@ -44,6 +45,7 @@ from api.schemas.weather import (
     ValueRangeOut,
     WeatherStatus,
 )
+from services.ip_limits import INGESTION_REQUEST, MATCH_CREATE
 from services.weather_ingestion import registry
 from services.weather_ingestion.jobs.alerts import alerts_state
 from services.weather_ingestion.jobs.manual import (
@@ -142,8 +144,11 @@ def _source_status(state: SourceState, name: str) -> SourceStatus:
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=MatchContext)
-def create_match_context(body: MatchContextCreate, connect: Connect) -> MatchContext:
+def create_match_context(
+    request: Request, body: MatchContextCreate, connect: Connect
+) -> MatchContext:
     """Save the match date/time and the chosen venue (FR-MAT-001, P-07)."""
+    enforce_ip_limit(request, connect, MATCH_CREATE)
     location = PgLocationRepository(connect).get_by_scope_key(body.venue)
     if location is None:
         raise ApiError(
@@ -297,6 +302,7 @@ def get_consolidated_weather(
     },
 )
 def request_ingestion(
+    request: Request,
     match_context_id: UUID,
     connect: Connect,
     settings: AppSettings,
@@ -309,8 +315,9 @@ def request_ingestion(
     ``reused_existing_job: true`` instead of starting again. Poll each job with
     GET /ingestions/{id}, or poll weather-status. 429 with ``retry_at`` when the only sources
     needing data must wait: PAGASA's 4-hour gap (FR-WTH-008) or the cooldown after a failed
-    attempt (DEC-04).
+    attempt (DEC-04). A separate per-IP limit (B6) also answers 429.
     """
+    enforce_ip_limit(request, connect, INGESTION_REQUEST)
     match, location = load_match(connect, match_context_id)
     result, _ = current_status(connect, groups, settings, match, location)
     try:

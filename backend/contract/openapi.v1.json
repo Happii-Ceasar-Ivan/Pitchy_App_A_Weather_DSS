@@ -748,7 +748,7 @@
           "match contexts"
         ],
         "summary": "Request Ingestion",
-        "description": "Start ingestion for the match's venue: one job per source group that needs data.\n\nA group already being ingested (by anyone, or the schedule) is returned with\n``reused_existing_job: true`` instead of starting again. Poll each job with\nGET /ingestions/{id}, or poll weather-status. 429 with ``retry_at`` when the only sources\nneeding data must wait: PAGASA's 4-hour gap (FR-WTH-008) or the cooldown after a failed\nattempt (DEC-04).",
+        "description": "Start ingestion for the match's venue: one job per source group that needs data.\n\nA group already being ingested (by anyone, or the schedule) is returned with\n``reused_existing_job: true`` instead of starting again. Poll each job with\nGET /ingestions/{id}, or poll weather-status. 429 with ``retry_at`` when the only sources\nneeding data must wait: PAGASA's 4-hour gap (FR-WTH-008) or the cooldown after a failed\nattempt (DEC-04). A separate per-IP limit (B6) also answers 429.",
         "operationId": "request_ingestion_api_v1_match_contexts__match_context_id__ingestions_post",
         "parameters": [
           {
