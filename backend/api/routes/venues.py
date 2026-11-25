@@ -8,22 +8,14 @@ from api.deps import get_connect
 from api.schemas.common import ERROR_RESPONSES
 from api.schemas.venue import VenueInfo, VenueList
 from shared.db.pool import ConnectionFactory
-from shared.db.records import Location
 from shared.db.repositories import PgLocationRepository
 
 router = APIRouter(prefix="/venues", tags=["venues"], responses=ERROR_RESPONSES)
 
 
-def venue_info(location: Location) -> VenueInfo:
-    return VenueInfo(
-        scope_key=location.scope_key,
-        name=location.name or location.scope_key,
-        latitude=location.latitude,
-        longitude=location.longitude,
-    )
-
-
 @router.get("", response_model=VenueList)
 def list_venues(connect: Annotated[ConnectionFactory, Depends(get_connect)]) -> VenueList:
     """The stadiums a match can be planned at. Clients send a `scope_key`, never coordinates."""
-    return VenueList(venues=[venue_info(v) for v in PgLocationRepository(connect).list_all()])
+    return VenueList(
+        venues=[VenueInfo.from_location(v) for v in PgLocationRepository(connect).list_all()]
+    )

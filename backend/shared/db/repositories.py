@@ -643,6 +643,15 @@ class PgRetentionRepository(_Repo):
                 (keep_forecasts, keep_jobs),
             ).fetchone()
 
+    def purge_matches(self, keep: timedelta) -> dict[str, int]:
+        """Matches whose kickoff is older than ``keep``, with their assessments and chat events
+        (``public.purge_old_match_contexts``, B6)."""
+        with self._connect() as conn:
+            cur = conn.cursor(row_factory=dict_row)
+            return cur.execute(
+                "select * from public.purge_old_match_contexts(%s)", (keep,)
+            ).fetchone()
+
 
 class PgAnonymousSessionRepository(_Repo):
     """Storage only. The sliding-window/cooldown check is done atomically in Sprint B6."""

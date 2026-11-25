@@ -1256,6 +1256,123 @@
           }
         }
       }
+    },
+    "/api/v1/conversation": {
+      "post": {
+        "tags": [
+          "conversation"
+        ],
+        "summary": "Ask General Question",
+        "description": "A general question without a match: what the approved rules and guidance say.\n\nNo assessment and no weather: the answer never speaks about current conditions. Same\nsession token, per-session limit, daily AI cap, off-topic filter and answer check as the\nmatch conversation (they share the per-session count).",
+        "operationId": "ask_general_question_api_v1_conversation_post",
+        "parameters": [
+          {
+            "name": "X-Session-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneralConversationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED. Body has retry_at; Retry-After header gives seconds.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not implemented yet (contract draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: the database is not configured or not reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_SESSION: token missing, forged, unknown or expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1717,7 +1834,7 @@
             },
             "type": "array",
             "title": "Limitations",
-            "description": "Always includes AGENT_NOT_AUTHORITY. Conversation codes: AGENT_NOT_AUTHORITY, AI_UNAVAILABLE, DAILY_LIMIT_REACHED, ANSWER_CHECK_FAILED, RETRIEVAL_KEYWORD_ONLY, OFF_TOPIC; plus the assessment's own limitations."
+            "description": "Always includes AGENT_NOT_AUTHORITY. Conversation codes: AGENT_NOT_AUTHORITY, AI_UNAVAILABLE, DAILY_LIMIT_REACHED, ANSWER_CHECK_FAILED, RETRIEVAL_KEYWORD_ONLY, OFF_TOPIC, GENERAL_GUIDANCE_ONLY, NO_GUIDANCE_FOUND; plus the assessment's own limitations."
           },
           "responded_at": {
             "type": "string",
@@ -1910,6 +2027,64 @@
           "longitude"
         ],
         "title": "FlashOut"
+      },
+      "GeneralConversationResponse": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/ConversationRole"
+          },
+          "generation": {
+            "type": "string",
+            "enum": [
+              "generated",
+              "unavailable"
+            ],
+            "title": "Generation",
+            "description": "'unavailable' when no AI provider answered (FR-AGT-006)."
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer",
+            "description": "AI-generated explanation of general guidance. Not an official decision and not about current conditions."
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceReference"
+            },
+            "type": "array",
+            "title": "References"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/Limitation"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "description": "Always includes AGENT_NOT_AUTHORITY and GENERAL_GUIDANCE_ONLY."
+          },
+          "responded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Responded At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "generation",
+          "answer",
+          "responded_at"
+        ],
+        "title": "GeneralConversationResponse",
+        "description": "Answer to a general question asked without a match: approved guidance only."
       },
       "GuidanceReference": {
         "properties": {

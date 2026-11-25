@@ -12,6 +12,7 @@ from pydantic import AwareDatetime, Field
 
 from api.schemas.common import ContractModel
 from api.schemas.venue import VENUE_KEY_PATTERN, VenueInfo
+from shared.db.records import Location, MatchContextRecord
 
 
 class AgeGroup(StrEnum):
@@ -47,3 +48,15 @@ class MatchContext(ContractModel):
     age_group: AgeGroup
     created_at: AwareDatetime
     updated_at: AwareDatetime
+
+    @classmethod
+    def from_records(cls, match: MatchContextRecord, location: Location) -> MatchContext:
+        return cls(
+            id=match.id,
+            kickoff_at=match.kickoff_at,
+            venue=VenueInfo.from_location(location),
+            pitch_surface=match.pitch_surface,
+            age_group=match.age_group,
+            created_at=match.created_at,
+            updated_at=match.updated_at,
+        )

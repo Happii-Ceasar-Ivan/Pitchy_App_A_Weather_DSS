@@ -68,6 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ingestions,
     ):
         app.include_router(module.router, prefix=API_V1_PREFIX)
+    app.include_router(conversation.general_router, prefix=API_V1_PREFIX)  # no match (B6)
 
     if settings.env == "development" and settings.enable_dev_routes:
         from api.routes import dev  # local demo routes; never in test/production or the contract

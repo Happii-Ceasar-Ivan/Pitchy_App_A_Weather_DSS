@@ -140,6 +140,10 @@ class Settings(BaseSettings):
     retention_conversation_days: float = Field(
         default=30, ge=1, validation_alias="PITCHY_RETENTION_CONVERSATION_DAYS"
     )  # conversation_events rows and anonymous sessions idle this long
+    retention_match_days: float = Field(
+        default=135, ge=30, validation_alias="PITCHY_RETENTION_MATCH_DAYS"
+    )  # matches (with their assessments and chat events) this long after kickoff; 4.5 months,
+    # user decision 2026-11-25 (DEC-14 addendum). The database refuses less than 30 days.
 
     @property
     def expose_api_docs(self) -> bool:

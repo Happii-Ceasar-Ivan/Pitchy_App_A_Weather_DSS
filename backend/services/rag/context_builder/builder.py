@@ -47,6 +47,8 @@ class AnswerContext:
     # hazard -> the level the engine gave (id, label), or None when it gave no level
     classifications: dict[str, tuple[str, str] | None]
     fact_references: list[GuidanceReference] = field(default_factory=list)
+    # True for a question asked without a match: no assessment, only approved documents.
+    general: bool = False
 
     @property
     def labels(self) -> set[str]:
@@ -148,7 +150,23 @@ def build_context(assessment: SafetyAssessment, retrieval: RetrievalResult) -> A
     for lim in assessment.limitations:
         lines.append(f"Overall: {lim.message}")
 
-    documents = [
+    return AnswerContext("\n".join(lines), _documents(retrieval), classifications, fact_refs)
+
+
+GENERAL_FACTS = (
+    f"[{FACTS_LABEL}] No match is selected. Pitchy has no assessment, weather data, forecast or "
+    "safety level for this question. Only the general guidance in the approved documents below "
+    "can be explained."
+)
+
+
+def build_general_context(retrieval: RetrievalResult) -> AnswerContext:
+    """Context for a question asked without a match: the fixed notice [A] and the documents."""
+    return AnswerContext(GENERAL_FACTS, _documents(retrieval), {}, [], general=True)
+
+
+def _documents(retrieval: RetrievalResult) -> list[DocumentBlock]:
+    return [
         DocumentBlock(
             label=f"D{i}",
             reference=GuidanceReference(
@@ -162,4 +180,3 @@ def build_context(assessment: SafetyAssessment, retrieval: RetrievalResult) -> A
         )
         for i, chunk in enumerate(retrieval.chunks, start=1)
     ]
-    return AnswerContext("\n".join(lines), documents, classifications, fact_refs)

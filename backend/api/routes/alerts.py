@@ -7,10 +7,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from api.deps import get_alert_fetcher, get_connect, get_settings_dep
-from api.routes.match_contexts import load_match
 from api.schemas.alerts import AlertArea, OfficialAlertOut, VenueAlerts
 from api.schemas.common import ERROR_RESPONSES, NOT_FOUND_RESPONSE
 from api.schemas.weather import AlertsStatus
+from services.match_contexts import load_match
 from services.weather_ingestion.jobs.alerts import alerts_state, refresh_alerts
 from shared.db.pool import ConnectionFactory
 from shared.db.repositories import (

@@ -132,3 +132,70 @@ def test_eleven_parallel_requests_exactly_ten_counted(connect, conn):
         results = list(pool.map(lambda _: go(lim), range(11)))
     assert sum(r == Counted() for r in results) == 10
     assert sum(isinstance(r, RateLimited) for r in results) == 1
+
+
+# B6 item 6: the daily cap is a reservation, so requests in flight can never overshoot it.
+
+
+def slots(conn):
+    return conn.execute(
+        "select coalesce(sum(reserved), 0) from public.chat_daily_ai_usage"
+    ).fetchone()[0]
+
+
+def test_parallel_sessions_never_exceed_the_daily_cap(connect, conn):
+    """12 sessions at once, cap 5, no events written yet (all in flight): exactly 5 counted."""
+    keys = [bytes([i]) * 32 for i in range(1, 13)]
+    repo = PgChatSessionRepository(connect)
+    for key in keys:
+        repo.create(key)
+    lim = ChatLimiter(connect, Settings(env="test", chat_daily_ai_cap=5))
+    with ThreadPoolExecutor(12) as pool:
+        results = list(pool.map(lambda k: lim.check_and_count(k, providers_configured=True), keys))
+    assert sum(isinstance(r, Counted) for r in results) == 5
+    assert results.count(NotCounted("DAILY_LIMIT_REACHED")) == 7
+    assert slots(conn) == 5
+
+
+def test_release_gives_the_slot_back_once(connect, conn):
+    lim = setup(connect, Settings(env="test", chat_daily_ai_cap=1))
+    first = go(lim)
+    assert isinstance(first, Counted) and first.ai_day is not None
+    assert go(lim) == NotCounted("DAILY_LIMIT_REACHED")
+    lim.release(first)
+    assert slots(conn) == 0
+    lim.release(first)  # never below zero
+    assert slots(conn) == 0
+    assert go(lim) == Counted()
+    lim.release(Counted())  # no slot held: nothing happens
+    assert slots(conn) == 1
+
+
+def test_seeded_once_from_events_already_recorded_today(connect, conn):
+    add_events(conn, 2)
+    lim = setup(connect, Settings(env="test", chat_daily_ai_cap=10))
+    assert go(lim) == Counted()
+    assert slots(conn) == 3  # 2 recorded + this one
+    add_events(conn, 3)  # the events of reserved questions do not count again
+    assert go(lim) == Counted()
+    assert slots(conn) == 4
+
+
+def test_a_new_manila_day_starts_a_new_count(connect, conn):
+    lim = setup(connect, Settings(env="test", chat_daily_ai_cap=1))
+    conn.execute(
+        "insert into public.chat_daily_ai_usage (day, reserved)"
+        " values ((now() at time zone interval '8 hours')::date - 1, 1)"
+    )
+    assert go(lim) == Counted()
+    today = conn.execute(
+        "select reserved from public.chat_daily_ai_usage"
+        " where day = (now() at time zone interval '8 hours')::date"
+    ).fetchone()[0]
+    assert today == 1
+
+
+def test_cap_zero_counts_nothing(connect, conn):
+    lim = setup(connect, Settings(env="test", chat_daily_ai_cap=0))
+    assert go(lim) == NotCounted("DAILY_LIMIT_REACHED")
+    assert slots(conn) == 0

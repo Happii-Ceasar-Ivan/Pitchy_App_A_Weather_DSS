@@ -41,11 +41,11 @@ jobs:
       PITCHY_ENV: test
       PITCHY_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pitchy_test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10.3.3  # no major tags since v8; pin the exact release
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock

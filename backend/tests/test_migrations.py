@@ -16,6 +16,7 @@ TABLES = {
     "forecast_values", "safety_assessments", "assessment_inputs", "protocol_documents",
     "protocol_chunks", "anonymous_sessions", "alert_checks", "official_alerts",
     "lightning_checks", "conversation_events", "ip_rate_limits",
+    "chat_daily_ai_usage",
 }  # fmt: skip
 
 pytestmark = requires_db

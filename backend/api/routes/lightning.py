@@ -7,7 +7,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from api.deps import get_connect, get_lightning_fetcher, get_settings_dep
-from api.routes.match_contexts import load_match
 from api.schemas.common import ERROR_RESPONSES, NOT_FOUND_RESPONSE
 from api.schemas.lightning import (
     FlashOut,
@@ -17,12 +16,12 @@ from api.schemas.lightning import (
     VenueLightning,
 )
 from api.schemas.weather import Attribution, CoverageWindow
+from services.match_contexts import load_match, thunderstorm_alert_active
 from services.safety_engine.rules import get_rules
 from services.weather_ingestion.jobs.lightning import lightning_state, refresh_lightning
 from services.weather_ingestion.sources.xweather.lightning import ATTRIBUTION
 from shared.db.pool import ConnectionFactory
 from shared.db.repositories import (
-    PgAlertRepository,
     PgIngestionJobRepository,
     PgLightningRepository,
 )
@@ -34,19 +33,6 @@ NOTE = (
     "Live lightning detection near the stadium from the last few minutes, not a forecast. "
     "Officials on site decide whether to stop play; Pitchy does not."
 )
-
-
-def _thunderstorm_alert(connect: ConnectionFactory, scope_key: str, now: datetime) -> bool:
-    repo = PgAlertRepository(connect)
-    check = repo.last_successful_check()
-    if check is None:
-        return False
-    return any(
-        scope_key in a.matched_venues
-        and "THUNDERSTORM" in a.event.upper()
-        and (a.valid_until is None or a.valid_until > now)
-        for a in repo.alerts_of_check(check.id)
-    )
 
 
 @router.get(
@@ -77,7 +63,7 @@ def get_lightning(
     reasons = []
     if reading is not None and state.state == "current" and reading.flash_count:
         reasons.append("LIGHTNING_DETECTED")
-    if _thunderstorm_alert(connect, location.scope_key, now):
+    if thunderstorm_alert_active(connect, location.scope_key, now):
         reasons.append("PAGASA_THUNDERSTORM_ALERT")
     guidance, level = None, None
     rules = get_rules()
