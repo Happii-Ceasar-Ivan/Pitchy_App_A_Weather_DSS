@@ -1,4 +1,5 @@
-"""POST /match-contexts/{id}/conversation (B5; FR-AGT-001..006, P-06, P-20, DEC-14).
+"""POST /match-contexts/{id}/conversation (B5; FR-AGT-001..006, P-06, P-20, DEC-14), and
+POST /conversation for a general question without a match (B6, "rules yes, today no").
 
 One question, one answer. The answer explains the current deterministic assessment and approved
 documents; it never classifies. Order (B5 plan section 2):
@@ -42,15 +43,16 @@ from api.schemas.conversation import (
 from api.schemas.conversation import (
     ConversationRequest,
     ConversationResponse,
+    GeneralConversationResponse,
 )
 from services.ai_providers.base import ProviderError
 from services.ai_providers.provider_router.router import ProviderRouter
 from services.chat_sessions.limiter import ChatLimiter, Counted, NotCounted, RateLimited
 from services.conversation.guard import GuardResult, check_answer
-from services.conversation.prompts import build_prompt
+from services.conversation.prompts import build_general_prompt, build_prompt
 from services.conversation.topic import OFF_TOPIC_MESSAGE, is_on_topic
 from services.match_contexts import load_match
-from services.rag.context_builder.builder import build_context
+from services.rag.context_builder.builder import build_context, build_general_context
 from services.rag.retrieval.hybrid import HybridRetriever
 from services.safety_engine.assessment_service import current_assessment
 from services.safety_engine.rules import get_rules
@@ -61,6 +63,7 @@ from shared.settings import Settings
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/match-contexts", tags=["conversation"], responses=ERROR_RESPONSES)
+general_router = APIRouter(prefix="/conversation", tags=["conversation"], responses=ERROR_RESPONSES)
 
 MESSAGES: dict[Code, str] = {
     Code.AGENT_NOT_AUTHORITY: "AI-generated explanation of the assessment. Officials make the "
@@ -74,6 +77,10 @@ MESSAGES: dict[Code, str] = {
     Code.RETRIEVAL_KEYWORD_ONLY: "The document search used keywords only, so fewer guidance "
     "passages may have been found.",
     Code.OFF_TOPIC: OFF_TOPIC_MESSAGE,
+    Code.GENERAL_GUIDANCE_ONLY: "No match is selected: this is general guidance from approved "
+    "documents, not advice about current conditions. Set up a match for a safety assessment.",
+    Code.NO_GUIDANCE_FOUND: "No approved guidance passage matched this question, so no AI answer "
+    "was generated.",
 }
 
 
@@ -205,6 +212,102 @@ def ask_question(
     rejected = any(code == "ANSWER_REJECTED" for _, code in routed.attempts)
     outcome = Code.ANSWER_CHECK_FAILED if rejected else Code.AI_UNAVAILABLE
     return finish(outcome, limitations, **common)
+
+
+@general_router.post(
+    "",
+    response_model=GeneralConversationResponse,
+    responses=INVALID_SESSION_RESPONSE,
+)
+def ask_general_question(
+    body: ConversationRequest,
+    session_key: Annotated[bytes, Depends(require_session)],
+    connect: Annotated[ConnectionFactory, Depends(get_connect)],
+    settings: Annotated[Settings, Depends(get_settings_dep)],
+    generators: Annotated[list, Depends(get_ai_generators)],
+    embedder=Depends(get_embedder),  # noqa: B008
+) -> GeneralConversationResponse:
+    """A general question without a match: what the approved rules and guidance say.
+
+    No assessment and no weather: the answer never speaks about current conditions. Same
+    session token, per-session limit, daily AI cap, off-topic filter and answer check as the
+    match conversation (they share the per-session count).
+    """
+    started = time.monotonic()
+    configured = any(g.configured for g in generators)
+    limiter = ChatLimiter(connect, settings)
+    decision = limiter.check_and_count(session_key, providers_configured=configured)
+    if isinstance(decision, RateLimited):
+        raise rate_limited(decision.retry_at)
+    if not isinstance(decision, Counted | NotCounted):  # SessionUnknown: purged since the check
+        raise ApiError(401, ErrorCode.INVALID_SESSION, "Missing or invalid session token.")
+
+    def finish(outcome, extra=(), *, answer=None, references=(), provider=None,
+               provider_called=False, retrieval_mode=None):  # fmt: skip
+        generated = answer is not None
+        refs = list(references)
+        _record(connect, ConversationEvent(
+            match_context_id=None, assessment_id=None, role=body.role.value,
+            generation="generated" if generated else "unavailable",
+            outcome_code="GENERATED" if generated else outcome.value,
+            provider_called=provider_called, provider=provider if generated else None,
+            reference_keys=sorted({r.document_id for r in refs}), retrieval_mode=retrieval_mode,
+            duration_ms=int((time.monotonic() - started) * 1000),
+        ))  # fmt: skip
+        if isinstance(decision, Counted) and not provider_called:
+            limiter.release(decision)  # no provider called: the daily AI slot goes back
+        own = [_limit(Code.AGENT_NOT_AUTHORITY), _limit(Code.GENERAL_GUIDANCE_ONLY)]
+        return GeneralConversationResponse(
+            role=body.role,
+            generation="generated" if generated else "unavailable",
+            answer=answer,
+            references=refs,
+            limitations=own + ([_limit(outcome)] if outcome else []) + list(extra),
+            responded_at=datetime.now(UTC),
+        )
+
+    if isinstance(decision, NotCounted):
+        return finish(Code(decision.reason))
+    if not is_on_topic(body.question):
+        return finish(Code.OFF_TOPIC)
+
+    extra: list[Limitation] = []
+    query_vector = None
+    if embedder is not None:
+        try:
+            query_vector = embedder.embed([body.question], task="query")[0]
+        except ProviderError as exc:
+            logger.info("Question embedding failed: %s", exc.code)
+    if query_vector is None:
+        extra.append(_limit(Code.RETRIEVAL_KEYWORD_ONLY))
+    retrieval = HybridRetriever(connect).search(body.question, query_vector)
+    if not retrieval.chunks:
+        return finish(Code.NO_GUIDANCE_FOUND, extra, retrieval_mode=retrieval.mode)
+    context = build_general_context(retrieval)
+    system, prompt = build_general_prompt(context, body.role, body.question)
+
+    rules = get_rules()
+    checked: dict[str, GuardResult] = {}
+
+    def accept(generation) -> bool:
+        result = check_answer(generation.text, context, rules, body.question)
+        checked["last"] = result
+        if not result.ok:
+            logger.info("General answer from %s rejected: %s", generation.provider, result.reason)
+        return result.ok
+
+    routed = ProviderRouter(generators).run(system, prompt, accept)
+    common = dict(provider_called=routed.provider_called, retrieval_mode=retrieval.mode)
+    if routed.generation is not None:
+        result = checked["last"]
+        if result.reason == "OFF_TOPIC":
+            return finish(Code.OFF_TOPIC, **common)
+        return finish(
+            None, extra, answer=result.answer, references=context.references_for(result.cited),
+            provider=routed.generation.provider, **common,
+        )  # fmt: skip
+    rejected = any(code == "ANSWER_REJECTED" for _, code in routed.attempts)
+    return finish(Code.ANSWER_CHECK_FAILED if rejected else Code.AI_UNAVAILABLE, extra, **common)
 
 
 def _record(connect: ConnectionFactory, event: ConversationEvent) -> None:

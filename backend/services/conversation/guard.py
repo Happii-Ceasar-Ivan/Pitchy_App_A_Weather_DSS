@@ -13,6 +13,9 @@ A reply is rejected (the router then tries the next provider) unless all of thes
    the user's ("the 35 °C you mentioned", "your 35 °C").
 4. No level label or id from rules.yaml appears unless it is the level the engine gave for that
    hazard; no wording that claims a level the engine did not give; never "it is safe".
+   Without a match (``context.general``): a [D] block must be cited, level wording only in a
+   sentence that cites a document, numbers only from the cited documents, nothing about current
+   conditions ("today", "now", "this match").
 HTML, links and markdown are removed first, so the answer is returned as plain text.
 Answers are in English (P-21); a few Filipino/Taglish "it is safe" phrases are a backup.
 
@@ -269,6 +272,9 @@ def check_answer(
     if not cited <= context.labels:
         return _reject("UNKNOWN_CITATION")
 
+    if context.general:
+        return _check_general(answer, cited, context, rules, question)
+
     lowered = _norm(answer)
     for hazard, levels in level_catalogue(rules).items():
         given = context.classifications.get(hazard)
@@ -290,6 +296,12 @@ def check_answer(
         return _reject("SAFETY_CLAIM")
 
     grounded = {_to_float(t) for t in _ANY_NUMBER.findall(context.grounding_text)}
+    if not _numbers_ok(answer, grounded, question):
+        return _reject("UNGROUNDED_NUMBER")
+    return GuardResult(True, "OK", answer, cited)
+
+
+def _numbers_ok(answer: str, grounded: set[float], question: str) -> bool:
     asked = {_to_float(t) for t in _ANY_NUMBER.findall(_canon(question))}
     for match in _NUMBER_WITH_UNIT.finditer(answer):
         value = _to_float(match.group(1))
@@ -297,6 +309,54 @@ def check_answer(
             continue
         if value in asked and _attributed(answer, match.start(), match.end()):
             continue  # the user's own number, quoted back as theirs (P-21)
-        return _reject("UNGROUNDED_NUMBER")
+        return False
+    return True
 
+
+# --- no match: "rules yes, today no" (docs/decisions/frontend-f4-chat.md item 4) -----------
+
+# Wording about current or coming conditions. Without a match Pitchy knows nothing about them.
+_CURRENT_CONDITIONS = re.compile(
+    r"\b(?:today|today's|tonight|tomorrow|now|right\s+now|currently|at\s+the\s+moment"
+    r"|at\s+present|this\s+(?:match|game|afternoon|evening|morning|week|weekend)"
+    r"|your\s+(?:match|game)|the\s+forecast|current\s+(?:conditions?|weather|forecast"
+    r"|temperature|wbgt|heat|risk)|ngayon|mamaya|bukas)\b",
+    re.I,
+)
+# Sentence ends; a dot between digits ("32.5 °C") is not one.
+_SENTENCE_END = re.compile(r"(?<!\d)[.!?]+(?!\d)|\n")
+_DOC_LABEL = re.compile(r"\[D\d{1,2}\]")
+
+
+def _check_general(
+    answer: str, cited: set[str], context: AnswerContext, rules: RuleSet, question: str
+) -> GuardResult:
+    """General guidance without a match. Level wording is allowed only in a sentence that cites
+    an approved document; numbers only from the cited documents; nothing about current
+    conditions; never "it is safe"."""
+    documents = {d.label: d.content for d in context.documents}
+    cited_docs = {c for c in cited if c in documents}
+    if not cited_docs:
+        return _reject("NO_DOCUMENT_CITATION")
+
+    catalogue = level_catalogue(rules)
+    ids = [level_id for levels in catalogue.values() for level_id, _ in levels]
+    labels = [_norm(label) for levels in catalogue.values() for _, label in levels]
+    if any(level_id in answer.lower() for level_id in ids):
+        return _reject("LEVEL_NOT_GIVEN")  # raw rule ids are never the way to say it
+    for sentence in _SENTENCE_END.split(answer):
+        names_level = any(label in _norm(sentence) for label in labels) or any(
+            p.search(sentence) for _, _, p in _LEVEL_CLAIMS
+        )
+        if names_level and not _DOC_LABEL.search(sentence):
+            return _reject("LEVEL_NOT_FROM_DOCUMENT")
+
+    if _unnegated_match(_CURRENT_CONDITIONS, answer):
+        return _reject("CURRENT_CONDITIONS")
+    if any(_unnegated_match(p, answer) for p in _SAFE_CLAIMS):
+        return _reject("SAFETY_CLAIM")
+
+    grounded = {_to_float(t) for c in cited_docs for t in _ANY_NUMBER.findall(documents[c])}
+    if not _numbers_ok(answer, grounded, question):
+        return _reject("UNGROUNDED_NUMBER")
     return GuardResult(True, "OK", answer, cited)

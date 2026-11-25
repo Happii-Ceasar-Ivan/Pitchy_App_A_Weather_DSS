@@ -34,6 +34,8 @@ class ConversationLimitationCode(StrEnum):
     ANSWER_CHECK_FAILED = "ANSWER_CHECK_FAILED"  # every reply failed the deterministic check
     RETRIEVAL_KEYWORD_ONLY = "RETRIEVAL_KEYWORD_ONLY"  # embedding failed; full-text search only
     OFF_TOPIC = "OFF_TOPIC"  # not about this match's weather safety; Pitchy's fixed decline
+    GENERAL_GUIDANCE_ONLY = "GENERAL_GUIDANCE_ONLY"  # no match: rules only, not current conditions
+    NO_GUIDANCE_FOUND = "NO_GUIDANCE_FOUND"  # no match and no approved passage matched
 
 
 class ConversationRequest(ContractModel):
@@ -55,5 +57,24 @@ class ConversationResponse(ContractModel):
         description="Always includes AGENT_NOT_AUTHORITY. Conversation codes: "
         + ", ".join(c.value for c in ConversationLimitationCode)
         + "; plus the assessment's own limitations.",
+    )
+    responded_at: AwareDatetime
+
+
+class GeneralConversationResponse(ContractModel):
+    """Answer to a general question asked without a match: approved guidance only."""
+
+    role: ConversationRole
+    generation: Literal["generated", "unavailable"] = Field(
+        description="'unavailable' when no AI provider answered (FR-AGT-006)."
+    )
+    answer: str | None = Field(
+        description="AI-generated explanation of general guidance. Not an official decision and "
+        "not about current conditions."
+    )
+    references: list[GuidanceReference] = Field(default_factory=list)
+    limitations: list[Limitation] = Field(
+        default_factory=list,
+        description="Always includes AGENT_NOT_AUTHORITY and GENERAL_GUIDANCE_ONLY.",
     )
     responded_at: AwareDatetime

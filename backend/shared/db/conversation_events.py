@@ -14,7 +14,7 @@ from shared.db.pool import ConnectionFactory
 
 @dataclass(frozen=True)
 class ConversationEvent:
-    match_context_id: UUID
+    match_context_id: UUID | None  # None: a general question asked without a match
     assessment_id: UUID | None
     role: str
     generation: str  # generated | unavailable
