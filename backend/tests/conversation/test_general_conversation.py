@@ -119,6 +119,7 @@ def message(res, code):
     for text in texts.values():
         low = text.lower()
         assert "match's" not in low and "assessment still applies" not in low, text
+        assert "of the assessment" not in low, text
     return texts[code]
 
 
@@ -232,6 +233,13 @@ def test_general_rows_are_purged_after_30_days(client, conn, connect, ai, token,
 
 
 @requires_db
+def test_authority_note_names_guidance_not_an_assessment(client, ai, token, rules_doc) -> None:
+    res = ask(client, token, {"role": "coach", "question": "What is the capital of France?"})
+    assert message(res, "AGENT_NOT_AUTHORITY") == (
+        "AI-generated explanation of approved guidance. Officials make the decision."
+    )
+
+
 def test_provider_failure_message_has_no_assessment(client, ai, token, rules_doc) -> None:
     from services.ai_providers.base import ProviderError
 

@@ -87,6 +87,8 @@ MESSAGES: dict[Code, str] = {
 # The no-match route has no match and no assessment, so these say neither (frontend note
 # 2026-11-25). Same codes: no contract change.
 GENERAL_MESSAGES: dict[Code, str] = {
+    Code.AGENT_NOT_AUTHORITY: "AI-generated explanation of approved guidance. Officials make the "
+    "decision.",
     Code.OFF_TOPIC: "I can only help with weather safety for football: heat, lightning, rain and "
     "official alerts. Please ask about those.",
     Code.AI_UNAVAILABLE: "The AI explanation is unavailable right now. Try again later.",
@@ -268,7 +270,7 @@ def ask_general_question(
         ))  # fmt: skip
         if isinstance(decision, Counted) and not provider_called:
             limiter.release(decision)  # no provider called: the daily AI slot goes back
-        own = [_limit(Code.AGENT_NOT_AUTHORITY), _limit(Code.GENERAL_GUIDANCE_ONLY)]
+        own = [_limit(Code.AGENT_NOT_AUTHORITY, general=True), _limit(Code.GENERAL_GUIDANCE_ONLY)]
         return GeneralConversationResponse(
             role=body.role,
             generation="generated" if generated else "unavailable",

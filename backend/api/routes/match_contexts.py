@@ -1,8 +1,8 @@
 """Match context, weather status, ingestion request, assessment and conversation routes.
 
-Match contexts, weather status and manual ingestion are implemented (Sprint B3). Assessment (B4)
-and conversation (B5) still return 501. Conversation requires an anonymous session token and is
-rate limited per session (P-06).
+Match contexts, weather status and manual ingestion are implemented (Sprint B3); assessment (B4)
+and conversation (B5) too. Conversation requires an anonymous session token and is rate limited
+per session (P-06).
 """
 
 import math
