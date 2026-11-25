@@ -12,8 +12,6 @@ import json
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from api.routes.lightning import _thunderstorm_alert
-from api.routes.match_contexts import _match_response, current_status, load_match
 from api.schemas.assessment import (
     AssessmentLevel,
     HazardIndicator,
@@ -24,7 +22,9 @@ from api.schemas.assessment import (
     SafetyAssessment,
 )
 from api.schemas.common import GuidanceReference, Limitation
+from api.schemas.match import MatchContext
 from api.schemas.weather import Provenance
+from services.match_contexts import current_status, load_match, thunderstorm_alert_active
 from services.safety_engine import engine
 from services.safety_engine.rules import get_rules
 from services.weather_ingestion.jobs.lightning import lightning_state, refresh_lightning
@@ -134,7 +134,7 @@ def current_assessment(
 ) -> SafetyAssessment:
     """Current assessment for a match context, saved on change; `.id` is the saved assessment id.
 
-    Raises the same errors as the route (404 for an unknown match via load_match)."""
+    Raises ``MatchNotFoundError`` for an unknown match (the API answers 404)."""
     rules = get_rules()
     match, location = load_match(connect, match_context_id)
     status, names = current_status(connect, groups, settings, match, location)
@@ -185,7 +185,7 @@ def current_assessment(
         longitude=location.longitude,
         weather=weather,
         lightning=lightning,
-        thunderstorm_alert=_thunderstorm_alert(connect, location.scope_key, now),
+        thunderstorm_alert=thunderstorm_alert_active(connect, location.scope_key, now),
         match_hours=settings.match_coverage_hours,
     )
     om_name = names.get(OPEN_METEO, "Open-Meteo")
@@ -221,7 +221,7 @@ def current_assessment(
 
     return SafetyAssessment(
         id=saved["id"],
-        match_context=_match_response(match, location),
+        match_context=MatchContext.from_records(match, location),
         assessed_at=saved["assessed_at"],
         checked_at=now,
         age_group=result.age_group,

@@ -20,7 +20,6 @@ from api.deps import (
     get_settings_dep,
 )
 from api.errors import ApiError
-from api.routes.venues import venue_info
 from api.schemas.common import (
     ERROR_RESPONSES,
     NOT_FOUND_RESPONSE,
@@ -46,6 +45,7 @@ from api.schemas.weather import (
     WeatherStatus,
 )
 from services.ip_limits import INGESTION_REQUEST, MATCH_CREATE
+from services.match_contexts import current_status, load_match
 from services.weather_ingestion import registry
 from services.weather_ingestion.jobs.alerts import alerts_state
 from services.weather_ingestion.jobs.manual import (
@@ -59,16 +59,13 @@ from services.weather_ingestion.relevance.consolidation import (
     consolidate,
 )
 from services.weather_ingestion.relevance.freshness import SourceState
-from services.weather_ingestion.relevance.status import VenueWeatherStatus, venue_weather_status
 from shared.db.pool import ConnectionFactory
-from shared.db.records import Location, MatchContextRecord
 from shared.db.repositories import (
     PgAlertRepository,
     PgForecastRepository,
     PgIngestionJobRepository,
     PgLocationRepository,
     PgMatchContextRepository,
-    PgWeatherSourceRepository,
 )
 from shared.settings import Settings
 
@@ -77,43 +74,6 @@ AppSettings = Annotated[Settings, Depends(get_settings_dep)]
 Groups = Annotated[list, Depends(get_adapter_groups)]
 
 router = APIRouter(prefix="/match-contexts", tags=["match contexts"], responses=ERROR_RESPONSES)
-
-
-def _match_response(match: MatchContextRecord, location: Location) -> MatchContext:
-    return MatchContext(
-        id=match.id,
-        kickoff_at=match.kickoff_at,
-        venue=venue_info(location),
-        pitch_surface=match.pitch_surface,
-        age_group=match.age_group,
-        created_at=match.created_at,
-        updated_at=match.updated_at,
-    )
-
-
-def load_match(connect: ConnectionFactory, match_context_id: UUID):
-    match = PgMatchContextRepository(connect).get(match_context_id)
-    if match is None:
-        raise ApiError(404, ErrorCode.NOT_FOUND, "Match context not found.")
-    location = PgLocationRepository(connect).get(match.location_id)
-    return match, location
-
-
-def current_status(
-    connect: ConnectionFactory, groups: list, settings: Settings, match, location
-) -> tuple[VenueWeatherStatus, dict[str, str]]:
-    names = {s.id: s.name for s in PgWeatherSourceRepository(connect).list_enabled()}
-    result = venue_weather_status(
-        groups,
-        set(names),
-        location,
-        match.kickoff_at,
-        settings,
-        PgForecastRepository(connect),
-        PgIngestionJobRepository(connect),
-        datetime.now(UTC),
-    )
-    return result, names
 
 
 def _source_status(state: SourceState, name: str) -> SourceStatus:
@@ -164,13 +124,13 @@ def create_match_context(
         body.pitch_surface,
         body.age_group.value,
     )
-    return _match_response(match, location)
+    return MatchContext.from_records(match, location)
 
 
 @router.get("/{match_context_id}", response_model=MatchContext, responses=NOT_FOUND_RESPONSE)
 def get_match_context(match_context_id: UUID, connect: Connect) -> MatchContext:
     match, location = load_match(connect, match_context_id)
-    return _match_response(match, location)
+    return MatchContext.from_records(match, location)
 
 
 @router.get(

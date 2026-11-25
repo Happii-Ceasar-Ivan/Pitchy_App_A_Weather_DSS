@@ -23,6 +23,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.middleware.request_id import current_request_id
 from api.schemas.common import ErrorBody, ErrorCode, ErrorDetail, ErrorEnvelope
+from services.match_contexts import MatchNotFoundError
 
 logger = logging.getLogger("pitchy.api")
 
@@ -104,6 +105,10 @@ async def _api_error_handler(_: Request, exc: ApiError) -> JSONResponse:
     return error_response(exc.status_code, exc.code, exc.message, exc.details, exc.retry_at)
 
 
+async def _match_not_found_handler(_: Request, __: MatchNotFoundError) -> JSONResponse:
+    return error_response(404, ErrorCode.NOT_FOUND, "Match context not found.")
+
+
 async def _http_error_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:
     code = _STATUS_TO_CODE.get(exc.status_code, ErrorCode.BAD_REQUEST)
     message = HTTPStatus(exc.status_code).phrase
@@ -132,6 +137,7 @@ async def _database_error_handler(_: Request, exc: Exception) -> JSONResponse:
 
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ApiError, _api_error_handler)
+    app.add_exception_handler(MatchNotFoundError, _match_not_found_handler)
     app.add_exception_handler(StarletteHTTPException, _http_error_handler)
     app.add_exception_handler(RequestValidationError, _validation_error_handler)
     app.add_exception_handler(PoolTimeout, _database_error_handler)

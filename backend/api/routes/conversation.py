@@ -29,7 +29,6 @@ from api.deps import (
     require_session,
 )
 from api.errors import ApiError, rate_limited
-from api.routes.match_contexts import load_match
 from api.schemas.common import (
     ERROR_RESPONSES,
     INVALID_SESSION_RESPONSE,
@@ -50,6 +49,7 @@ from services.chat_sessions.limiter import ChatLimiter, Counted, NotCounted, Rat
 from services.conversation.guard import GuardResult, check_answer
 from services.conversation.prompts import build_prompt
 from services.conversation.topic import OFF_TOPIC_MESSAGE, is_on_topic
+from services.match_contexts import load_match
 from services.rag.context_builder.builder import build_context
 from services.rag.retrieval.hybrid import HybridRetriever
 from services.safety_engine.assessment_service import current_assessment
