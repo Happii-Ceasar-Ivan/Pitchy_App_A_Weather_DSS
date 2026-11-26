@@ -34,18 +34,18 @@ export const release: ReleaseInfo = {
   releasesPageUrl: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases',
   assets: {
     android: {
-      url: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases/download/v1.0.1/pitchy-1.0.1-android.apk',
-      version: '1.0.1',
+      url: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases/download/v1.1.0/pitchy-1.1.0-android.apk',
+      version: '1.1.0',
       publishedAt: '2026-11-26',
-      sizeBytes: 24738302,
-      sha256: '15cd1b2ebaf3ff990db1eb0c53cae1b841f467b5862a9c98ddcea46d1eee7d4d',
+      sizeBytes: 24835698,
+      sha256: '5f451d6f7c556913ff33a8101a7f4d65f91cf6aea49cb004d4b91ed26d165cc2',
     },
     windows: {
-      url: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases/download/v1.0.1/pitchy-1.0.1-windows-setup.exe',
-      version: '1.0.1',
+      url: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases/download/v1.1.0/pitchy-1.1.0-windows-setup.exe',
+      version: '1.1.0',
       publishedAt: '2026-11-26',
-      sizeBytes: 11701346,
-      sha256: '52faa887faf459d1085d4d9938adfd7c777efc3b640a61afad314e03ce46a33f',
+      sizeBytes: 11731928,
+      sha256: '8feb3026ec79cd57ab9d0207d50589e0233097fcf58f2df1adf70f4262c67c8f',
     },
   },
 };
