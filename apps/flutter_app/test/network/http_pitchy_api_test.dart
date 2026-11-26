@@ -52,6 +52,44 @@ void main() {
     expect(weather.attributions.single.text, 'Weather data by Open-Meteo.com');
   });
 
+  test('trend window sends hours_before and reads kickoff_at and coverage (P-27)', () async {
+    late Uri seen;
+    final client = MockClient((r) async {
+      seen = r.url;
+      return json(trendWeatherJson(now: now, kickoff: kickoff), 200);
+    });
+    final weather = await api(client).getWeather(rizalMemorialId, hours: 5, hoursBefore: 6);
+    expect(seen.queryParameters, {'hours': '5', 'hours_before': '6'});
+    expect(weather.kickoffAt, kickoff);
+    expect(weather.coverage!.end, kickoff.add(const Duration(hours: 2)));
+    expect(weather.window.start, kickoff.subtract(const Duration(hours: 6)));
+    expect(weather.quantities.first.slots, hasLength(11));
+  });
+
+  test('an older backend reply without the P-27 fields still parses', () async {
+    final client = MockClient(
+      (r) async => json(trendWeatherJson(now: now, kickoff: kickoff, trendContract: false), 200),
+    );
+    final weather = await api(client).getWeather(rizalMemorialId, hours: 5, hoursBefore: 6);
+    expect(weather.kickoffAt, isNull);
+    expect(weather.coverage, isNull);
+    expect(weather.window.start, kickoff);
+  });
+
+  test('wait reasons parse, and an unknown one is kept as other (P-27 A4)', () async {
+    final client = MockClient(
+      (r) async =>
+          json(weatherStatusJson(MockScenario.unavailable, now: now, kickoff: kickoff), 200),
+    );
+    final status = await api(client).getWeatherStatus(rizalMemorialId);
+    final ecmwf = status.sources.firstWhere((s) => s.sourceId == 'pagasa_ecmwf');
+    expect(ecmwf.waitReason, WaitReason.failureCooldown);
+    expect(ecmwf.nextRequestAt, now.add(const Duration(minutes: 15)));
+    expect(status.sources.firstWhere((s) => s.sourceId == 'open_meteo').waitReason, isNull);
+    expect(WaitReason.parse('new_reason'), WaitReason.other);
+    expect(WaitReason.parse(null), isNull);
+  });
+
   test('POST match-contexts sends the venue scope key and UTC kickoff', () async {
     late Map<String, Object?> body;
     final client = MockClient((r) async {

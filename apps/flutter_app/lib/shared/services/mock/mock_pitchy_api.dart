@@ -123,7 +123,24 @@ class MockPitchyApi implements PitchyApi {
   );
 
   @override
-  Future<ConsolidatedWeather> getWeather(String matchContextId, {int? hours}) => _respond(() {
+  Future<ConsolidatedWeather> getWeather(
+    String matchContextId, {
+    int? hours,
+    int? hoursBefore,
+  }) => _respond(() {
+    weatherQueries.add((hours: hours, hoursBefore: hoursBefore));
+    if (hoursBefore != null) {
+      final json = trendWeatherJson(
+        scenario: scenario,
+        now: _now,
+        kickoff: _kickoffFor(matchContextId),
+        id: matchContextId,
+        hoursBefore: hoursBefore,
+        hours: hours ?? 5,
+        trendContract: trendContract,
+      );
+      return _keep(matchContextId, SavedKind.trend, json, ConsolidatedWeather.fromJson);
+    }
     final json = consolidatedWeatherJson(
       scenario: scenario,
       now: _now,
@@ -144,6 +161,13 @@ class MockPitchyApi implements PitchyApi {
       VenueAlerts.fromJson,
     ),
   );
+
+  /// False imitates a backend from before P-27 (no `hours_before`, no
+  /// `kickoff_at`), so the chart hides the hours before kickoff.
+  bool trendContract = true;
+
+  /// Every weather read, for tests (e.g. switching the chart's range sends none).
+  final List<({int? hours, int? hoursBefore})> weatherQueries = [];
 
   /// Update requests sent, for tests that check no duplicate is sent.
   int ingestionRequests = 0;

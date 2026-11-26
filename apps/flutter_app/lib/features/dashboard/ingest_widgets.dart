@@ -3,7 +3,9 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
+import '../../shared/models/ingestion.dart';
 import '../../shared/models/weather.dart';
+import '../../shared/widgets/wait_text.dart';
 import '../../shared/widgets/weather_value_card.dart' show shortSourceName;
 import 'ingestion_controller.dart';
 
@@ -94,9 +96,13 @@ class IngestNotice extends StatelessWidget {
     required this.sources,
     required this.onDismiss,
     required this.onCheckAgain,
+    this.now,
   });
 
   final IngestOutcome outcome;
+
+  /// For naming the day in wait times; the device clock otherwise.
+  final DateTime? now;
 
   /// Used to name a failed source ("PAGASA ECMWF") from its id.
   final List<SourceStatus> sources;
@@ -119,6 +125,17 @@ class IngestNotice extends StatelessWidget {
     return id ?? 'Update';
   }
 
+  /// One line per waiting source, from the backend's `next_request_at` and
+  /// `wait_reason` (P-27). Null when the backend didn't say (older backends).
+  String? _perSourceWaits() {
+    final at = now ?? DateTime.now();
+    final lines = [
+      for (final s in sources)
+        if (sourceWaitLine(s, now: at) case final line?) '${shortSourceName(s.sourceName)}: $line',
+    ];
+    return lines.isEmpty ? null : lines.join('\n');
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -134,8 +151,9 @@ class IngestNotice extends StatelessWidget {
         Icons.schedule,
         palette.ink,
         retryAt == null ? 'Update again later' : 'Update again at ${formatPhtTime(retryAt)}',
-        'The sources that need data were asked recently. Pitchy limits how often each '
-            'source is asked.',
+        _perSourceWaits() ??
+            'The sources that need data were asked recently. Pitchy limits how often each '
+                'source is asked.',
         false,
       ),
       IngestJobsFailed(:final failures) => (
@@ -224,3 +242,27 @@ class IngestNotice extends StatelessWidget {
     );
   }
 }
+
+/// The sources a 202 left waiting, in words (P-27): "PAGASA ATMO and PAGASA
+/// ECMWF: next check 3:40 PM PHT: …". Null when none wait.
+String? waitingSummary(
+  List<IngestionWait> waiting,
+  List<SourceStatus> sources, {
+  required DateTime now,
+}) {
+  if (waiting.isEmpty) return null;
+  String name(String id) {
+    for (final s in sources) {
+      if (s.sourceId == id) return shortSourceName(s.sourceName);
+    }
+    return id;
+  }
+
+  return [
+    for (final w in waiting)
+      '${w.sourceIds.map(name).join(' and ')}: '
+          '${w.retryAt == null ? 'waits' : _lowerFirst(waitLine(w.reason, w.retryAt!, now: now))}',
+  ].join('. ');
+}
+
+String _lowerFirst(String s) => s.isEmpty ? s : '${s[0].toLowerCase()}${s.substring(1)}';

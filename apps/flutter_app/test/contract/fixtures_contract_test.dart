@@ -30,7 +30,20 @@ void main() {
       'WeatherStatus#${s.name}': () => weatherStatusJson(s, now: now, kickoff: kickoff),
     'ConsolidatedWeather': () => consolidatedWeatherJson(now: now, kickoff: kickoff),
     'VenueAlerts': () => alertsJson(now: now, withAlert: true),
+    for (final s in MockScenario.values)
+      'ConsolidatedWeather#trend-${s.name}': () =>
+          trendWeatherJson(scenario: s, now: now, kickoff: kickoff),
     'IngestionRequestResult': () => ingestionRequestJson(now: now),
+    'IngestionRequestResult#waiting': () => ingestionRequestJson(
+      now: now,
+      waiting: [
+        {
+          'source_ids': ['pagasa_atmo', 'pagasa_ecmwf'],
+          'retry_at': now.add(const Duration(hours: 2)).toIso8601String(),
+          'reason': 'min_interval',
+        },
+      ],
+    ),
     for (final st in ['queued', 'running', 'succeeded', 'failed'])
       'IngestionJob#$st': () =>
           ingestionJobJson(id: 'c1d2e3f4-0000-4000-8000-000000000001', state: st, created: now),

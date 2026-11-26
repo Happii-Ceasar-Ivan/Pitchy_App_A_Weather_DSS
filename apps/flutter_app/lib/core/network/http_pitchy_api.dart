@@ -148,12 +148,20 @@ class HttpPitchyApi implements PitchyApi {
   );
 
   @override
-  Future<ConsolidatedWeather> getWeather(String matchContextId, {int? hours}) => _get(
-    _uri(['match-contexts', matchContextId, 'weather'], hours == null ? null : {'hours': '$hours'}),
-    ConsolidatedWeather.fromJson,
-    // Only the default window is what the dashboard shows offline.
-    save: hours == null ? (matchContextId, SavedKind.weather) : null,
-  );
+  Future<ConsolidatedWeather> getWeather(String matchContextId, {int? hours, int? hoursBefore}) {
+    final query = {'hours': ?hours?.toString(), 'hours_before': ?hoursBefore?.toString()};
+    return _get(
+      _uri(['match-contexts', matchContextId, 'weather'], query.isEmpty ? null : query),
+      ConsolidatedWeather.fromJson,
+      // Offline the dashboard shows the default window (tiles) and the trend
+      // window (chart); other windows aren't saved.
+      save: switch ((hours, hoursBefore)) {
+        (null, null) => (matchContextId, SavedKind.weather),
+        (_, _?) => (matchContextId, SavedKind.trend),
+        _ => null,
+      },
+    );
+  }
 
   @override
   Future<VenueAlerts> getAlerts(String matchContextId) => _get(

@@ -128,6 +128,12 @@ class IngestionController extends ChangeNotifier {
   IngestOutcome? _outcome;
   IngestOutcome? get outcome => _outcome;
 
+  List<IngestionWait> _waiting = const [];
+
+  /// From the last accepted request (202, P-27): sources that needed data but
+  /// weren't asked because they must wait. Empty on older backends.
+  List<IngestionWait> get waiting => _waiting;
+
   DateTime? _waitUntil;
 
   /// Set after a 429: the backend's `retry_at`. Requests are held until then.
@@ -158,10 +164,12 @@ class IngestionController extends ChangeNotifier {
     if (!canRequest) return;
     _phase = IngestPhase.requesting;
     _outcome = null;
+    _waiting = const [];
     _notify();
     try {
       final result = await api.requestIngestion(matchContextId);
       if (_disposed) return;
+      _waiting = result.waiting;
       _startPolling(result.jobs.map((j) => j.id), initial: result.jobs);
       if (_phase == IngestPhase.polling) await onAccepted?.call();
     } on ApiError catch (e) {

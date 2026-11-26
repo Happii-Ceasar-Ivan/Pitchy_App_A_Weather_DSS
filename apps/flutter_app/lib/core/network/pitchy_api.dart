@@ -25,8 +25,11 @@ abstract interface class PitchyApi {
   /// `GET /match-contexts/{id}/weather-status`
   Future<WeatherStatus> getWeatherStatus(String matchContextId);
 
-  /// `GET /match-contexts/{id}/weather?hours=` (hours 1 to 24 from kickoff; null = coverage window)
-  Future<ConsolidatedWeather> getWeather(String matchContextId, {int? hours});
+  /// `GET /match-contexts/{id}/weather?hours=&hours_before=` (hours 1 to 24
+  /// from kickoff, null = coverage window; hoursBefore 0 to 6 before kickoff,
+  /// P-27). A backend without `hours_before` ignores it and answers from
+  /// kickoff, with no `kickoff_at` in the reply.
+  Future<ConsolidatedWeather> getWeather(String matchContextId, {int? hours, int? hoursBefore});
 
   /// `GET /match-contexts/{id}/alerts`
   Future<VenueAlerts> getAlerts(String matchContextId);

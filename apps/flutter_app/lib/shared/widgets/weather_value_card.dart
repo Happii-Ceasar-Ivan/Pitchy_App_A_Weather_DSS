@@ -6,6 +6,7 @@ import '../models/weather.dart';
 import 'dashed_border.dart';
 import 'data_state_badge.dart';
 import 'skeletons.dart';
+import 'weather_icons.dart';
 
 /// A source name without its trailing domain, for tight spaces:
 /// "PAGASA ATMO (panahon.gov.ph)" -> "PAGASA ATMO". The full name stays in the
@@ -100,6 +101,21 @@ class WeatherValueCard extends StatelessWidget {
               // One line: the label without its bracketed source (the full
               // label is in the details and the screen-reader text).
               // Screen readers hear the full label once, in the value's text.
+              // The icon has its own row (P-27 B), so the label keeps its full
+              // width on narrow phones. The row is there even without an icon,
+              // so every card in a row has the same shape.
+              SizedBox(
+                height: WeatherQuantityIcon.sizeFor(context, text.labelLarge),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: WeatherQuantityIcon(
+                    quantity: quantity.quantity,
+                    style: text.labelLarge,
+                    color: palette.inkMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
               ExcludeSemantics(
                 child: Text(
                   shortSourceName(quantity.label),
@@ -447,6 +463,16 @@ class WeatherCardGridSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // The icon's row, then the label, as on the loaded card.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SkeletonBox(
+                width: WeatherQuantityIcon.sizeFor(context, text.labelLarge),
+                height: WeatherQuantityIcon.sizeFor(context, text.labelLarge),
+                radius: 4,
+              ),
+            ),
+            const SizedBox(height: 4),
             SkeletonLine(style: text.labelLarge, widthFactor: 0.7),
             const SizedBox(height: 6),
             SkeletonLine(style: text.headlineMedium, widthFactor: 0.45),

@@ -155,6 +155,9 @@ void main() {
       api.scenario = MockScenario.offline;
       await tester.tap(find.byTooltip('Refresh'));
       await tester.pumpAndSettle();
+      // The tiles sit below the hourly trend (P-27).
+      await tester.ensureVisible(find.byType(WeatherCardGrid));
+      await tester.pumpAndSettle();
 
       final node = find.semantics
           .byPredicate((n) => n.label.contains('Heat index (PAGASA): 40'))

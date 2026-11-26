@@ -57,6 +57,6 @@ Also update the requirement lines in `src/install/platforms.ts` once the minimum
 | `src/install/sheet.ts` | Install sheet (`<dialog>`) that opens after the first goal |
 | `src/styles/tokens.css` | Colours, type, spacing (colours follow the app's DESIGN.md) |
 | `public/brand/pitchy-logo.png` | Placeholder logo: replace this one file when the real logo arrives |
-| `public/images/app/` | App screenshots with sample data, from the F5 QA runs |
+| `public/images/app/` | App screenshots with sample data, from the P-27 captures (`docs/frontend/reviews/p27-landing/`) |
 
 The weather on the pitch is an illustration, never live data.

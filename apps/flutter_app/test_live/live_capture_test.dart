@@ -19,17 +19,22 @@ import 'package:pitchy/shared/services/mock/mock_pitchy_api.dart';
 
 /// Serves one live snapshot; everything else falls back to the mock.
 class _LiveSnapshot extends MockPitchyApi {
-  _LiveSnapshot(this.match, this.status, this.weather, this.alerts) : super(latency: Duration.zero);
+  _LiveSnapshot(this.match, this.status, this.weather, this.trend, this.alerts)
+    : super(latency: Duration.zero);
   final MatchContext match;
   final WeatherStatus status;
   final ConsolidatedWeather weather;
+
+  /// The P-27 trend window (`hours_before=6&hours=5`).
+  final ConsolidatedWeather trend;
   final VenueAlerts alerts;
   @override
   Future<MatchContext> getMatchContext(String id) async => match;
   @override
   Future<WeatherStatus> getWeatherStatus(String id) async => status;
   @override
-  Future<ConsolidatedWeather> getWeather(String id, {int? hours}) async => weather;
+  Future<ConsolidatedWeather> getWeather(String id, {int? hours, int? hoursBefore}) async =>
+      hoursBefore == null ? weather : trend;
   @override
   Future<VenueAlerts> getAlerts(String id) async => alerts;
 }
@@ -67,6 +72,7 @@ void main() {
           m,
           await http.getWeatherStatus(m.id),
           await http.getWeather(m.id),
+          await http.getWeather(m.id, hours: 5, hoursBefore: 6),
           await http.getAlerts(m.id),
         );
       }, _RealHttp());
@@ -96,6 +102,19 @@ void main() {
     await expectLater(
       find.byType(PitchyApp),
       matchesGoldenFile('../.impeccable/review/live-phone-alert.png'),
+    );
+    // P-27: the hourly trend from the live trend window.
+    await tester.scrollUntilVisible(
+      find.text('Hourly trend'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await expectLater(
+      find.byType(PitchyApp),
+      matchesGoldenFile('../.impeccable/review/live-phone-trend.png'),
     );
   });
 }
