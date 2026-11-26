@@ -230,7 +230,8 @@ class _ChatState extends State<_Chat> {
 }
 
 /// Always visible above the conversation: what Ask Pitchy is, and what it isn't.
-class _AgentNotice extends StatelessWidget {
+/// It can be collapsed to the safety line alone; that line never hides.
+class _AgentNotice extends StatefulWidget {
   const _AgentNotice({
     super.key,
     required this.match,
@@ -247,61 +248,101 @@ class _AgentNotice extends StatelessWidget {
   final bool compact;
 
   @override
+  State<_AgentNotice> createState() => _AgentNoticeState();
+}
+
+class _AgentNoticeState extends State<_AgentNotice> {
+  bool _collapsed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final match = widget.match;
+    final side = widget.side;
+    final compact = widget.compact;
     final palette = context.palette;
-    final text = Theme.of(context).textTheme;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: palette.surface,
-        border: Border(bottom: BorderSide(color: palette.hairline)),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: side, vertical: compact ? 8 : 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline, color: palette.inkMuted, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  compact
-                      ? 'AI explanations, not decisions. Officials decide.'
-                      : 'AI explanations, not official decisions. The Safety tab and your '
-                            'match officials decide.',
-                  style: text.bodyMedium,
-                ),
-                const SizedBox(height: 2),
-                if (match case final m?)
-                  Text(
-                    'About ${m.venue.name}, kickoff ${formatPhtDateTime(m.kickoffAt)}',
-                    style: text.bodySmall?.copyWith(color: palette.inkMuted),
-                  )
-                else ...[
-                  Text(
-                    'No match selected: general guidance from approved documents only, '
-                    'not about current conditions.',
-                    style: text.bodySmall?.copyWith(color: palette.ink),
-                  ),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton(
-                      onPressed: () => context.push(Routes.matchSetup),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        minimumSize: const Size(48, 40),
-                      ),
-                      child: const Text('Set up a match'),
-                    ),
-                  ),
-                ],
-              ],
+    // The whole notice is the hide/show target (at least 48 px tall), so the
+    // safety line keeps its width; the arrow is only the visual cue.
+    return Material(
+      color: palette.surface,
+      shape: Border(bottom: BorderSide(color: palette.hairline)),
+      child: Tooltip(
+        message: _collapsed ? 'Show details' : 'Hide details',
+        child: InkWell(
+          onTap: () => setState(() => _collapsed = !_collapsed),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48, minWidth: double.infinity),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: side, vertical: compact ? 8 : 10),
+              child: _body(context, match, compact),
             ),
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _body(BuildContext context, MatchContext? match, bool compact) {
+    final palette = context.palette;
+    final text = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.info_outline, color: palette.inkMuted, size: 20),
+        // 8 + a 16 px arrow: the phone safety line still fits on one line at 390 px.
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                compact
+                    ? 'AI explanations, not decisions. Officials decide.'
+                    : 'AI explanations, not official decisions. The Safety tab and your '
+                          'match officials decide.',
+                style: text.bodyMedium,
+              ),
+              if (_collapsed)
+                const SizedBox.shrink()
+              else if (match case final m?) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'About ${m.venue.name}, kickoff ${formatPhtDateTime(m.kickoffAt)}',
+                  style: text.bodySmall?.copyWith(color: palette.inkMuted),
+                ),
+              ] else ...[
+                const SizedBox(height: 2),
+                Text(
+                  'No match selected: general guidance from approved documents only, '
+                  'not about current conditions.',
+                  style: text.bodySmall?.copyWith(color: palette.ink),
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton(
+                    onPressed: () => context.push(Routes.matchSetup),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                      minimumSize: const Size(48, 40),
+                    ),
+                    child: const Text('Set up a match'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 4),
+        ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(
+              _collapsed ? Icons.expand_more : Icons.expand_less,
+              color: palette.inkMuted,
+              size: 16,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

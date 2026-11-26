@@ -53,6 +53,22 @@ void main() {
       expect(find.textContaining('About Rizal Memorial Stadium'), findsOneWidget);
     });
 
+    testWidgets('hiding the details shrinks the notice to the safety line', (tester) async {
+      await _openStarted(tester, const Size(390, 844));
+      final before = tester.getSize(_notice).height;
+      await tester.tap(find.byTooltip('Hide details'));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(_notice).height, lessThan(before));
+      final safety = find.text('AI explanations, not decisions. Officials decide.');
+      expect(safety, findsOneWidget);
+      final line = tester.renderObject<RenderParagraph>(safety);
+      expect(
+        line.size.height,
+        lessThanOrEqualTo(line.getMinIntrinsicHeight(double.infinity) + 0.5),
+      );
+      expect(find.textContaining('About Rizal Memorial Stadium'), findsNothing);
+    });
+
     testWidgets('the role stays visible and changeable from the composer row', (tester) async {
       await _openStarted(tester, const Size(390, 844));
       // Review P1-1: a visible short role name and a caret, not an icon only.

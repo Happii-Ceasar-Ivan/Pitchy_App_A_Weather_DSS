@@ -189,6 +189,29 @@ void main() {
       expect(find.byKey(const ValueKey('general-only')), findsOneWidget);
     });
 
+    testWidgets('the notice collapses to the safety line and expands again', (tester) async {
+      await open(tester);
+      await start(tester);
+      const safety = 'AI explanations, not decisions. Officials decide.';
+      expect(find.textContaining('No match selected'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Hide details'));
+      await tester.pumpAndSettle();
+      // The safety line never hides; the details and Set up a match do.
+      expect(find.text(safety), findsOneWidget);
+      expect(find.textContaining('No match selected'), findsNothing);
+      expect(find.text('Set up a match'), findsNothing);
+      final button = tester.getSize(find.byTooltip('Show details'));
+      expect(button.width, greaterThanOrEqualTo(48));
+      expect(button.height, greaterThanOrEqualTo(48));
+
+      await tester.tap(find.byTooltip('Show details'));
+      await tester.pumpAndSettle();
+      expect(find.text(safety), findsOneWidget);
+      expect(find.textContaining('No match selected'), findsOneWidget);
+      expect(find.text('Set up a match'), findsOneWidget);
+    });
+
     testWidgets('Set up a match from the general chat opens match setup', (tester) async {
       await open(tester);
       await start(tester);
