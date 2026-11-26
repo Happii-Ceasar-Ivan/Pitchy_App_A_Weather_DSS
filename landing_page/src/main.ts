@@ -6,6 +6,24 @@ import type { Weather } from './scene/audio';
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
+/* ---------- scroll reveals: one observer, only when motion is welcome ---------- */
+if (matchMedia('(prefers-reduced-motion: no-preference)').matches && 'IntersectionObserver' in window) {
+  document.documentElement.classList.add('motion');
+  document.querySelectorAll<HTMLElement>('.faq-list details').forEach((d, i) => d.style.setProperty('--i', String(i)));
+  const reveals = new IntersectionObserver(
+    (entries, obs) => {
+      for (const en of entries) {
+        // also settle anything already scrolled past (anchor jumps), so nothing stays hidden
+        if (!en.isIntersecting && en.boundingClientRect.top >= 0) continue;
+        en.target.classList.add('is-in');
+        obs.unobserve(en.target);
+      }
+    },
+    { rootMargin: '0px 0px -15% 0px' },
+  );
+  document.querySelectorAll('[data-reveal], [data-sweep], [data-line]').forEach((el) => reveals.observe(el));
+}
+
 /* ---------- inline icons ---------- */
 function paintIcons(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => {

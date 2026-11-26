@@ -17,44 +17,45 @@
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 @font-face {
-  font-family: "Atkinson Hyperlegible Next";
+  font-family: "Switzer";
+  src: url("/fonts/switzer-variable.woff2") format("woff2");
+  font-weight: 100 900;
   font-style: normal;
-  font-weight: 200 800;
   font-display: swap;
-  src: url("/fonts/atkinson-hyperlegible-next-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+/* Metric-matched fallback so the swap does not shift layout. Values measured against Switzer in Chromium (width, ascent, descent). */
 @font-face {
-  font-family: "Atkinson Hyperlegible Next";
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-  src: url("/fonts/atkinson-hyperlegible-next-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  font-family: "Switzer Fallback";
+  src: local("Arial");
+  size-adjust: 100.4%;
+  ascent-override: 97.6%;
+  descent-override: 24.9%;
+  line-gap-override: 0%;
 }
 
 :root {
   /* night stadium */
-  --night: #07111f;
-  --night-2: #0b1626;
-  --navy: #0f2540;
-  --navy-2: #16304f;
-  --navy-line: #2b3e58;
+  --night: #031a31;
+  --night-2: #052341;
+  --navy: #0a2d4e;
+  --navy-2: #113a60;
+  --navy-line: #23476b;
   --on-dark: #f2f5f9;
   --on-dark-muted: #b4c2d3;
 
   /* pitch */
   --pitch: #0e3b2e;
   --pitch-2: #114634;
-  --teal: #0e6b52;
-  --teal-hover: #0b5a45;
-  --teal-bright: #52c7b4;
+  --red: #d62935;
+  --red-hover: #b8222d;
+  --glacier: #8bb9d9;
+  --glacier-ink: #2f5f82;
   --flood: #fff4d6;
 
   /* match-programme paper (install, FAQ) */
   --ground: #f5f7fa;
   --surface: #ffffff;
-  --ink: #0f2540;
+  --ink: #031a31;
   --ink-muted: #45556b;
   --hairline: #d3dae3;
   --tint: #e6ecf4;
@@ -71,7 +72,7 @@
   --windows-tint: #e4eefa;
 
   --f-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
-  --f-body: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-body: "Switzer", "Switzer Fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --s1: 4px;
   --s2: 8px;
@@ -90,15 +91,18 @@
   --r-xl: 28px;
   --r-pill: 999px;
 
-  --shadow-1: 0 1px 2px rgba(7, 17, 31, 0.08), 0 2px 8px rgba(7, 17, 31, 0.06);
-  --shadow-2: 0 2px 4px rgba(7, 17, 31, 0.05), 0 18px 44px rgba(7, 17, 31, 0.12);
+  --shadow-1: 0 1px 2px rgba(3, 26, 49, 0.08), 0 2px 8px rgba(3, 26, 49, 0.06);
+  --shadow-2: 0 2px 4px rgba(3, 26, 49, 0.05), 0 18px 44px rgba(3, 26, 49, 0.12);
   --shadow-dark: 0 2px 6px rgba(0, 0, 0, 0.3), 0 30px 70px rgba(0, 0, 0, 0.45);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-reveal: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-line: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-sine: cubic-bezier(0.445, 0.05, 0.55, 0.95);
   --t-fast: 140ms;
   --t-mid: 260ms;
 
   --header-h: 68px;
   --gutter: clamp(16px, 4.2vw, 48px);
-  --focus: var(--teal-bright);
+  --focus: var(--glacier);
 }

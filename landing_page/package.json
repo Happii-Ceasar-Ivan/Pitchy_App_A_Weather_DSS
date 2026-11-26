@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "fonts": "node scripts/fetch-switzer.mjs",
+    "predev": "node scripts/fetch-switzer.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/fetch-switzer.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"

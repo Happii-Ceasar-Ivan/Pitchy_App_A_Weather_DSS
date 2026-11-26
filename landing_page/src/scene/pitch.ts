@@ -131,14 +131,14 @@ export function createPitch(o: PitchOptions): PitchHandle {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
 
-    g.fillStyle = '#0d1624';
+    g.fillStyle = '#031a31';
     g.fillRect(0, 0, W, H);
 
     // stands: crowd as small tiles in muted kit colours
     const boardH = Math.max(14, H * 0.034);
     const standBottom = pt - boardH;
     const step = Math.max(4, H * 0.0085);
-    const crowd = ['#33404f', '#4e3636', '#2c4058', '#5f6266', '#6f6450', '#35473f', '#7d4a4a', '#8c8f94', '#9a8440', '#2f5f57'];
+    const crowd = ['#33404f', '#3a4658', '#2c4058', '#5f6266', '#6f6450', '#35473f', '#56606e', '#8c8f94', '#9a8440', '#2f5f57'];
     for (let y = 2, r = 0; y < standBottom; y += step, r++) {
       const dim = 0.5 + 0.5 * (y / standBottom);
       for (let x = (r % 2) * step * 0.6; x < W; x += step * 1.2) {
@@ -148,18 +148,18 @@ export function createPitch(o: PitchOptions): PitchHandle {
       }
       if (r % 9 === 8) {
         g.globalAlpha = 0.55;
-        g.fillStyle = '#070d16';
+        g.fillStyle = '#02111f';
         g.fillRect(0, y + step * 0.85, W, step * 0.35);
       }
     }
     g.globalAlpha = 1;
     let gr = g.createLinearGradient(0, 0, 0, standBottom);
-    gr.addColorStop(0, 'rgba(5,9,16,.9)');
-    gr.addColorStop(1, 'rgba(5,9,16,0)');
+    gr.addColorStop(0, 'rgba(2,14,26,.9)');
+    gr.addColorStop(1, 'rgba(2,14,26,0)');
     g.fillStyle = gr;
     g.fillRect(0, 0, W, standBottom);
     for (let x = W / 16; x < W; x += W / 8) {
-      g.fillStyle = 'rgba(6,10,16,.5)';
+      g.fillStyle = 'rgba(2,14,26,.5)';
       g.fillRect(x, 0, Math.max(3, W * 0.006), standBottom);
     }
 
@@ -169,9 +169,9 @@ export function createPitch(o: PitchOptions): PitchHandle {
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     for (let x = 0, i = 0; x < W; x += pw, i++) {
-      g.fillStyle = i % 2 ? '#0f2540' : '#0e3b2e';
+      g.fillStyle = i % 2 ? '#031a31' : '#0a2d4e';
       g.fillRect(x, standBottom, pw, boardH);
-      g.fillStyle = i % 2 ? 'rgba(242,245,249,.82)' : 'rgba(82,199,180,.9)';
+      g.fillStyle = i % 2 ? 'rgba(242,245,249,.82)' : 'rgba(139,185,217,.9)';
       g.fillText('PITCHY', x + pw / 2, standBottom + boardH * 0.54);
     }
     g.fillStyle = 'rgba(0,0,0,.35)';
@@ -592,7 +592,7 @@ export function createPitch(o: PitchOptions): PitchHandle {
 
     const { W, H, dpr, cx, goalY, gh, gw } = G;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#07111f';
+    ctx.fillStyle = '#02111f';
     ctx.fillRect(0, 0, W, H);
 
     ctx.save();
@@ -609,7 +609,7 @@ export function createPitch(o: PitchOptions): PitchHandle {
     ctx.drawImage(lit, 0, 0, W, H);
     ctx.globalAlpha = 1;
     if (L < 1) {
-      ctx.fillStyle = `rgba(7,17,31,${0.22 * (1 - L)})`;
+      ctx.fillStyle = `rgba(3,26,49,${0.22 * (1 - L)})`;
       ctx.fillRect(0, 0, W, H);
     }
 

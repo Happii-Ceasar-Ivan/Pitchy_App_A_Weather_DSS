@@ -8,7 +8,7 @@
       name="description"
       content="Pitchy puts match-day weather from PAGASA and Open-Meteo, the guidance the approved safety rules give, and plain-language answers into one app for Android and Windows. Free download."
     />
-    <meta name="theme-color" content="#07111F" />
+    <meta name="theme-color" content="#031A31" />
     <meta property="og:title" content="Pitchy: Your Football Safety &amp; Weather Guide" />
     <meta
       property="og:description"
@@ -18,7 +18,7 @@
     <link rel="icon" type="image/png" href="/brand/favicon-64.png" />
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/big-shoulders-display-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/switzer-variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
   <body>
@@ -36,7 +36,7 @@
           <a href="#install">Install</a>
           <a href="#faq">FAQ</a>
         </nav>
-        <a class="btn btn-primary btn-sm" href="#install">Get Pitchy</a>
+        <a class="btn btn-primary btn-red btn-sm" href="#install">Get Pitchy</a>
       </div>
     </header>
 
@@ -59,7 +59,7 @@
               Ask Pitchy to explain it in plain words. Every value shows its source and how old it is.
             </p>
             <div class="hero-actions">
-              <a class="btn btn-primary btn-lg" href="#install">Get Pitchy</a>
+              <a class="btn btn-primary btn-red btn-lg" href="#install">Get Pitchy</a>
               <a class="btn btn-ghost btn-lg" href="#features">See what it does</a>
             </div>
             <p class="hero-status">
@@ -102,15 +102,15 @@
       <!-- FEATURES: scroll story with a sticky phone -->
       <section class="features" id="features" aria-labelledby="features-title">
         <div class="wrap">
-          <h2 class="section-title" id="features-title">Match conditions, nothing hidden</h2>
-          <p class="section-lede">
+          <h2 class="section-title" id="features-title" data-sweep>Match conditions, nothing hidden</h2>
+          <p class="section-lede" data-reveal>
             Pitchy is a weather and safety guide for football matches in the Philippines. It brings several sources
             together for your venue and kickoff, and keeps the evidence one tap away.
           </p>
 
           <div class="story">
             <div class="story-steps">
-              <article class="story-step" data-shot="0">
+              <article class="story-step" data-shot="0" data-reveal>
                 <h3 class="story-title">Conditions for your venue and kickoff</h3>
                 <p>
                   Pick Rizal Memorial Stadium or New Clark City, and a kickoff time. Pitchy shows air temperature, heat
@@ -127,7 +127,7 @@
                 </figure>
               </article>
 
-              <article class="story-step" data-shot="1">
+              <article class="story-step" data-shot="1" data-reveal>
                 <h3 class="story-title">Hourly trend around kickoff</h3>
                 <p>
                   Pick a value and a time range, from 6 hours before kickoff to 5 hours after. The chart shows the
@@ -141,7 +141,7 @@
                 </figure>
               </article>
 
-              <article class="story-step" data-shot="2">
+              <article class="story-step" data-shot="2" data-reveal="safe">
                 <h3 class="story-title">The safety status, from the rules</h3>
                 <p>
                   Pitchy’s safety engine checks heat, lightning and rain against the approved rules. It shows what the
@@ -153,7 +153,7 @@
                 </figure>
               </article>
 
-              <article class="story-step" data-shot="3">
+              <article class="story-step" data-shot="3" data-reveal>
                 <h3 class="story-title">Ask Pitchy, in plain words</h3>
                 <p>
                   Ask about the weather and the guidance for your match. Pick your role, such as coach, referee, medical
@@ -182,15 +182,15 @@
       <!-- WINDOWS: mown-stripe band -->
       <section class="windows" aria-labelledby="windows-title">
         <div class="wrap windows-inner">
-          <div class="windows-copy">
-            <h2 class="section-title" id="windows-title">On Windows, for planning ahead</h2>
+          <div class="windows-copy" data-reveal>
+            <h2 class="section-title" id="windows-title" data-sweep>On Windows, for planning ahead</h2>
             <p>
               The same app on a PC, with room to read the sources, the timestamps and the basis of each assessment
               before match day.
             </p>
           </div>
           <figure class="windows-shot">
-            <div class="device-window">
+            <div class="device-window" data-reveal="clip">
               <div class="window-bar" aria-hidden="true">
                 <img src="/brand/pitchy-logo.png" alt="" width="16" height="16" />
                 <span>Pitchy</span>
@@ -210,29 +210,29 @@
             <figcaption>App screen with sample data</figcaption>
           </figure>
           <div class="trust-copy">
-            <h2 class="section-title" id="trust-title">Pitchy tells you how old the data is</h2>
-            <p class="section-lede">
+            <h2 class="section-title" id="trust-title" data-sweep>Pitchy tells you how old the data is</h2>
+            <p class="section-lede" data-reveal="safe">
               A weather number without its age can mislead. Pitchy never shows old or missing data as if it were live.
             </p>
             <ul class="truths">
-              <li class="truth">
+              <li class="truth" data-reveal="safe">
                 <span data-icon="source"></span>
                 <div><p class="truth-title">A source on every value</p><p>Each reading names where it came from and the time it covers.</p></div>
               </li>
-              <li class="truth">
+              <li class="truth" data-reveal="safe">
                 <span data-icon="clock"></span>
                 <div><p class="truth-title">Stale is never shown as current</p><p>Old or missing data is labelled Stale or Unavailable, never passed off as live.</p></div>
               </li>
-              <li class="truth">
+              <li class="truth" data-reveal="safe">
                 <span data-icon="cloudOff"></span>
                 <div><p class="truth-title">A saved copy when the signal drops</p><p>Weak signal at the venue? Pitchy shows its last good reply, clearly marked as a saved copy.</p></div>
               </li>
-              <li class="truth">
+              <li class="truth" data-reveal="safe">
                 <span data-icon="globeTime"></span>
                 <div><p class="truth-title">Philippine Time, always</p><p>Every time is shown in PHT, whatever time zone your device is set to.</p></div>
               </li>
             </ul>
-            <p class="trust-note">
+            <p class="trust-note" data-reveal="safe">
               <span data-icon="shield"></span>
               <span>Pitchy supports the people who make match decisions. It doesn’t replace them.</span>
             </p>
@@ -243,7 +243,7 @@
       <!-- INSTALL -->
       <section class="install" id="install" aria-labelledby="install-title">
         <div class="wrap">
-          <div class="install-head">
+          <div class="install-head" data-line>
             <h2 class="section-title" id="install-title">Install Pitchy</h2>
             <p class="section-lede">
               For Android phones and Windows PCs. Pick your device, download, and follow the steps.
@@ -260,31 +260,31 @@
         <div class="wrap faq-inner">
           <h2 class="section-title" id="faq-title">Questions</h2>
           <div class="faq-list">
-            <details>
+            <details data-line>
               <summary>Is Pitchy available yet?</summary>
               <p>Yes. Version 1.1.0 is out for Android (APK) and Windows (installer). Download it on this page, or from Pitchy’s GitHub Releases, where every version and its SHA-256 checksums are listed.</p>
             </details>
-            <details>
+            <details data-line>
               <summary>Is there an iPhone or Mac version?</summary>
               <p>No. Pitchy is planned for Android and Windows only.</p>
             </details>
-            <details>
+            <details data-line>
               <summary>Why does Android ask me to allow the install?</summary>
               <p>Pitchy for Android comes as an APK file from this page, not from the Google Play Store. Android asks you to allow installs from your browser for files like this.</p>
             </details>
-            <details>
+            <details data-line>
               <summary>Do I need an account?</summary>
               <p>No. There’s no sign-up or login. In Ask Pitchy you pick a role, which only changes how answers are worded.</p>
             </details>
-            <details>
+            <details data-line>
               <summary>Where does the weather come from?</summary>
               <p>From PAGASA and Open-Meteo, with DOST-ASTI planned. In the app, every value shows its source. <a href="https://open-meteo.com/" rel="noopener" target="_blank">Weather data by Open-Meteo.com</a>.</p>
             </details>
-            <details>
+            <details data-line>
               <summary>Does Pitchy decide whether a match goes ahead?</summary>
               <p>No. It shows the data and what the approved rules say. Match officials make the decision.</p>
             </details>
-            <details>
+            <details data-line>
               <summary>Is the weather on this page real?</summary>
               <p>No. The rain and wind on the pitch at the top of this page are just for fun. Real conditions are only in the app.</p>
             </details>
@@ -293,7 +293,7 @@
       </section>
     </main>
 
-    <footer class="site-footer">
+    <footer class="site-footer" data-line>
       <div class="wrap footer-inner">
         <div class="footer-brand">
           <a class="brand" href="#top" aria-label="Pitchy, back to top">
