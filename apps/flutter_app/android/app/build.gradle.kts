@@ -84,6 +84,15 @@ android {
         }
     }
 
+    // Store native libraries compressed in the APK (P-08 size audit,
+    // 2026-11-26): the universal APK downloads at about half the size.
+    // Android unpacks them on install, so installed size is a little larger.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             // The release key when there is one; otherwise the debug key, which
