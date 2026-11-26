@@ -5,6 +5,7 @@
 // existing jobs), 409 when not needed or already running, or 429 with retry_at.
 
 import 'json.dart';
+import 'weather.dart' show WaitReason;
 
 enum IngestionJobState {
   queued('queued'),
@@ -73,14 +74,38 @@ class IngestionJob {
   final bool reusedExistingJob;
 }
 
+/// Sources that needed data but were not asked by this request, and when they
+/// may be (P-27 A4).
+class IngestionWait {
+  const IngestionWait({required this.sourceIds, required this.retryAt, required this.reason});
+
+  factory IngestionWait.fromJson(Json json) => IngestionWait(
+    sourceIds: readStringList(json, 'source_ids'),
+    retryAt: readTimeOrNull(json, 'retry_at'),
+    reason: WaitReason.parse(json['reason']),
+  );
+
+  final List<String> sourceIds;
+  final DateTime? retryAt;
+  final WaitReason? reason;
+}
+
 class IngestionRequestResult {
-  const IngestionRequestResult({required this.matchContextId, required this.jobs});
+  const IngestionRequestResult({
+    required this.matchContextId,
+    required this.jobs,
+    this.waiting = const [],
+  });
 
   factory IngestionRequestResult.fromJson(Json json) => IngestionRequestResult(
     matchContextId: readString(json, 'match_context_id'),
     jobs: readList(json, 'jobs', IngestionJob.fromJson),
+    waiting: readList(json, 'waiting', IngestionWait.fromJson, optional: true),
   );
 
   final String matchContextId;
   final List<IngestionJob> jobs;
+
+  /// Empty on older backends and when every source needing data was asked.
+  final List<IngestionWait> waiting;
 }

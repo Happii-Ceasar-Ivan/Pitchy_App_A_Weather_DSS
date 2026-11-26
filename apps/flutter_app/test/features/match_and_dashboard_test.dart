@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/core/storage/preferences.dart';
 import 'package:pitchy/core/storage/saved_copies.dart';
+import 'package:pitchy/features/dashboard/trend/trend_card.dart';
 import 'package:pitchy/features/match_management/match_controller.dart';
 import 'package:pitchy/shared/models/match.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
@@ -191,6 +192,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
       expect(find.byType(SourceRailSkeleton), findsOneWidget);
       expect(find.byType(WeatherCardGridSkeleton), findsOneWidget);
+      expect(find.byType(TrendCardSkeleton), findsOneWidget);
+      final skeletonTrend = tester.getRect(find.byType(TrendCardSkeleton));
       final skeletonRail = tester.getRect(find.byType(SourceRailSkeleton));
       final skeletonGrid = tester.getRect(find.byType(WeatherCardGridSkeleton)).topLeft;
       final skeletonCardTops = [
@@ -207,6 +210,9 @@ void main() {
       expect(rail.topLeft, skeletonRail.topLeft);
       expect(rail.width, skeletonRail.width);
       expect((rail.height - skeletonRail.height).abs(), lessThan(1.5));
+      final trend = tester.getRect(find.byType(TrendCard));
+      expect((trend.top - skeletonTrend.top).abs(), lessThan(1.5));
+      expect((trend.height - skeletonTrend.height).abs(), lessThan(1.5));
       final grid = tester.getRect(find.byType(WeatherCardGrid)).topLeft;
       expect((grid.dy - skeletonGrid.dy).abs(), lessThan(1.5));
       expect(grid.dx, skeletonGrid.dx);
@@ -262,19 +268,26 @@ void main() {
       expect(find.text('Update'), findsNothing); // no second request while a job runs
     });
 
-    testWidgets('phone stacks rail above cards; wide windows put them side by side', (
+    testWidgets('sources, trend, tiles stack on phones and wide windows alike', (
       tester,
     ) async {
       await pumpPitchyApp(tester, prefs: withActiveMatch());
       var rail = tester.getRect(find.byType(SourceRail));
+      var trend = tester.getRect(find.byType(TrendCard));
       var grid = tester.getRect(find.byType(WeatherCardGrid));
-      expect(grid.top, greaterThan(rail.bottom));
+      // P-27: sources, then the hourly trend, then the tiles.
+      expect(trend.top, greaterThan(rail.bottom));
+      expect(grid.top, greaterThan(trend.bottom));
 
       await pumpPitchyApp(tester, prefs: withActiveMatch(), size: const Size(1400, 900));
       rail = tester.getRect(find.byType(SourceRail));
+      trend = tester.getRect(find.byType(TrendCard));
       grid = tester.getRect(find.byType(WeatherCardGrid));
-      expect(grid.left, greaterThan(rail.right));
-      expect(grid.top, rail.top);
+      // Wide: the same order, each across the full width (no empty column).
+      expect(trend.top, greaterThan(rail.bottom));
+      expect(grid.top, greaterThan(trend.bottom));
+      expect((trend.left, trend.right), (rail.left, rail.right));
+      expect((grid.left, grid.right), (rail.left, rail.right));
     });
   });
 }

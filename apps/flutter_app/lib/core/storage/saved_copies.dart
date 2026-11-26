@@ -18,6 +18,9 @@ enum SavedKind {
 
   /// Consolidated weather for the default window only (no `hours`).
   weather,
+
+  /// Consolidated weather for the trend chart's window (P-27: `hours_before`).
+  trend,
   alerts,
   assessment,
 }

@@ -31,6 +31,7 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
   UpdateChecker? updates,
   UpdateInstaller? updateInstaller,
   bool checkForUpdatesOnOpen = false,
+  MockPitchyApi? api,
 }) async {
   final clockNow = now ?? testNow;
   tester.view.devicePixelRatio = 1;
@@ -38,7 +39,7 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
   addTearDown(tester.view.reset);
   final preferences = MemoryPreferences(prefs);
   final savedCopies = SavedCopyStore(preferences, clock: () => clockNow);
-  final api = MockPitchyApi(
+  api ??= MockPitchyApi(
     scenario: scenario,
     clock: () => clockNow,
     latency: latency,

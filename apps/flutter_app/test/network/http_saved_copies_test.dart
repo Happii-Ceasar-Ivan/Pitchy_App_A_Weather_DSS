@@ -62,6 +62,7 @@ void main() {
     await api.getMatchContext(id);
     await api.getWeatherStatus(id);
     await api.getWeather(id);
+    await api.getWeather(id, hours: 5, hoursBefore: 6);
     await api.getAlerts(id);
     await api.getAssessment(id);
 
@@ -76,6 +77,7 @@ void main() {
   test('a weather call for a custom window is not saved', () async {
     await online().getWeather(id, hours: 6);
     expect(store.get(id, SavedKind.weather), isNull);
+    expect(store.get(id, SavedKind.trend), isNull);
   });
 
   test('chat and session replies are never saved', () async {

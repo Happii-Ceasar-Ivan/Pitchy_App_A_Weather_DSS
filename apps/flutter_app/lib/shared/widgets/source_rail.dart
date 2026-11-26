@@ -5,6 +5,7 @@ import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'data_state_badge.dart';
 import 'skeletons.dart';
+import 'wait_text.dart';
 import 'weather_value_card.dart' show shortSourceName;
 
 /// The Line Board's signature: every weather source is a line on the board with
@@ -344,11 +345,13 @@ class _SourceLine extends StatelessWidget {
     final filled = source.state == WeatherDataState.current;
     final p = source.provenance;
 
+    final wait = sourceWaitLine(source, now: now);
     return Semantics(
       container: true,
       label:
           '${source.sourceName}: ${spokenStateWord(context, source.state)}. ${_detail()}'
-          '${p != null && !source.coversMatchTime ? '. Doesn’t cover the whole match.' : ''}',
+          '${p != null && !source.coversMatchTime ? '. Doesn’t cover the whole match.' : ''}'
+          '${wait == null ? '' : '. $wait.'}',
       excludeSemantics: true,
       child: IntrinsicHeight(
         child: Row(
@@ -400,6 +403,26 @@ class _SourceLine extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    // P-27 A4: why and when this source is asked again. Only
+                    // from the backend's fields; only while it must wait.
+                    if (wait != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1, right: 4),
+                              child: Icon(
+                                Icons.schedule,
+                                size: MediaQuery.textScalerOf(context).scale(14),
+                                color: palette.inkMuted,
+                              ),
+                            ),
+                            Expanded(child: Text(wait, style: text.bodySmall)),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 8),
                     ValidityBar(
                       window: coverage,

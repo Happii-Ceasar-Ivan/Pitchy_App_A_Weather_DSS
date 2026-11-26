@@ -59,6 +59,35 @@ class Provenance {
   final DateTime? expiresAt;
 }
 
+/// Why a source needing data must wait before it is asked again (P-27 A4).
+/// The backend decides; the app only words it.
+enum WaitReason {
+  /// PAGASA: 4 hours after the last successful request.
+  minInterval('min_interval'),
+
+  /// PAGASA answered 401/403/429 last time (signs of blocking): 4 hours.
+  sourceRefused('source_refused'),
+
+  /// 15 minutes after an ordinary failed request.
+  failureCooldown('failure_cooldown'),
+
+  /// A reason this app version doesn't know yet: worded generically.
+  other('');
+
+  const WaitReason(this.wire);
+  final String wire;
+
+  /// Null for null; an unknown value becomes [other] instead of failing the
+  /// whole reply, since the wording is only a hint.
+  static WaitReason? parse(Object? value) {
+    if (value == null) return null;
+    for (final r in values) {
+      if (r != other && r.wire == value) return r;
+    }
+    return other;
+  }
+}
+
 class SourceStatus {
   const SourceStatus({
     required this.sourceId,
@@ -68,6 +97,8 @@ class SourceStatus {
     required this.currentUntil,
     required this.provenance,
     required this.limitations,
+    this.nextRequestAt,
+    this.waitReason,
   });
 
   factory SourceStatus.fromJson(Json json) => SourceStatus(
@@ -80,6 +111,8 @@ class SourceStatus {
         ? null
         : Provenance.fromJson(asJson(json['provenance'], 'provenance')),
     limitations: readList(json, 'limitations', Limitation.fromJson, optional: true),
+    nextRequestAt: readTimeOrNull(json, 'next_request_at'),
+    waitReason: WaitReason.parse(json['wait_reason']),
   );
 
   final String sourceId;
@@ -91,6 +124,11 @@ class SourceStatus {
   final DateTime? currentUntil;
   final Provenance? provenance;
   final List<Limitation> limitations;
+
+  /// Set only while this source needs data and a new request must wait (P-27
+  /// A4). Null when current or requestable now, and on older backends.
+  final DateTime? nextRequestAt;
+  final WaitReason? waitReason;
 }
 
 class CoverageWindow {
@@ -297,6 +335,8 @@ class ConsolidatedWeather {
     required this.sources,
     required this.quantities,
     required this.attributions,
+    this.kickoffAt,
+    this.coverage,
   });
 
   factory ConsolidatedWeather.fromJson(Json json) => ConsolidatedWeather(
@@ -307,6 +347,10 @@ class ConsolidatedWeather {
     sources: readList(json, 'sources', SourceStatus.fromJson),
     quantities: readList(json, 'quantities', ConsolidatedQuantity.fromJson),
     attributions: readList(json, 'attributions', Attribution.fromJson),
+    kickoffAt: readTimeOrNull(json, 'kickoff_at'),
+    coverage: json['coverage'] == null
+        ? null
+        : CoverageWindow.fromJson(asJson(json['coverage'], 'coverage')),
   );
 
   final String matchContextId;
@@ -316,4 +360,10 @@ class ConsolidatedWeather {
   final List<SourceStatus> sources;
   final List<ConsolidatedQuantity> quantities;
   final List<Attribution> attributions;
+
+  /// Exact kickoff (UTC) and the DEC-04 coverage window (kickoff to +2 h),
+  /// sent since P-27. Null on older backends, which also can't serve hours
+  /// before kickoff.
+  final DateTime? kickoffAt;
+  final CoverageWindow? coverage;
 }

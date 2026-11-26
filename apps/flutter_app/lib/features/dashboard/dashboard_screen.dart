@@ -17,7 +17,9 @@ import '../../shared/widgets/weather_value_card.dart';
 import '../match_management/match_controller.dart';
 import 'dashboard_controller.dart';
 import 'ingest_widgets.dart';
+
 import 'ingestion_controller.dart';
+import 'trend/trend_card.dart';
 
 /// Dashboard: the active match's kickoff strip, official alerts, the source
 /// rail (with the update action, F2) and the weather cards. Every state and
@@ -138,8 +140,14 @@ class _MatchDashboardState extends State<_MatchDashboard> {
 
   /// Success and "already up to date" are brief: a snack bar, then cleared.
   void _announce() {
+    final data = _controller.data;
+    final waits = waitingSummary(
+      _ingest.waiting,
+      data is Loaded<DashboardData> ? data.value.status.sources : const [],
+      now: _match.now,
+    );
     final message = switch (_ingest.outcome) {
-      IngestUpdated() => 'Weather data updated.',
+      IngestUpdated() => waits == null ? 'Weather data updated.' : 'Weather data updated. $waits.',
       IngestNotNeeded() => 'The server says no update is needed.',
       IngestBusy() => 'An update is already running on the server.',
       _ => null,
@@ -160,6 +168,13 @@ class _MatchDashboardState extends State<_MatchDashboard> {
     _controller.dispose();
     super.dispose();
   }
+
+  Widget _trend(BuildContext context) => TrendBlock(
+    trend: _controller.trend,
+    matchKickoff: widget.match.kickoffAt,
+    now: AppScope.of(context).match.now,
+    onRetry: _controller.retryTrend,
+  );
 
   void _changeMatch() {
     AppScope.of(context).match.draftFromActive();
@@ -211,6 +226,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                           now: AppScope.of(context).match.now,
                           action: const _UpdateOffWhileSaved(),
                         ),
+                        trend: _trend(context),
                         cards: WeatherCardGrid(
                           weather: value.weather,
                           kickoff: widget.match.kickoffAt,
@@ -246,6 +262,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                             ? IngestNotice(
                                 outcome: _ingest.outcome!,
                                 sources: value.status.sources,
+                                now: AppScope.of(context).match.now,
                                 // The wait reason stays while the button is held.
                                 onDismiss: _ingest.waitUntil == null
                                     ? _ingest.dismissOutcome
@@ -257,6 +274,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                               )
                             : null,
                       ),
+                      trend: _trend(context),
                       cards: WeatherCardGrid(
                         weather: value.weather,
                         kickoff: widget.match.kickoffAt,
@@ -369,30 +387,21 @@ class _BoardList extends StatelessWidget {
   }
 }
 
-/// Phone: rail above the cards. Wide windows: rail beside the cards.
+/// Sources, then the hourly trend, then the cards, on every width (P-27). On
+/// wide windows the rail is one compact row, so stacking leaves no empty
+/// column beside a tall chart (user, 2026-11-26), and the chart gets the full
+/// width for its hours.
 class _Board extends StatelessWidget {
-  const _Board({required this.rail, required this.cards});
+  const _Board({required this.rail, required this.trend, required this.cards});
 
   final Widget rail;
+  final Widget trend;
   final Widget cards;
 
-  static const sideBySide = 900.0;
-
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, c) => c.maxWidth >= sideBySide
-        ? Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 5, child: rail),
-              const SizedBox(width: 16),
-              Expanded(flex: 6, child: cards),
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [rail, const SizedBox(height: 12), cards],
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [rail, const SizedBox(height: 12), trend, const SizedBox(height: 12), cards],
   );
 }
 
@@ -400,6 +409,9 @@ class _BoardSkeleton extends StatelessWidget {
   const _BoardSkeleton();
 
   @override
-  Widget build(BuildContext context) =>
-      const _Board(rail: SourceRailSkeleton(), cards: WeatherCardGridSkeleton());
+  Widget build(BuildContext context) => const _Board(
+    rail: SourceRailSkeleton(),
+    trend: TrendCardSkeleton(),
+    cards: WeatherCardGridSkeleton(),
+  );
 }

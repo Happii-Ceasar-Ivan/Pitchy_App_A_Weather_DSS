@@ -143,6 +143,17 @@ List<Json> _sourceStatuses(MockScenario s, DateTime now, DateTime kickoff) {
             if (state == 'unavailable')
               {'code': 'SOURCE_FAILED', 'message': 'The last fetch from this source failed.'},
           ],
+          // P-27 A4: set only while a source needing data must wait.
+          'next_request_at': switch (state) {
+            'stale' => _t(now.add(const Duration(hours: 1, minutes: 40))),
+            'unavailable' => _t(now.add(const Duration(minutes: 15))),
+            _ => null,
+          },
+          'wait_reason': switch (state) {
+            'stale' => 'min_interval',
+            'unavailable' => 'failure_cooldown',
+            _ => null,
+          },
         };
       }(),
   ];
@@ -246,8 +257,10 @@ Json consolidatedWeatherJson({
   return {
     'match_context_id': id,
     'venue': 'rizal_memorial',
+    'kickoff_at': _t(kickoff),
     'checked_at': _t(now),
     'window': {'start': _t(start), 'end': _t(kickoff.add(const Duration(hours: 3)))},
+    'coverage': {'start': _t(kickoff), 'end': _t(kickoff.add(const Duration(hours: 2)))},
     'sources': sources,
     'quantities': [
       q('air_temperature', 'Air temperature', '°C', [
@@ -282,6 +295,165 @@ Json consolidatedWeatherJson({
         'pagasa_atmo',
         'pagasa_ecmwf',
       ], _slots(states: states, start, [3.1, 3.4, 4.2, 5.0])),
+    ],
+    'attributions': [
+      {
+        'source_id': 'open_meteo',
+        'text': 'Weather data by Open-Meteo.com',
+        'url': 'https://open-meteo.com/',
+      },
+    ],
+  };
+}
+
+/// The trend chart's window (P-27). The hours it shares with
+/// [consolidatedWeatherJson] (kickoff - 1 h to + 3 h) carry the same values, so
+/// the chart and the tiles agree in demos.
+///
+/// The trend chart's window (P-27): `hours_before` hours before kickoff to
+/// kickoff + [hours], one slot per hour. Synthetic values with the cases the
+/// chart must handle: hours before the Open-Meteo fetch are gaps, heat index
+/// has a gap after kickoff, rain switches source mid-range (with a fallback
+/// label), cloud cover has no value at all, and wind direction is circular.
+///
+/// [trendContract] false imitates a backend from before P-27: the window starts
+/// at kickoff and `kickoff_at`/`coverage` are missing (that reply is not valid
+/// against today's contract, on purpose).
+Json trendWeatherJson({
+  MockScenario scenario = MockScenario.allCurrent,
+  required DateTime now,
+  required DateTime kickoff,
+  String id = rizalMemorialId,
+  int hoursBefore = 6,
+  int hours = 5,
+  bool trendContract = true,
+}) {
+  final before = trendContract ? hoursBefore : 0;
+  final ko = DateTime.utc(kickoff.year, kickoff.month, kickoff.day, kickoff.hour);
+  final start = ko.subtract(Duration(hours: before));
+  final end = _ceilHour(kickoff.add(Duration(hours: hours)));
+  final count = end.difference(start).inHours;
+  final sources = _sourceStatuses(scenario, now, kickoff);
+  final states = {for (final src in sources) src['source_id']! as String: src['state']! as String};
+  bool usable(String? sid) => states[sid] == 'current' || states[sid] == 'stale';
+
+  // Values for offsets -6 .. +4 hours from kickoff.
+  double? at(List<double?> series, int k) =>
+      k + 6 >= 0 && k + 6 < series.length ? series[k + 6] : null;
+
+  Json slot(
+    int i,
+    double? raw,
+    String sourceFor, {
+    String? other,
+    double? otherValue,
+    String? fallback,
+  }) {
+    final value = usable(sourceFor) ? raw : null;
+    final hasOther = other != null && otherValue != null && usable(other);
+    final from = start.add(Duration(hours: i));
+    return {
+      'valid_from': _t(from),
+      'valid_until': _t(from.add(const Duration(hours: 1))),
+      'value': value,
+      'source_id': value == null ? null : sourceFor,
+      'state': value == null ? null : states[sourceFor],
+      'fallback_label': value == null ? null : fallback,
+      'notes': <String>[],
+      'range': value == null || !hasOther
+          ? null
+          : {
+              'min': value < otherValue ? value : otherValue,
+              'max': value > otherValue ? value : otherValue,
+              'count': 2,
+              'source_ids': [sourceFor, other],
+            },
+      'by_source': [
+        if (value != null)
+          {'source_id': sourceFor, 'value': value, 'state': states[sourceFor], 'note': null},
+        if (hasOther)
+          {'source_id': other, 'value': otherValue, 'state': states[other], 'note': null},
+      ],
+    };
+  }
+
+  List<Json> series(List<double?> values, {String source = 'open_meteo'}) => [
+    for (var i = 0; i < count; i++) slot(i, at(values, i - before), source),
+  ];
+
+  Json q(String key, String label, String unit, List<String> priority, List<Json> slots) => {
+    'quantity': key,
+    'label': label,
+    'unit': unit,
+    'priority': priority,
+    'slots': slots,
+  };
+
+  const heat = <double?>[36, 37, 38, 38, 39, 39, 40, 38, 36, null, 34];
+  const rain = <double?>[0, 0, 0, 0, 0.1, 0, 0.2, 1.4, 2.0, 0.6, 0.3];
+  return {
+    'match_context_id': id,
+    'venue': 'rizal_memorial',
+    if (trendContract) 'kickoff_at': _t(kickoff),
+    'checked_at': _t(now),
+    'window': {'start': _t(start), 'end': _t(end)},
+    if (trendContract)
+      'coverage': {'start': _t(kickoff), 'end': _t(kickoff.add(const Duration(hours: 2)))},
+    'sources': sources,
+    'quantities': [
+      q('air_temperature', 'Air temperature', '°C', [
+        'open_meteo',
+      ], series([null, null, 30.2, 30.9, 31.4, 32.1, 32.4, 31.8, 30.9, 30.1, 29.6])),
+      q(
+        'heat_index',
+        'Heat index (PAGASA)',
+        '°C',
+        ['pagasa_atmo', 'pagasa_ecmwf'],
+        [
+          for (var i = 0; i < count; i++)
+            slot(
+              i,
+              at(heat, i - before),
+              'pagasa_atmo',
+              other: 'pagasa_ecmwf',
+              otherValue: at(heat, i - before) == null ? null : at(heat, i - before)! + 1,
+            ),
+        ],
+      ),
+      q('relative_humidity', 'Relative humidity', '%', [
+        'open_meteo',
+      ], series([null, null, 60, 61, 63, 68, 66, 70, 74, 76, 77])),
+      q(
+        'rain',
+        'Rain',
+        'mm/h',
+        ['pagasa_atmo', 'pagasa_ecmwf', 'open_meteo'],
+        [
+          for (var i = 0; i < count; i++)
+            i - before <= 1
+                ? slot(i, at(rain, i - before), 'pagasa_atmo')
+                : slot(
+                    i,
+                    at(rain, i - before),
+                    'open_meteo',
+                    fallback: 'Rain: Open-Meteo; PAGASA ATMO has no value for this hour',
+                  ),
+        ],
+      ),
+      q('rain_probability', 'Rain probability', '%', [
+        'open_meteo',
+      ], series([null, null, 10, 10, 15, 20, 35, 55, 60, 50, 45])),
+      q('wind_speed', 'Wind speed', 'm/s', [
+        'open_meteo',
+        'pagasa_atmo',
+        'pagasa_ecmwf',
+      ], series([null, null, 2.1, 2.4, 2.8, 3.1, 3.4, 4.2, 5.0, 4.6, 4.1])),
+      q('wind_direction', 'Wind direction', '°', [
+        'open_meteo',
+        'pagasa_atmo',
+        'pagasa_ecmwf',
+      ], series([null, null, 350, 355, 5, 10, 20, 30, 40, 45, 50])),
+      q('cloud_cover', 'Cloud cover', '%', ['open_meteo'], series(const [])),
     ],
     'attributions': [
       {
@@ -352,8 +524,13 @@ Json ingestionJobJson({
   'reused_existing_job': reused,
 };
 
-Json ingestionRequestJson({required DateTime now, String id = rizalMemorialId}) => {
+Json ingestionRequestJson({
+  required DateTime now,
+  String id = rizalMemorialId,
+  List<Json> waiting = const [],
+}) => {
   'match_context_id': id,
+  'waiting': waiting,
   'jobs': [
     ingestionJobJson(id: pagasaJobId, state: 'queued', created: now),
     ingestionJobJson(

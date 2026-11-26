@@ -101,6 +101,7 @@ void main() {
         'match',
         'weatherStatus',
         'weather',
+        'trend',
         'alerts',
         'assessment',
       ]);

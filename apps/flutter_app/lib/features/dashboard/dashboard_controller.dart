@@ -6,6 +6,7 @@ import '../../core/state/loadable.dart';
 import '../../core/storage/saved_copies.dart';
 import '../../shared/models/alerts.dart';
 import '../../shared/models/weather.dart';
+import 'trend/trend_series.dart' show trendHours, trendHoursBefore;
 
 /// What the dashboard shows for one match: weather status (per-source states)
 /// and consolidated weather (values). Both come straight from the backend.
@@ -41,6 +42,11 @@ class DashboardController extends ChangeNotifier {
   Loadable<VenueAlerts> _alerts = const Loading();
   Loadable<VenueAlerts> get alerts => _alerts;
 
+  /// The hourly trend window (P-27), kickoff - 6 h to + 5 h in one call. Loads
+  /// on its own like the alerts: a failed trend never hides the tiles.
+  Loadable<ConsolidatedWeather> _trend = const Loading();
+  Loadable<ConsolidatedWeather> get trend => _trend;
+
   bool _refreshing = false;
 
   /// How many loads in a row fell back to the saved copy, and when the last
@@ -72,8 +78,9 @@ class DashboardController extends ChangeNotifier {
       _data = const Loading();
     }
     if (_alerts is! Loaded<VenueAlerts>) _alerts = const Loading();
+    if (_trend is! Loaded<ConsolidatedWeather>) _trend = const Loading();
     _notify();
-    await Future.wait([_loadWeather(), loadAlerts()]);
+    await Future.wait([_loadWeather(), loadAlerts(), loadTrend()]);
     _refreshing = false;
     _notify();
   }
@@ -112,6 +119,32 @@ class DashboardController extends ChangeNotifier {
       DashboardData(status: status.value, weather: weather.value),
       savedAt: status.savedAt.isBefore(weather.savedAt) ? status.savedAt : weather.savedAt,
     );
+  }
+
+  /// Tries the trend again (after a failed load).
+  Future<void> retryTrend() {
+    _trend = const Loading();
+    _notify();
+    return loadTrend();
+  }
+
+  /// Loads the trend window only. Read-only and cache-only on the backend.
+  Future<void> loadTrend() async {
+    try {
+      _trend = Loaded(
+        await api.getWeather(matchContextId, hours: trendHours, hoursBefore: trendHoursBefore),
+      );
+    } on ApiFailure catch (e) {
+      // Never the previous live trend after a failure: only the labelled
+      // saved copy, and only when the server can't be reached.
+      _trend = Failed(
+        e,
+        saved: allowsSavedCopy(e)
+            ? savedCopies?.read(matchContextId, SavedKind.trend, ConsolidatedWeather.fromJson)
+            : null,
+      );
+    }
+    _notify();
   }
 
   /// Tries the official alerts again (after a failed check).
