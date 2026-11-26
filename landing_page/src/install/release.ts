@@ -31,10 +31,22 @@ export interface ReleaseInfo {
 }
 
 export const release: ReleaseInfo = {
-  releasesPageUrl: null,
+  releasesPageUrl: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases',
   assets: {
-    android: null,
-    windows: null,
+    android: {
+      url: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases/download/v1.0.0/pitchy-1.0.0-android.apk',
+      version: '1.0.0',
+      publishedAt: '2026-11-26',
+      sizeBytes: 24698974,
+      sha256: '7d5c62e4d091dbf5b20d13f39efa63636e2ea45b9af6a912e9387e4cb2fbb718',
+    },
+    windows: {
+      url: 'https://github.com/Happii-Ceasar-Ivan/Pitchy_App_A_Weather_DSS/releases/download/v1.0.0/pitchy-1.0.0-windows-setup.exe',
+      version: '1.0.0',
+      publishedAt: '2026-11-26',
+      sizeBytes: 11702049,
+      sha256: 'f3c003956f7447a225c85f8b40be87589b7e3aeb67e7405914d6357e5355a03e',
+    },
   },
 };
 

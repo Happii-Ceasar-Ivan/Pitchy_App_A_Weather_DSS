@@ -18,9 +18,9 @@ export interface Platform {
 }
 
 /*
- * Copy rules: describe only what the OS really shows. Signing and minimum
- * OS versions are not decided yet, so prompts are written as "if you see"
- * and requirements say they will be listed with the release.
+ * Copy rules: describe only what the OS really shows. Prompts are written as
+ * "if you see". Minimum versions come from the v1.0.0 build: Android minSdk 24
+ * (Android 7.0); Windows installer MinVersion 10.0, 64-bit only (P-08).
  */
 export const platforms: Record<PlatformId, Platform> = {
   android: {
@@ -30,7 +30,7 @@ export const platforms: Record<PlatformId, Platform> = {
     fileType: 'APK file',
     summary: 'For checking conditions pitch-side, on the phone in your pocket.',
     method: 'Install the APK file directly (not through Google Play).',
-    requirements: 'An Android phone or tablet. The minimum Android version will be listed with the first release.',
+    requirements: 'An Android phone or tablet with Android 7.0 or newer.',
     steps: [
       {
         title: 'Download the APK',
@@ -59,7 +59,7 @@ export const platforms: Record<PlatformId, Platform> = {
     fileType: 'EXE installer',
     summary: 'For planning a match ahead of the day, with room to read the detail.',
     method: 'Run the EXE installer on your PC.',
-    requirements: 'A Windows PC. The supported Windows versions will be listed with the first release.',
+    requirements: 'A 64-bit PC with Windows 10 or Windows 11.',
     steps: [
       {
         title: 'Download the installer',
