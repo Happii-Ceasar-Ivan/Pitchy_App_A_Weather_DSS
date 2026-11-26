@@ -2,3 +2,6 @@ node_modules/
 dist/
 .vercel/
 .impeccable/review/
+
+# Switzer (ITF Free Font License): never commit; fetched from Fontshare at build by scripts/fetch-switzer.mjs
+public/fonts/switzer-*.woff2

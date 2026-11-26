@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/styles/main.css"
+        ],
+        "createdAt": "2026-11-26T18:06:16.851Z",
+        "reason": "Title colour sweep from the approved redesign plan 2026-11-27 §4 (UC-6): hard two-stop fill ending as solid --on-dark; reduced motion and forced colours show solid colour"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-26T18:06:16.989Z",
+        "reason": "Title colour sweep from the approved redesign plan 2026-11-27 §4 (UC-6): hard two-stop fill ending as solid --on-dark; reduced motion and forced colours show solid colour (index.html only holds the data-sweep hooks)"
+      }
+    ]
+  }
+}

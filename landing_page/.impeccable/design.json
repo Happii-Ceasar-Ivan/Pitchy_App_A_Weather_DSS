@@ -1,37 +1,82 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-26T00:00:00Z",
+  "generatedAt": "2026-11-27T00:00:00Z",
   "title": "Design System: Pitchy Landing Page",
   "extensions": {
     "colorMeta": {
-      "teal": {
-        "role": "primary",
-        "displayName": "Logo Teal",
-        "canonical": "#0e6b52",
+      "night": {
+        "role": "neutral",
+        "displayName": "Midnight Navy",
+        "canonical": "#031a31",
         "tonalRamp": [
-          "#04211a",
-          "#073528",
-          "#0a4a39",
-          "#0e6b52",
-          "#2f8d73",
-          "#52c7b4",
-          "#a6e3d8",
-          "#e1f3ec"
+          "#010a13",
+          "#02111f",
+          "#031a31",
+          "#052341",
+          "#0a2d4e",
+          "#113a60",
+          "#23476b",
+          "#b4c2d3"
         ]
       },
-      "teal-bright": {
-        "role": "primary",
-        "displayName": "Bright Teal",
-        "canonical": "#52c7b4",
+      "navy": {
+        "role": "neutral",
+        "displayName": "Match Navy",
+        "canonical": "#0a2d4e",
         "tonalRamp": [
-          "#0e6b52",
-          "#1f8a72",
-          "#34a893",
-          "#52c7b4",
-          "#7fd6c8",
-          "#a6e3d8",
-          "#d0f0ea",
-          "#ecf9f6"
+          "#031a31",
+          "#052341",
+          "#0a2d4e",
+          "#113a60",
+          "#1b4a73",
+          "#23476b",
+          "#4a6a8c",
+          "#b4c2d3"
+        ]
+      },
+      "red": {
+        "role": "primary",
+        "displayName": "Racing Red",
+        "canonical": "#d62935",
+        "tonalRamp": [
+          "#4a0f14",
+          "#7a171e",
+          "#a31f29",
+          "#b8222d",
+          "#d62935",
+          "#e0535c",
+          "#ec8a90",
+          "#f8d4d6"
+        ]
+      },
+      "glacier": {
+        "role": "primary",
+        "displayName": "Glacier Blue",
+        "canonical": "#8bb9d9",
+        "tonalRamp": [
+          "#1f3d54",
+          "#2f5f82",
+          "#467ba0",
+          "#6a9cc0",
+          "#8bb9d9",
+          "#aecde3",
+          "#cfe2ef",
+          "#eaf2f8"
+        ]
+      },
+      "glacier-ink": {
+        "role": "primary",
+        "displayName": "Glacier Ink",
+        "canonical": "#2f5f82",
+        "tonalRamp": [
+          "#10283a",
+          "#1c3e57",
+          "#2f5f82",
+          "#467ba0",
+          "#6a9cc0",
+          "#8bb9d9",
+          "#bcd5e7",
+          "#e6eff6"
         ]
       },
       "flood": {
@@ -47,36 +92,6 @@
           "#fff4d6",
           "#fff8e6",
           "#fffcf3"
-        ]
-      },
-      "night": {
-        "role": "neutral",
-        "displayName": "Night",
-        "canonical": "#07111f",
-        "tonalRamp": [
-          "#030811",
-          "#07111f",
-          "#0b1626",
-          "#0f2540",
-          "#16304f",
-          "#2b3e58",
-          "#4a5d77",
-          "#b4c2d3"
-        ]
-      },
-      "navy": {
-        "role": "neutral",
-        "displayName": "Match Navy / Ink",
-        "canonical": "#0f2540",
-        "tonalRamp": [
-          "#07111f",
-          "#0b1a2f",
-          "#0f2540",
-          "#16304f",
-          "#2b3e58",
-          "#45556b",
-          "#9aa8b8",
-          "#d3dae3"
         ]
       },
       "pitch": {
@@ -113,34 +128,34 @@
     "typographyMeta": {
       "display": {
         "displayName": "Wordmark",
-        "purpose": "Hero wordmark only, flood white."
+        "purpose": "Hero brand word (Racing Red) only; Big Shoulders Display 800."
       },
       "headline": {
         "displayName": "Section Title",
-        "purpose": "Section headings, max 16ch."
+        "purpose": "Section headings, Big Shoulders Display 800, max 16ch."
       },
       "title": {
         "displayName": "Story and Panel Title",
-        "purpose": "Story steps, hero tagline, panel and step headings."
+        "purpose": "Panel, sheet and step headings, hero tagline; display face. Story step titles are Switzer 600, not this role."
       },
       "body": {
         "displayName": "Reading Text",
-        "purpose": "All running text; 34 to 44rem measure."
+        "purpose": "All running text in Switzer; 34 to 44rem measure."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Chips, dock labels, captions, nav links, fact terms."
+        "purpose": "Switzer 600: chips, dock labels, captions, nav links, fact terms."
       }
     },
     "shadows": [
       {
         "name": "paper-low",
-        "value": "0 1px 2px rgba(7,17,31,0.08), 0 2px 8px rgba(7,17,31,0.06)",
+        "value": "0 1px 2px rgba(3,26,49,0.08), 0 2px 8px rgba(3,26,49,0.06)",
         "purpose": "Platform picks, sheet download panel."
       },
       {
         "name": "paper-high",
-        "value": "0 2px 4px rgba(7,17,31,0.05), 0 18px 44px rgba(7,17,31,0.12)",
+        "value": "0 2px 4px rgba(3,26,49,0.05), 0 18px 44px rgba(3,26,49,0.12)",
         "purpose": "Download panel, selected platform pick."
       },
       {
@@ -163,7 +178,22 @@
       {
         "name": "ease-out",
         "value": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "The only easing; all state and surface transitions."
+        "purpose": "State and surface transitions, hero rise, sheet, clip reveal."
+      },
+      {
+        "name": "ease-reveal",
+        "value": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "purpose": "Scroll reveals (800ms rise, 80ms index stagger)."
+      },
+      {
+        "name": "ease-line",
+        "value": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        "purpose": "Hairline draws (900 to 1000ms) and nav underline (300ms)."
+      },
+      {
+        "name": "ease-sine",
+        "value": "cubic-bezier(0.445, 0.05, 0.55, 0.95)",
+        "purpose": "Title colour sweep (1000ms) and button hover wipe (380ms)."
       },
       {
         "name": "t-fast",
@@ -173,7 +203,12 @@
       {
         "name": "t-mid",
         "value": "260ms",
-        "purpose": "Header solidify, chevrons, shadows."
+        "purpose": "Header solidify without motion, chevrons, shadows."
+      },
+      {
+        "name": "hero-rise",
+        "value": "700ms",
+        "purpose": "Hero entrance, 60ms stagger; brand, tagline, lede transform only."
       },
       {
         "name": "sheet-in",
@@ -205,17 +240,25 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Get Pitchy and every action: the one teal pill.",
-      "html": "<button class=\"ds-btn-primary\">Get Pitchy</button>",
-      "css": ".ds-btn-primary{min-height:48px;padding:0 22px;border:1.5px solid transparent;border-radius:999px;background:#0e6b52;color:#fff;font:700 1rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif;box-shadow:0 1px 0 rgba(255,255,255,.14) inset,0 4px 14px rgba(0,0,0,.3);cursor:pointer;transition:background-color 140ms cubic-bezier(.16,1,.3,1),transform 140ms cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#0b5a45}.ds-btn-primary:active{transform:translateY(1px) scale(.985)}.ds-btn-primary:focus-visible{outline:3px solid #52c7b4;outline-offset:3px}"
+      "description": "Navy pill, the action fill on dark and paper (install, sheet, header and hero base).",
+      "html": "<button class=\"ds-btn-primary\">Download</button>",
+      "css": ".ds-btn-primary{min-height:48px;padding:0 22px;border:1.5px solid transparent;border-radius:999px;background:#031a31;color:#fff;font:600 1rem/1 'Switzer',system-ui,sans-serif;box-shadow:0 1px 0 rgba(255,255,255,.14) inset,0 4px 14px rgba(0,0,0,.3);cursor:pointer;transition:background-color 140ms cubic-bezier(.16,1,.3,1),transform 140ms cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#113a60}.ds-btn-primary:active{transform:translateY(1px) scale(.985)}.ds-btn-primary:focus-visible{outline:3px solid #8bb9d9;outline-offset:3px}"
+    },
+    {
+      "name": "Red Button",
+      "kind": "button",
+      "refersTo": "button-red",
+      "description": "Get Pitchy in the header and hero only (modifier on the navy primary). Nowhere else.",
+      "html": "<a class=\"ds-btn-red\" href=\"#install\">Get Pitchy</a>",
+      "css": ".ds-btn-red{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 28px;border:1.5px solid transparent;border-radius:999px;background:#d62935;color:#fff;font:600 1.0625rem/1 'Switzer',system-ui,sans-serif;text-decoration:none;box-shadow:0 1px 0 rgba(255,255,255,.14) inset,0 4px 14px rgba(0,0,0,.3);cursor:pointer;transition:background-color 140ms cubic-bezier(.16,1,.3,1),transform 140ms cubic-bezier(.16,1,.3,1)}.ds-btn-red:hover{background:#b8222d}.ds-btn-red:active{transform:translateY(1px) scale(.985)}.ds-btn-red:focus-visible{outline:3px solid #8bb9d9;outline-offset:3px}"
     },
     {
       "name": "Ghost Button",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "Secondary link on dark, beside Get Pitchy.",
-      "html": "<button class=\"ds-btn-ghost\">See how it works</button>",
-      "css": ".ds-btn-ghost{min-height:48px;padding:0 22px;border:1.5px solid rgba(242,245,249,.38);border-radius:999px;background:#07111f;color:#f2f5f9;font:700 1rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif;cursor:pointer;transition:border-color 140ms,background-color 140ms}.ds-btn-ghost:hover{border-color:#f2f5f9;background:#101a29}.ds-btn-ghost:focus-visible{outline:3px solid #52c7b4;outline-offset:3px}"
+      "description": "Secondary link on dark, beside the hero Get Pitchy.",
+      "html": "<button class=\"ds-btn-ghost\">See what it does</button>",
+      "css": ".ds-btn-ghost{min-height:48px;padding:0 22px;border:1.5px solid #8bb9d9;border-radius:999px;background:transparent;color:#f2f5f9;font:600 1rem/1 'Switzer',system-ui,sans-serif;cursor:pointer;transition:border-color 200ms ease,background-color 200ms ease}.ds-btn-ghost:hover{background:rgba(139,185,217,.12)}.ds-btn-ghost:focus-visible{outline:3px solid #8bb9d9;outline-offset:3px}"
     },
     {
       "name": "Disabled Download Button",
@@ -223,7 +266,15 @@
       "refersTo": "button-download-disabled",
       "description": "Download action before a release exists: visibly inert, never starts a download.",
       "html": "<button class=\"ds-btn-download\" aria-disabled=\"true\">Download coming soon</button>",
-      "css": ".ds-btn-download{width:100%;min-height:58px;border:1.5px solid #cfd7e1;border-radius:999px;background:#e4e9ef;color:#33404f;font:700 1.0625rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif;cursor:not-allowed}"
+      "css": ".ds-btn-download{width:100%;min-height:58px;border:1.5px solid #cfd7e1;border-radius:999px;background:#e4e9ef;color:#33404f;font:600 1.0625rem/1 'Switzer',system-ui,sans-serif;cursor:not-allowed}"
+    },
+    {
+      "name": "Hero Brand",
+      "kind": "custom",
+      "refersTo": "display",
+      "description": "The hero wordmark: the only red text on the page, large display type over the night canvas.",
+      "html": "<span class=\"ds-hero-brand\">Pitchy</span>",
+      "css": ".ds-hero-brand{display:inline-block;padding:8px 12px;background:#031a31;font:800 6rem/.86 'Big Shoulders Display','Arial Narrow','Roboto Condensed',sans-serif;letter-spacing:-.01em;color:#d62935;text-shadow:0 2px 30px rgba(0,0,0,.5)}"
     },
     {
       "name": "Scoreboard Dock",
@@ -231,7 +282,7 @@
       "refersTo": "scoreboard-dock",
       "description": "Floating dark bar under the ball: goals, weather choice, sound.",
       "html": "<div class=\"ds-dock\"><span class=\"ds-dock-label\">Goals</span><span class=\"ds-dock-num\">2</span><button class=\"ds-dock-btn is-on\" aria-label=\"Clear\">C</button><button class=\"ds-dock-btn\" aria-label=\"Wind\">W</button><button class=\"ds-dock-btn\" aria-label=\"Rain\">R</button></div>",
-      "css": ".ds-dock{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:16px;background:rgba(7,17,31,.9);border:1px solid #2b3e58;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#b4c2d3;font:700 .8125rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif}.ds-dock-num{font:800 1.75rem/1 'Big Shoulders Display','Arial Narrow',sans-serif;color:#fff4d6;min-width:1.2ch;text-align:center}.ds-dock-btn{width:44px;height:44px;border:0;border-radius:11px;background:transparent;color:#b4c2d3;cursor:pointer}.ds-dock-btn:hover{background:rgba(242,245,249,.07);color:#f2f5f9}.ds-dock-btn.is-on{background:rgba(255,244,214,.14);color:#fff4d6}.ds-dock-btn:focus-visible{outline:3px solid #52c7b4;outline-offset:1px}"
+      "css": ".ds-dock{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:16px;background:rgba(3,26,49,.9);border:1px solid #23476b;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#b4c2d3;font:600 .8125rem/1 'Switzer',system-ui,sans-serif}.ds-dock-num{font:800 1.75rem/1 'Big Shoulders Display','Arial Narrow',sans-serif;color:#fff4d6;min-width:1.2ch;text-align:center}.ds-dock-btn{width:44px;height:44px;border:0;border-radius:11px;background:transparent;color:#b4c2d3;cursor:pointer}.ds-dock-btn:hover{background:rgba(242,245,249,.07);color:#f2f5f9}.ds-dock-btn.is-on{background:rgba(255,244,214,.14);color:#fff4d6}.ds-dock-btn:focus-visible{outline:3px solid #8bb9d9;outline-offset:1px}"
     },
     {
       "name": "Platform Pick",
@@ -239,7 +290,7 @@
       "refersTo": "platform-pick",
       "description": "Android or Windows choice card on paper.",
       "html": "<label class=\"ds-pick\"><span class=\"ds-pick-icon\">A</span><span><span class=\"ds-pick-name\">Android</span><span class=\"ds-pick-meta\">Phone and tablet</span></span></label>",
-      "css": ".ds-pick{position:relative;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:14px;min-height:84px;padding:14px 44px 14px 16px;border-radius:18px;background:#fff;border:1.5px solid #d3dae3;box-shadow:0 1px 2px rgba(7,17,31,.08),0 2px 8px rgba(7,17,31,.06);cursor:pointer;color:#0f2540;transition:border-color 140ms cubic-bezier(.16,1,.3,1)}.ds-pick:hover{border-color:#aab6c5}.ds-pick-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#e3f2ea;color:#157a4a;font-weight:800}.ds-pick-name{display:block;font:800 1.625rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-pick-meta{display:block;font:400 .875rem/1.35 'Atkinson Hyperlegible Next',system-ui,sans-serif;color:#45556b}"
+      "css": ".ds-pick{position:relative;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:14px;min-height:84px;padding:14px 44px 14px 16px;border-radius:18px;background:#fff;border:1.5px solid #d3dae3;box-shadow:0 1px 2px rgba(3,26,49,.08),0 2px 8px rgba(3,26,49,.06);cursor:pointer;color:#031a31;transition:border-color 140ms cubic-bezier(.16,1,.3,1)}.ds-pick:hover{border-color:#aab6c5}.ds-pick-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#e3f2ea;color:#157a4a;font-weight:800}.ds-pick-name{display:block;font:800 1.625rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-pick-meta{display:block;font:400 .875rem/1.35 'Switzer',system-ui,sans-serif;color:#45556b}"
     },
     {
       "name": "Status Chip",
@@ -247,7 +298,7 @@
       "refersTo": "status-chip",
       "description": "Coming-soon and live markers on the download panel.",
       "html": "<span class=\"ds-chip\">Coming soon</span>",
-      "css": ".ds-chip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 12px;border-radius:999px;background:#e6ecf4;color:#16304f;font:700 .8125rem/1 'Atkinson Hyperlegible Next',system-ui,sans-serif}"
+      "css": ".ds-chip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 12px;border-radius:999px;background:#e6ecf4;color:#113a60;font:600 .8125rem/1 'Switzer',system-ui,sans-serif}"
     },
     {
       "name": "Download Panel",
@@ -255,7 +306,7 @@
       "refersTo": "download-panel",
       "description": "White programme-board panel with a hairline fact list.",
       "html": "<section class=\"ds-dl\"><h3 class=\"ds-dl-title\">Android</h3><dl class=\"ds-facts\"><div><dt>Version</dt><dd>Listed at release</dd></div></dl></section>",
-      "css": ".ds-dl{padding:32px;border-radius:28px;background:#fff;border:1px solid #d3dae3;box-shadow:0 2px 4px rgba(7,17,31,.05),0 18px 44px rgba(7,17,31,.12);color:#0f2540}.ds-dl-title{margin:0;font:800 2.375rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-facts{margin:24px 0 0;border-top:1px solid #d3dae3}.ds-facts div{display:grid;grid-template-columns:9.5rem 1fr;gap:16px;padding:12px 0;border-bottom:1px solid #d3dae3}.ds-facts dt{font:700 .875rem/1.4 'Atkinson Hyperlegible Next',system-ui,sans-serif;color:#45556b}.ds-facts dd{margin:0;font:400 1rem/1.4 'Atkinson Hyperlegible Next',system-ui,sans-serif}"
+      "css": ".ds-dl{padding:32px;border-radius:28px;background:#fff;border:1px solid #d3dae3;box-shadow:0 2px 4px rgba(3,26,49,.05),0 18px 44px rgba(3,26,49,.12);color:#031a31}.ds-dl-title{margin:0;font:800 2.375rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-facts{margin:24px 0 0;border-top:1px solid #d3dae3}.ds-facts div{display:grid;grid-template-columns:9.5rem 1fr;gap:16px;padding:12px 0;border-bottom:1px solid #d3dae3}.ds-facts dt{font:700 .875rem/1.4 'Switzer',system-ui,sans-serif;color:#45556b}.ds-facts dd{margin:0;font:400 1rem/1.4 'Switzer',system-ui,sans-serif}"
     },
     {
       "name": "Install Step",
@@ -263,18 +314,18 @@
       "refersTo": "steps",
       "description": "Numbered step joined to the next by a hairline rail.",
       "html": "<ol class=\"ds-steps\"><li class=\"ds-step\"><span class=\"ds-step-num\">1</span><div><p class=\"ds-step-title\">Download the file</p><p class=\"ds-step-detail\">Details appear with the first release.</p></div></li><li class=\"ds-step\"><span class=\"ds-step-num\">2</span><div><p class=\"ds-step-title\">Open it</p></div></li></ol>",
-      "css": ".ds-steps{list-style:none;margin:0;padding:0;color:#0f2540}.ds-step{position:relative;display:grid;grid-template-columns:36px 1fr;gap:16px;padding-bottom:24px}.ds-step:not(:last-child)::before{content:'';position:absolute;left:17px;top:40px;bottom:4px;width:2px;border-radius:2px;background:#d3dae3}.ds-step-num{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#0f2540;color:#fff;font:800 1.25rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-step-title{margin:0;padding-top:5px;font:700 1.0625rem/1.4 'Atkinson Hyperlegible Next',system-ui,sans-serif}.ds-step-detail{margin:4px 0 0;color:#45556b}"
+      "css": ".ds-steps{list-style:none;margin:0;padding:0;color:#031a31}.ds-step{position:relative;display:grid;grid-template-columns:36px 1fr;gap:16px;padding-bottom:24px}.ds-step:not(:last-child)::before{content:'';position:absolute;left:17px;top:40px;bottom:4px;width:2px;border-radius:2px;background:#d3dae3}.ds-step-num{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#031a31;color:#fff;font:800 1.25rem/1 'Big Shoulders Display','Arial Narrow',sans-serif}.ds-step-title{margin:0;padding-top:5px;font:700 1.0625rem/1.4 'Switzer',system-ui,sans-serif}.ds-step-detail{margin:4px 0 0;color:#45556b}"
     }
   ],
   "narrative": {
     "northStar": "Under the Floodlights",
-    "overview": "The page is a night match. The hero is a canvas stadium the visitor lights up by scoring; the floodlights coming on is Pitchy's job made literal. Below the hero the page stays in night navy and mown-pitch green, then turns to match-programme paper (white panels, hairlines, ink numerals) where the visitor installs. Dark means \"look\", paper means \"do\".",
+    "overview": "The page is a night match. The hero is a canvas stadium the visitor lights up by scoring; the floodlights coming on is Pitchy's job made literal. Below the hero the page stays in Midnight Navy (the Windows band uses two navy tints in the old mown-stripe pattern; the green lives only in the hero canvas grass), then turns to match-programme paper (white panels, hairlines, ink numerals) where the visitor installs. Dark means \"look\", paper means \"do\".\n\nTwo voices carry it: Big Shoulders Display, a stadium-board condensed face, for every heading and number; Switzer, a neutral neo-grotesk, for everything read outdoors on a phone. Light is a material here: floodlight warm white (`flood`) appears only where something is lit (wordmark, score, current step title, status dot), Glacier Blue carries information (focus, links and marks on dark), and Racing Red is reserved for the two \"Get Pitchy\" buttons and the hero brand word (`.hero-brand`, 3.54:1 on night, large text only). Safety colours never decorate; this page carries none.\n\nReal app screenshots in phone and window frames are the proof. Nothing is a gradient-on-mockup hero or a feature-card grid.",
     "keyCharacteristics": [
-      "Night navy grounds, pitch-green stripe bands, warm flood white for light only.",
-      "One action colour (teal, pill-shaped) on dark and on paper.",
-      "Condensed display type at weight 800 over a hyperlegible body, tabular numerals page-wide.",
+      "Midnight Navy grounds, navy stripe bands, warm flood white for light only.",
+      "Navy pill buttons on dark and on paper; Racing Red only on the two \"Get Pitchy\" buttons and the hero brand word.",
+      "Condensed display type at weight 800 over a Switzer body, tabular numerals page-wide.",
       "Dark sections flat and bordered; paper sections lifted with soft shadow.",
-      "Pitch-stripe strips mark the move from night to paper (full-width section band) and cap the sheet; never a rail on a rounded card.",
+      "Pitch-stripe strips (green, 6 to 10px) mark the move from night to paper (full-width section band) and cap the sheet. Never as a bar on one side of a rounded card.",
       "44px minimum targets, 3px focus ring, reduced-motion honoured."
     ],
     "rules": [
@@ -285,22 +336,22 @@
       },
       {
         "name": "The One Action Rule",
-        "body": "Teal is the only button fill. Platform green and blue identify a platform and never act as buttons.",
+        "body": "Navy is the button fill; Racing Red is the two \"Get Pitchy\" buttons only. Platform green and blue identify a platform and never act as buttons.",
         "section": "colors"
       },
       {
         "name": "The Paper Switch Rule",
-        "body": "Install, sheet and FAQ sit on paper with ink text; the focus ring changes to teal there. Night and paper do not mix inside one panel.",
+        "body": "Install, sheet and FAQ sit on paper with ink text; the focus ring changes to Glacier Ink there. Night and paper do not mix inside one panel.",
         "section": "colors"
       },
       {
         "name": "The Tabular Rule",
-        "body": "Numerals are tabular page-wide; scores, steps and times never shift width.",
+        "body": "Numerals are tabular page-wide (`font-variant-numeric: tabular-nums`); scores, steps and times never shift width.",
         "section": "typography"
       },
       {
         "name": "The Condensed-Heads Rule",
-        "body": "Display face for headings and numerals only; never for running text or buttons.",
+        "body": "Display face for section headings, the hero brand and tagline, panel titles and numerals only; never for running text, buttons or story step titles (buttons are body face, 600).",
         "section": "typography"
       },
       {
@@ -310,9 +361,9 @@
       }
     ],
     "dos": [
-      "Do keep teal (#0e6b52) as the only action fill and flood white (#fff4d6) for light only.",
+      "Do keep navy as the action fill, red only on the two \"Get Pitchy\" buttons and the hero brand word, and flood white (`#fff4d6`) for light only.",
       "Do use the display face for headings and numerals and the body face for everything read.",
-      "Do switch to paper (#f5f7fa, white panels, hairlines, ink text) for install, sheet and FAQ, and swap the focus ring to teal there.",
+      "Do switch to paper (`#f5f7fa`, white panels, hairlines, ink text) for install, sheet and FAQ, and swap the focus ring to Glacier Ink there.",
       "Do keep every target at least 44px and keep the 3px focus ring.",
       "Do show real app screenshots with sample data in frames; keep downloads visibly \"coming soon\" until a real release exists.",
       "Do keep the pitch-stripe strip as the night-to-paper marker."
@@ -321,7 +372,8 @@
       "Don't use a gradient-backed hero mockup plus a feature-card grid; the hero is the playable pitch.",
       "Don't use safety colours (red, amber, green status) as decoration.",
       "Don't invent testimonials, partners, versions, sizes or URLs.",
-      "Don't use flood white as a surface or border, or teal on a non-action.",
+      "Don't use flood white as a surface or border, or red on anything but the two \"Get Pitchy\" buttons and the hero brand word (it sits close to the app's danger red, so it never appears near screenshots, install steps or safety copy).",
+      "Don't fade or clip safety and honesty copy in a reveal (`data-reveal=\"safe\"` moves only).",
       "Don't put shadows on dark section surfaces other than floating objects."
     ]
   }
