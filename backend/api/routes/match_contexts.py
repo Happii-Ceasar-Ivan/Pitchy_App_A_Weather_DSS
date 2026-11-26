@@ -38,10 +38,12 @@ from api.schemas.weather import (
     CoverageWindow,
     IngestionJob,
     IngestionRequestResult,
+    IngestionWait,
     Provenance,
     SourceStatus,
     SourceValueOut,
     ValueRangeOut,
+    WaitReason,
     WeatherStatus,
 )
 from services.ip_limits import INGESTION_REQUEST, MATCH_CREATE
@@ -59,6 +61,7 @@ from services.weather_ingestion.relevance.consolidation import (
     consolidate,
 )
 from services.weather_ingestion.relevance.freshness import SourceState
+from services.weather_ingestion.relevance.status import GroupState, VenueWeatherStatus
 from shared.db.pool import ConnectionFactory
 from shared.db.repositories import (
     PgAlertRepository,
@@ -76,7 +79,20 @@ Groups = Annotated[list, Depends(get_adapter_groups)]
 router = APIRouter(prefix="/match-contexts", tags=["match contexts"], responses=ERROR_RESPONSES)
 
 
-def _source_status(state: SourceState, name: str) -> SourceStatus:
+def _waits_by_source(result: VenueWeatherStatus) -> dict[str, GroupState]:
+    """Source id -> its group, for groups that need data but must wait."""
+    return {
+        source_id: g
+        for g in result.groups
+        if g.needs_data and g.wait is not None and g.active_job is None
+        for source_id in g.active_sources
+    }
+
+
+def _source_status(
+    state: SourceState, name: str, waiting: dict[str, GroupState] | None = None
+) -> SourceStatus:
+    group = (waiting or {}).get(state.source_id) if state.needs_data else None
     cov = state.coverage
     provenance = None
     if cov is not None:
@@ -100,6 +116,8 @@ def _source_status(state: SourceState, name: str) -> SourceStatus:
             Limitation(code=n.code, message=n.message, detail_code=n.detail_code)
             for n in state.notes
         ],
+        next_request_at=group.wait.until if group is not None else None,
+        wait_reason=WaitReason(group.wait.reason) if group is not None else None,
     )
 
 
@@ -150,7 +168,10 @@ def get_weather_status(
         venue=location.scope_key,
         checked_at=result.checked_at,
         coverage=CoverageWindow(start=result.coverage_start, end=result.coverage_end),
-        sources=[_source_status(s, names.get(s.source_id, s.source_id)) for s in result.sources],
+        sources=[
+            _source_status(s, names.get(s.source_id, s.source_id), _waits_by_source(result))
+            for s in result.sources
+        ],
         ingestion_needed=result.ingestion_needed,
         active_job_ids=[j.id for j in result.active_jobs],
         next_ingestion_at=result.next_ingestion_at,
@@ -194,14 +215,28 @@ def get_consolidated_weather(
         int | None,
         Query(ge=1, le=24, description="Hours from kickoff. Default: the coverage window."),
     ] = None,
+    hours_before: Annotated[
+        int,
+        Query(
+            ge=0,
+            le=6,
+            description="Also return this many hours before kickoff (P-27). The window starts at"
+            " kickoff rounded down to the hour, minus this. All values are forecasts, also for"
+            " hours already past.",
+        ),
+    ] = 0,
 ) -> ConsolidatedWeather:
     """Consolidated hourly values (P-09): best current source per value, labelled fallback,
-    range across comparable sources. Uses each source's cached fetch; never fetches."""
+    range across comparable sources. Uses each source's cached fetch; never fetches.
+    One slot per hour for every quantity; an hour without a value is ``value: null``."""
     match, location = load_match(connect, match_context_id)
     result, names = current_status(connect, groups, settings, match, location)
-    start = match.kickoff_at.astimezone(UTC).replace(minute=0, second=0, microsecond=0)
+    kickoff_hour = match.kickoff_at.astimezone(UTC).replace(minute=0, second=0, microsecond=0)
     span = timedelta(hours=hours) if hours else result.coverage_end - result.coverage_start
-    end = start + timedelta(hours=math.ceil((match.kickoff_at + span - start) / timedelta(hours=1)))
+    end = kickoff_hour + timedelta(
+        hours=math.ceil((match.kickoff_at + span - kickoff_hour) / timedelta(hours=1))
+    )
+    start = kickoff_hour - timedelta(hours=hours_before)
     forecasts = PgForecastRepository(connect)
     data = {}
     for s in result.sources:
@@ -219,9 +254,14 @@ def get_consolidated_weather(
     return ConsolidatedWeather(
         match_context_id=match.id,
         venue=location.scope_key,
+        kickoff_at=match.kickoff_at.astimezone(UTC),
         checked_at=result.checked_at,
         window=CoverageWindow(start=start, end=end),
-        sources=[_source_status(s, names.get(s.source_id, s.source_id)) for s in result.sources],
+        coverage=CoverageWindow(start=result.coverage_start, end=result.coverage_end),
+        sources=[
+            _source_status(s, names.get(s.source_id, s.source_id), _waits_by_source(result))
+            for s in result.sources
+        ],
         quantities=[
             ConsolidatedQuantity(
                 quantity=v.spec.key,
@@ -277,9 +317,12 @@ def request_ingestion(
     needing data must wait: PAGASA's 4-hour gap (FR-WTH-008) or the cooldown after a failed
     attempt (DEC-04). A separate per-IP limit (B6) also answers 429.
     """
-    enforce_ip_limit(request, connect, INGESTION_REQUEST)
     match, location = load_match(connect, match_context_id)
     result, _ = current_status(connect, groups, settings, match, location)
+    if any(g.active_job is not None or g.can_start_now for g in result.groups):
+        # Only a request that starts or reuses a job uses the per-IP budget (P-27 A5);
+        # refusals below (409, 429 from the source rules) only read the shared cache.
+        enforce_ip_limit(request, connect, INGESTION_REQUEST)
     try:
         started = start_manual_ingestion(
             result,
@@ -298,8 +341,18 @@ def request_ingestion(
             ErrorCode.RATE_LIMITED,
             "The sources needing data were requested too recently (PAGASA: 4 hours,"
             " FR-WTH-008; after a failure: a short cooldown). Try again after retry_at.",
+            [
+                ErrorDetail(field=f"sources.{source_id}", issue=_wait_issue(g))
+                for source_id, g in _waits_by_source(result).items()
+            ],
             retry_at=wait.retry_at,
         ) from None
+    started_ids = {sid for g in started for sid in g.source_ids}
+    waiting = [
+        g for g in result.groups
+        if g.needs_data and g.wait is not None and g.active_job is None
+        and not started_ids.intersection(g.active_sources)
+    ]  # fmt: skip
     return IngestionRequestResult(
         match_context_id=match.id,
         jobs=[
@@ -316,4 +369,24 @@ def request_ingestion(
             )
             for g in started
         ],
+        waiting=[
+            IngestionWait(
+                source_ids=list(g.active_sources),
+                retry_at=g.wait.until,
+                reason=WaitReason(g.wait.reason),
+            )
+            for g in waiting
+        ],
     )
+
+
+_WAIT_TEXT = {
+    "min_interval": "requested less than 4 hours ago (FR-WTH-008)",
+    "source_refused": "the source refused the last request; waiting 4 hours",
+    "failure_cooldown": "the last request failed; short cooldown",
+}
+
+
+def _wait_issue(group: GroupState) -> str:
+    until = group.wait.until.astimezone(UTC).isoformat(timespec="minutes")
+    return f"Next request at {until}: {_WAIT_TEXT[group.wait.reason]}."

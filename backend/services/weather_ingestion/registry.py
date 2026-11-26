@@ -11,7 +11,7 @@ from services.weather_ingestion.sources.pagasa.forecast import PagasaForecastAda
 from shared.db.records import Location
 from shared.settings import Settings
 
-PAGASA_MIN_INTERVAL = timedelta(hours=4)  # FR-WTH-008
+PAGASA_MIN_INTERVAL = timedelta(hours=4)  # FR-WTH-008: from the last success (P-27 A1)
 
 
 def adapter_groups(settings: Settings) -> list[AdapterGroup]:
@@ -25,6 +25,7 @@ def adapter_groups(settings: Settings) -> list[AdapterGroup]:
             PagasaForecastAdapter.source_ids,
             lambda: PagasaForecastAdapter(client()),
             min_interval=PAGASA_MIN_INTERVAL,
+            failure_cooldown=timedelta(minutes=settings.retry_after_failure_minutes),
         ),
         AdapterGroup("dost_asti", ("dost_asti",), DostAstiAdapter),
     ]

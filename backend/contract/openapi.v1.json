@@ -627,7 +627,7 @@
           "match contexts"
         ],
         "summary": "Get Consolidated Weather",
-        "description": "Consolidated hourly values (P-09): best current source per value, labelled fallback,\nrange across comparable sources. Uses each source's cached fetch; never fetches.",
+        "description": "Consolidated hourly values (P-09): best current source per value, labelled fallback,\nrange across comparable sources. Uses each source's cached fetch; never fetches.\nOne slot per hour for every quantity; an hour without a value is ``value: null``.",
         "operationId": "get_consolidated_weather_api_v1_match_contexts__match_context_id__weather_get",
         "parameters": [
           {
@@ -659,6 +659,20 @@
               "title": "Hours"
             },
             "description": "Hours from kickoff. Default: the coverage window."
+          },
+          {
+            "name": "hours_before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 6,
+              "minimum": 0,
+              "description": "Also return this many hours before kickoff (P-27). The window starts at kickoff rounded down to the hour, minus this. All values are forecasts, also for hours already past.",
+              "default": 0,
+              "title": "Hours Before"
+            },
+            "description": "Also return this many hours before kickoff (P-27). The window starts at kickoff rounded down to the hour, minus this. All values are forecasts, also for hours already past."
           }
         ],
         "responses": {
@@ -1711,6 +1725,12 @@
             "type": "string",
             "title": "Venue"
           },
+          "kickoff_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Kickoff At",
+            "description": "The match's kickoff (UTC)."
+          },
           "checked_at": {
             "type": "string",
             "format": "date-time",
@@ -1718,7 +1738,11 @@
           },
           "window": {
             "$ref": "#/components/schemas/CoverageWindow",
-            "description": "Hourly slots, UTC."
+            "description": "Hourly slots, UTC: kickoff rounded down to the hour minus `hours_before`, to the end of `hours`. Every quantity has one slot per hour of this window."
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageWindow",
+            "description": "The window forecasts must cover to count for the match (DEC-04: kickoff to kickoff + 2 h). Not an end-of-match time."
           },
           "sources": {
             "items": {
@@ -1748,8 +1772,10 @@
         "required": [
           "match_context_id",
           "venue",
+          "kickoff_at",
           "checked_at",
           "window",
+          "coverage",
           "sources",
           "quantities",
           "attributions"
@@ -1886,7 +1912,7 @@
           "end"
         ],
         "title": "CoverageWindow",
-        "description": "Forecasts must cover this window to count (DEC-04: kickoff to kickoff + 2 h)."
+        "description": "A time window, UTC. As `coverage`: forecasts must cover it to count for the match\n(DEC-04: kickoff to kickoff + 2 h)."
       },
       "ErrorBody": {
         "properties": {
@@ -2489,6 +2515,14 @@
             "type": "array",
             "minItems": 1,
             "title": "Jobs"
+          },
+          "waiting": {
+            "items": {
+              "$ref": "#/components/schemas/IngestionWait"
+            },
+            "type": "array",
+            "title": "Waiting",
+            "description": "Groups that need data but must wait, so this request did not refresh them."
           }
         },
         "additionalProperties": false,
@@ -2499,6 +2533,34 @@
         ],
         "title": "IngestionRequestResult",
         "description": "Answer to a manual Ingest: one job per source group that needed data."
+      },
+      "IngestionWait": {
+        "properties": {
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Ids"
+          },
+          "retry_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retry At"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/WaitReason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_ids",
+          "retry_at",
+          "reason"
+        ],
+        "title": "IngestionWait",
+        "description": "A source group that needs data but was not requested because it must wait (P-27)."
       },
       "InputValue": {
         "properties": {
@@ -3210,6 +3272,30 @@
             },
             "type": "array",
             "title": "Limitations"
+          },
+          "next_request_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Request At",
+            "description": "When Ingest can next refresh this source. Set only while this source needs data (stale, missing or unavailable) and a new request must wait. Null when it can be requested now or is current."
+          },
+          "wait_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WaitReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set only while this source needs data (stale, missing or unavailable) and a new request must wait. Null when it can be requested now or is current."
           }
         },
         "additionalProperties": false,
@@ -3514,6 +3600,16 @@
           "venues"
         ],
         "title": "VenueList"
+      },
+      "WaitReason": {
+        "type": "string",
+        "enum": [
+          "min_interval",
+          "source_refused",
+          "failure_cooldown"
+        ],
+        "title": "WaitReason",
+        "description": "Why a source that needs data cannot be requested yet (P-27)."
       },
       "WeatherDataState": {
         "type": "string",

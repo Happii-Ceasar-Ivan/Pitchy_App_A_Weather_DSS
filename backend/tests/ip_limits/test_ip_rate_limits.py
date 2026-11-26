@@ -172,14 +172,13 @@ def test_match_create_is_limited_and_invalid_input_is_not_counted(connect):
     assert c.post(f"{API}/match-contexts", json=MATCH_BODY).status_code == 429
 
 
-def test_ingestion_request_is_limited_per_ip(connect):
+def test_refused_ingestion_requests_do_not_use_the_ip_budget(connect):
+    """P-27 A5: a request that starts or reuses no job (here 409: no source groups) is not
+    counted. Counted requests are tested in test_weather_api.py."""
     c = make_client(connect, ip_limit_ingestion_requests_per_hour=1)
     match_id = c.post(f"{API}/match-contexts", json=MATCH_BODY).json()["id"]
     url = f"{API}/match-contexts/{match_id}/ingestions"
-    assert c.post(url).status_code != 429  # no source groups here: nothing to start
-    res = c.post(url)
-    assert res.status_code == 429
-    assert "per-IP" not in res.json()["error"]["message"]  # same plain 429 message as the chat
+    assert [c.post(url).status_code for _ in range(3)] == [409, 409, 409]
 
 
 def test_separate_ips_get_separate_limits_behind_the_proxy(connect):

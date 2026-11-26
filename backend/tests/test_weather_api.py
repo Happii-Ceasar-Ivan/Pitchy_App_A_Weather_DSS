@@ -519,3 +519,119 @@ def test_consolidated_falls_back_with_a_label_and_never_shows_stale_as_current(
     temp = _quantity(body, "air_temperature")["slots"][0]
     assert (temp["value"], temp["state"]) == (30.0, "stale")
     assert _quantity(body, "cape")["slots"][0]["value"] is None
+
+
+# --- Update 2 (P-27): wait reasons, waiting groups, per-IP counting, trend window ------------
+
+
+def _sources_by_id(body) -> dict[str, dict]:
+    return {s["source_id"]: s for s in body["sources"]}
+
+
+def test_status_and_429_name_the_waiting_source_and_why(client, connect, conn) -> None:
+    store(connect, "open_meteo", KICKOFF - HOUR, 6)
+    old_run = datetime.now(UTC) - 30 * HOUR
+    for sid in ("pagasa_atmo", "pagasa_ecmwf"):
+        store(connect, sid, KICKOFF - HOUR, 6, issued=old_run)
+        age_fetches(conn, sid, HOUR)
+    match_id = new_match(client)
+
+    body = status(client, match_id)
+    by_id = _sources_by_id(body)
+    for sid in ("pagasa_atmo", "pagasa_ecmwf"):
+        assert by_id[sid]["wait_reason"] == "min_interval"
+        assert by_id[sid]["next_request_at"] == body["next_ingestion_at"]
+    assert by_id["open_meteo"]["next_request_at"] is None  # current: nothing to wait for
+    assert by_id["open_meteo"]["wait_reason"] is None
+
+    err = ingest(client, match_id).json()["error"]
+    assert err["code"] == "RATE_LIMITED"
+    assert {d["field"] for d in err["details"]} == {"sources.pagasa_atmo", "sources.pagasa_ecmwf"}
+    assert all("4 hours" in d["issue"] for d in err["details"])
+
+
+def test_202_lists_the_groups_that_must_wait(client, executor, connect) -> None:
+    store(connect, "pagasa_atmo", KICKOFF - HOUR, 6, issued=datetime.now(UTC) - 30 * HOUR)
+    match_id = new_match(client)
+    body = ingest(client, match_id).json()
+    assert [j["source_ids"] for j in body["jobs"]] == [["open_meteo"]]
+    assert [(w["source_ids"], w["reason"]) for w in body["waiting"]] == [
+        (["pagasa_atmo", "pagasa_ecmwf"], "min_interval")
+    ]
+    assert datetime.fromisoformat(body["waiting"][0]["retry_at"]) > datetime.now(UTC)
+    executor.run_all()
+
+
+def test_failed_pagasa_waits_the_cooldown_not_four_hours(client, executor, sources) -> None:
+    """P-27 A1: before, a failed PAGASA call blocked manual refresh for 4 hours."""
+    sources["pagasa"]["mode"] = "down"
+    match_id = new_match(client)
+    ingest(client, match_id)
+    executor.run_all()
+    body = status(client, match_id)
+    by_id = _sources_by_id(body)
+    assert by_id["pagasa_atmo"]["state"] == "unavailable"
+    assert by_id["pagasa_atmo"]["wait_reason"] == "failure_cooldown"
+    wait = datetime.fromisoformat(by_id["pagasa_atmo"]["next_request_at"]) - datetime.now(UTC)
+    assert timedelta(minutes=14) < wait <= timedelta(minutes=15)
+
+
+def test_requests_that_start_or_reuse_a_job_use_the_ip_budget(connect, executor, sources) -> None:
+    groups = [
+        AdapterGroup(
+            "open_meteo",
+            ("open_meteo",),
+            lambda: FakeAdapter(("open_meteo",), sources["open_meteo"]),
+        )
+    ]
+    app = create_app(Settings(env="test", ip_limit_ingestion_requests_per_hour=1))
+    app.dependency_overrides[get_connect] = lambda: connect
+    app.dependency_overrides[get_adapter_groups] = lambda: groups
+    app.dependency_overrides[get_ingestion_executor] = lambda: executor
+    c = TestClient(app)
+    match_id = new_match(c)
+    assert ingest(c, match_id).status_code == 202  # starts a job: counted
+    res = ingest(c, match_id)  # would reuse the running job: counted, over the limit
+    assert res.status_code == 429 and res.json()["error"]["details"] == []
+    executor.run_all()
+    assert ingest(c, match_id).status_code == 409  # refused: not counted, so not a 429
+
+
+def test_trend_window_reaches_six_hours_before_kickoff(client, connect) -> None:
+    hours = [KICKOFF + i * HOUR for i in range(-7, 7) if i != -3]  # no value at kickoff - 3 h
+    _store_values(connect, "open_meteo", [_v("temperature_2m", 30.0 + i, "°C", t)
+                                          for i, t in enumerate(hours)])  # fmt: skip
+    match_id = new_match(client)
+    url = f"{API}/match-contexts/{match_id}/weather"
+
+    default = client.get(url).json()
+    assert datetime.fromisoformat(default["window"]["start"]) == KICKOFF  # unchanged default
+
+    body = client.get(url, params={"hours_before": 6, "hours": 5}).json()
+    assert datetime.fromisoformat(body["kickoff_at"]) == KICKOFF
+    assert datetime.fromisoformat(body["window"]["start"]) == KICKOFF - 6 * HOUR
+    assert datetime.fromisoformat(body["window"]["end"]) == KICKOFF + 5 * HOUR
+    assert datetime.fromisoformat(body["coverage"]["end"]) == KICKOFF + 2 * HOUR
+    for q in body["quantities"]:
+        starts = [datetime.fromisoformat(s["valid_from"]) for s in q["slots"]]
+        assert starts == [KICKOFF + i * HOUR for i in range(-6, 5)]  # contiguous, 11 hours
+    temp = {datetime.fromisoformat(s["valid_from"]): s for s in
+            _quantity(body, "air_temperature")["slots"]}  # fmt: skip
+    gap = temp[KICKOFF - 3 * HOUR]
+    assert gap["value"] is None and gap["source_id"] is None and gap["by_source"] == []
+    assert temp[KICKOFF - 4 * HOUR]["source_id"] == "open_meteo"
+    assert temp[KICKOFF - 4 * HOUR]["state"] == "current"
+
+    assert client.get(url, params={"hours_before": 7}).status_code == 422
+    assert client.get(url, params={"hours_before": -1}).status_code == 422
+
+
+def test_trend_window_rounds_a_half_hour_kickoff_down(client, connect) -> None:
+    _store_values(connect, "open_meteo", [_v("temperature_2m", 30.0, "°C", KICKOFF + i * HOUR)
+                                          for i in range(-3, 4)])  # fmt: skip
+    match_id = new_match(client, kickoff=KICKOFF + timedelta(minutes=30))
+    body = client.get(f"{API}/match-contexts/{match_id}/weather",
+                      params={"hours_before": 2, "hours": 1}).json()  # fmt: skip
+    assert datetime.fromisoformat(body["window"]["start"]) == KICKOFF - 2 * HOUR
+    assert datetime.fromisoformat(body["window"]["end"]) == KICKOFF + 2 * HOUR  # 10:30 + 1 h
+    assert datetime.fromisoformat(body["kickoff_at"]) == KICKOFF + timedelta(minutes=30)

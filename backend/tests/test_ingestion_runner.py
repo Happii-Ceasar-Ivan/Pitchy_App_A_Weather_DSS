@@ -35,6 +35,8 @@ class FakeAdapter:
         self.calls += 1
         if self.behaviour == "down":
             raise SourceUnavailableError("Site down.", "HTTP_503")
+        if self.behaviour == "refused":
+            raise SourceUnavailableError("Forbidden.", "HTTP_403")
         if self.behaviour == "crash":
             raise ZeroDivisionError("bug")
         outcomes = []
@@ -96,13 +98,56 @@ def test_pagasa_four_hour_rule(env) -> None:
     assert adapter.calls == 4 and {r.status for r in later.results} == {"stored"}
 
 
-def test_failed_requests_also_count_for_the_four_hour_rule(env) -> None:
+def _pagasa(adapter, cooldown=timedelta(minutes=15)):
+    return AdapterGroup("pagasa", ("pagasa_atmo",), lambda: adapter,
+                        min_interval=timedelta(hours=4), failure_cooldown=cooldown)  # fmt: skip
+
+
+def _at(delta):
+    return lambda: datetime.now(UTC) + delta
+
+
+def test_ordinary_failure_waits_only_the_cooldown(env) -> None:
+    """P-27 A1: a timeout/5xx no longer starts PAGASA's 4-hour gap; 15 minutes, checked in the
+    runner (under the lock), so no retry storm before that."""
     down = FakeAdapter(("pagasa_atmo",), "down")
-    group = AdapterGroup("pagasa", ("pagasa_atmo",), lambda: down, min_interval=timedelta(hours=4))
+    group = _pagasa(down)
     first = run(env, [group], {"pagasa_atmo"})
     assert {(r.status, r.error_code) for r in first.results} == {("failed", "HTTP_503")}
+    soon = run(env, [group], {"pagasa_atmo"}, now=_at(timedelta(minutes=10)))
+    assert down.calls == 2 and {r.status for r in soon.results} == {"skipped_recent"}
+    after = run(env, [group], {"pagasa_atmo"}, now=_at(timedelta(minutes=16)))
+    assert down.calls == 4 and {r.status for r in after.results} == {"failed"}
+
+
+def test_failure_without_cooldown_is_not_held_by_the_runner(env) -> None:
+    down = FakeAdapter(("pagasa_atmo",), "down")
+    run(env, [_pagasa(down, cooldown=None)], {"pagasa_atmo"})
+    run(env, [_pagasa(down, cooldown=None)], {"pagasa_atmo"})
+    assert down.calls == 4  # no 4-hour gap after a plain failure any more
+
+
+def test_refusal_by_the_source_still_waits_four_hours(env) -> None:
+    refused = FakeAdapter(("pagasa_atmo",), "refused")
+    group = _pagasa(refused)
     run(env, [group], {"pagasa_atmo"})
-    assert down.calls == 2  # one per venue, no retry storm
+    later = run(env, [group], {"pagasa_atmo"}, now=_at(timedelta(hours=3, minutes=59)))
+    assert refused.calls == 2 and {r.status for r in later.results} == {"skipped_recent"}
+    assert all("source_refused" in r.message for r in later.results)
+    run(env, [group], {"pagasa_atmo"}, now=_at(timedelta(hours=4, minutes=1)))
+    assert refused.calls == 4
+
+
+def test_failure_after_a_success_keeps_the_gap_from_the_success(env) -> None:
+    venues, _, forecasts = env
+    adapter = FakeAdapter(("pagasa_atmo",))
+    group = _pagasa(adapter)
+    run(env, [group], {"pagasa_atmo"})  # success now
+    for v in venues:  # then an ordinary failure (e.g. a manual run that timed out)
+        forecasts.record_failed_fetch("pagasa_atmo", v.location_id, None, "TIMEOUT", "Slow.")
+    later = run(env, [group], {"pagasa_atmo"}, now=_at(timedelta(minutes=20)))
+    assert adapter.calls == 2  # cooldown over, but the success 20 min ago still holds 4 h
+    assert all("min_interval" in r.message for r in later.results)
 
 
 def test_one_model_failing_keeps_the_other(env, conn) -> None:

@@ -37,6 +37,51 @@ class AdapterGroup:
     source_ids: tuple[str, ...]
     make_adapter: Callable[[], object]  # fresh adapter per run (PAGASA: fresh session)
     min_interval: timedelta | None = None  # PAGASA: 4 h per venue (FR-WTH-008)
+    # After an ordinary failure, wait this long before calling again, checked under the lock too
+    # (P-27 A1). None: only the status check applies (DEC-04 cooldown).
+    failure_cooldown: timedelta | None = None
+
+
+# The source answered in a way that means "stop asking" (P-27 A1, DEC-02): such a failure starts
+# the full minimum gap, like a success. Every other failure only gets the failure cooldown.
+BLOCKING_ERROR_CODES = ("HTTP_401", "HTTP_403", "HTTP_429")
+
+WaitReason = str  # "min_interval" | "source_refused" | "failure_cooldown"
+
+
+@dataclass(frozen=True)
+class GroupWait:
+    until: datetime
+    reason: WaitReason
+
+
+def group_wait(
+    group: AdapterGroup,
+    active: Sequence[str],
+    location_id: UUID,
+    forecasts: ForecastRepository,
+    now: datetime,
+) -> GroupWait | None:
+    """When this group may next be requested for a venue, if it must wait now; the later
+    wait wins. Shared by the status view and the runner, so both always agree."""
+    waits: list[GroupWait] = []
+    if group.min_interval is not None:
+        last = forecasts.last_gap_attempt(active, location_id, BLOCKING_ERROR_CODES)
+        if last is not None and now - last.requested_at < group.min_interval:
+            reason = "min_interval" if last.status == "succeeded" else "source_refused"
+            waits.append(GroupWait(last.requested_at + group.min_interval, reason))
+    if group.failure_cooldown is not None:
+        for source_id in active:
+            attempt = forecasts.latest_attempt(source_id, location_id)
+            if (
+                attempt is not None
+                and attempt.status == "failed"
+                and now - attempt.requested_at < group.failure_cooldown
+            ):
+                waits.append(
+                    GroupWait(attempt.requested_at + group.failure_cooldown, "failure_cooldown")
+                )
+    return max(waits, key=lambda w: w.until) if waits else None
 
 
 @dataclass
@@ -82,17 +127,15 @@ def lock_scope(group_name: str, venue_scope_key: str) -> str:
 
 
 def _skipped_recent(group, venue, active, forecasts, now) -> list[SourceResult] | None:
-    """PAGASA's 4-hour rule (FR-WTH-008): results to report if the group must wait."""
-    if group.min_interval is None:
+    """PAGASA's minimum gap (FR-WTH-008, P-27) or a failure cooldown: results to report if
+    the group must wait."""
+    wait = group_wait(group, active, venue.location_id, forecasts, now())
+    if wait is None:
         return None
-    last = forecasts.last_requested_at(active, venue.location_id)
-    if last is None or now() - last >= group.min_interval:
-        return None
-    next_allowed = (last + group.min_interval).isoformat(timespec="minutes")
+    next_allowed = wait.until.isoformat(timespec="minutes")
     return [
         SourceResult(s, venue.scope_key, "skipped_recent",
-                     message=f"Requested at {last.isoformat(timespec='minutes')}"
-                             f"; next allowed {next_allowed}.")
+                     message=f"Must wait ({wait.reason}); next allowed {next_allowed}.")
         for s in active
     ]  # fmt: skip
 
@@ -106,7 +149,7 @@ def acquire_group(
     lease: timedelta,
     now: Callable[[], datetime],
 ) -> LockResult | list[SourceResult]:
-    """Check the 4-hour rule, then take the group's lock. Returns the lock, or skip results."""
+    """Check the wait rules, then take the group's lock. Returns the lock, or skip results."""
     skipped = _skipped_recent(group, venue, active, forecasts, now)
     if skipped is not None:
         return skipped
@@ -125,7 +168,7 @@ def execute_group(
     now: Callable[[], datetime],
 ) -> list[SourceResult]:
     """Fetch, store and release a lock this worker holds. Always finishes the job."""
-    # Re-check under the lock: another run may have fetched PAGASA since the first check.
+    # Re-check under the lock: another run may have called the source since the first check.
     skipped = _skipped_recent(group, venue, active, forecasts, now)
     if skipped is not None:
         jobs.finish(job_id, succeeded=False, failure_code="SKIPPED_RECENT",

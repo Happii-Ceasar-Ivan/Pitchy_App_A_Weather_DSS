@@ -8,7 +8,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from services.weather_ingestion.jobs.runner import AdapterGroup, lock_scope
+from services.weather_ingestion.jobs.runner import (
+    AdapterGroup,
+    GroupWait,
+    group_wait,
+    lock_scope,
+)
 from services.weather_ingestion.relevance.freshness import (
     SourceState,
     assess_source,
@@ -27,8 +32,11 @@ class GroupState:
     active_sources: tuple[str, ...]  # enabled source ids of this group
     active_job: IngestionJobRecord | None
     needs_data: bool  # a source is stale/missing/unavailable and no job is running
-    next_allowed_at: datetime | None  # set while PAGASA's 4-hour gap or the failure cooldown
-    #                                   blocks a new request
+    wait: GroupWait | None  # set while PAGASA's gap or a failure cooldown blocks a new request
+
+    @property
+    def next_allowed_at(self) -> datetime | None:
+        return self.wait.until if self.wait is not None else None
 
     @property
     def can_start_now(self) -> bool:
@@ -55,7 +63,8 @@ class VenueWeatherStatus:
     @property
     def next_ingestion_at(self) -> datetime | None:
         """When a group that needs data may be requested again, if it must wait: PAGASA's
-        4-hour gap (FR-WTH-008) or the cooldown after a failed attempt (DEC-04 option C)."""
+        4-hour gap (FR-WTH-008, from the last success or refusal, P-27) or the cooldown after a
+        failed attempt (DEC-04 option C)."""
         waits = [g.next_allowed_at for g in self.groups if g.needs_data and g.next_allowed_at]
         return min(waits) if waits else None
 
@@ -101,18 +110,18 @@ def venue_weather_status(
         ]
         sources += states
         needs = any(s.needs_data for s in states)
-        waits = []
-        if needs and group.min_interval is not None:
-            last = forecasts.last_requested_at(ids, location.id)
-            if last is not None and now - last < group.min_interval:
-                waits.append(last + group.min_interval)
+        waits: list[GroupWait] = []
         if needs:
+            shared = group_wait(group, ids, location.id, forecasts, now)
+            if shared is not None:
+                waits.append(shared)
             cooldown = timedelta(minutes=settings.retry_after_failure_minutes)
             for s in states:
                 attempt = latest[s.source_id]
                 if s.needs_data and attempt is not None and attempt.status == "failed":
                     if now - attempt.requested_at < cooldown:
-                        waits.append(attempt.requested_at + cooldown)
-        next_allowed = max(waits) if waits else None
-        group_states.append(GroupState(group, ids, job, needs, next_allowed))
+                        waits.append(GroupWait(attempt.requested_at + cooldown,
+                                               "failure_cooldown"))  # fmt: skip
+        wait = max(waits, key=lambda w: w.until) if waits else None
+        group_states.append(GroupState(group, ids, job, needs, wait))
     return VenueWeatherStatus(now, start, end, sources, group_states)

@@ -105,9 +105,9 @@ class ForecastRepository(Protocol):
     def values_covering(
         self, location_id: UUID, at: datetime, parameters: Sequence[str] | None = None
     ) -> list[ForecastValueRecord]: ...
-    def last_requested_at(
-        self, source_ids: Sequence[str], location_id: UUID
-    ) -> datetime | None: ...
+    def last_gap_attempt(
+        self, source_ids: Sequence[str], location_id: UUID, blocking_codes: Sequence[str]
+    ) -> FetchAttempt | None: ...
     def recent_fetches(self, limit: int = 20) -> list[dict]: ...
     def recent_coverage(
         self, source_id: str, location_id: UUID, start: datetime, end: datetime, limit: int = 10
@@ -396,14 +396,21 @@ class PgForecastRepository(_Repo):
                 (source_id, location_id, start, end),
             ).fetchall()
 
-    def last_requested_at(self, source_ids: Sequence[str], location_id: UUID) -> datetime | None:
-        """Most recent request (successful or not) to any of these sources for a location."""
+    def last_gap_attempt(
+        self, source_ids: Sequence[str], location_id: UUID, blocking_codes: Sequence[str]
+    ) -> FetchAttempt | None:
+        """The newest call to any of these sources for a location that starts a minimum gap
+        (FR-WTH-008 as refined by P-27): a success, or a failure whose code is in
+        ``blocking_codes`` (the source refused us). Ordinary failures are not returned."""
         with self._connect() as conn:
-            return conn.execute(
-                "select max(requested_at) from public.source_fetches"
-                " where source_id = any(%s) and location_id = %s",
-                (list(source_ids), location_id),
-            ).fetchone()[0]
+            cur = conn.cursor(row_factory=class_row(FetchAttempt))
+            return cur.execute(
+                "select id, status, requested_at, error_code, error_summary"
+                " from public.source_fetches where source_id = any(%s) and location_id = %s"
+                " and (status = 'succeeded' or error_code = any(%s))"
+                " order by requested_at desc limit 1",
+                (list(source_ids), location_id, list(blocking_codes)),
+            ).fetchone()
 
     def recent_fetches(self, limit: int = 20) -> list[dict]:
         """Latest source calls with counts, for status views. No raw payloads."""

@@ -34,6 +34,20 @@ class Provenance(ContractModel):
     expires_at: AwareDatetime | None
 
 
+class WaitReason(StrEnum):
+    """Why a source that needs data cannot be requested yet (P-27)."""
+
+    MIN_INTERVAL = "min_interval"  # PAGASA: 4 h after the last successful request (FR-WTH-008)
+    SOURCE_REFUSED = "source_refused"  # PAGASA answered 401/403/429: 4 h, never worked around
+    FAILURE_COOLDOWN = "failure_cooldown"  # 15 min after an ordinary failure (DEC-04)
+
+
+WAIT_FIELDS_DESCRIPTION = (
+    "Set only while this source needs data (stale, missing or unavailable) and a new request"
+    " must wait. Null when it can be requested now or is current."
+)
+
+
 class SourceStatus(ContractModel):
     source_id: str
     source_name: str
@@ -50,10 +64,16 @@ class SourceStatus(ContractModel):
         " Null when nothing covers the match."
     )
     limitations: list[Limitation] = Field(default_factory=list)
+    next_request_at: AwareDatetime | None = Field(
+        default=None,
+        description="When Ingest can next refresh this source. " + WAIT_FIELDS_DESCRIPTION,
+    )
+    wait_reason: WaitReason | None = Field(default=None, description=WAIT_FIELDS_DESCRIPTION)
 
 
 class CoverageWindow(ContractModel):
-    """Forecasts must cover this window to count (DEC-04: kickoff to kickoff + 2 h)."""
+    """A time window, UTC. As `coverage`: forecasts must cover it to count for the match
+    (DEC-04: kickoff to kickoff + 2 h)."""
 
     start: AwareDatetime
     end: AwareDatetime
@@ -124,11 +144,23 @@ class IngestionJob(ContractModel):
     )
 
 
+class IngestionWait(ContractModel):
+    """A source group that needs data but was not requested because it must wait (P-27)."""
+
+    source_ids: list[str]
+    retry_at: AwareDatetime
+    reason: WaitReason
+
+
 class IngestionRequestResult(ContractModel):
     """Answer to a manual Ingest: one job per source group that needed data."""
 
     match_context_id: UUID
     jobs: list[IngestionJob] = Field(min_length=1)
+    waiting: list[IngestionWait] = Field(
+        default_factory=list,
+        description="Groups that need data but must wait, so this request did not refresh them.",
+    )
 
 
 # --- Consolidated weather (P-09) -----------------------------------------------------------
@@ -190,8 +222,16 @@ class ConsolidatedWeather(ContractModel):
 
     match_context_id: UUID
     venue: str
+    kickoff_at: AwareDatetime = Field(description="The match's kickoff (UTC).")
     checked_at: AwareDatetime
-    window: CoverageWindow = Field(description="Hourly slots, UTC.")
+    window: CoverageWindow = Field(
+        description="Hourly slots, UTC: kickoff rounded down to the hour minus `hours_before`,"
+        " to the end of `hours`. Every quantity has one slot per hour of this window."
+    )
+    coverage: CoverageWindow = Field(
+        description="The window forecasts must cover to count for the match (DEC-04: kickoff to"
+        " kickoff + 2 h). Not an end-of-match time."
+    )
     sources: list[SourceStatus]
     quantities: list[ConsolidatedQuantity]
     attributions: list[Attribution] = Field(
