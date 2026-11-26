@@ -2,11 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:material_ui/material_ui.dart';
 
-import '../../core/app_scope.dart';
 import '../../core/config/project_links.dart';
-import '../../shared/widgets/link_text.dart';
 
 /// What one check found.
 sealed class UpdateResult {
@@ -20,7 +17,7 @@ class UpToDate extends UpdateResult {
 }
 
 class UpdateAvailable extends UpdateResult {
-  const UpdateAvailable({required this.version, required this.page});
+  const UpdateAvailable({required this.version, required this.page, this.assets = const []});
 
   /// `1.1.0`, from the release tag.
   final String version;
@@ -28,6 +25,70 @@ class UpdateAvailable extends UpdateResult {
   /// The GitHub release page (files and checksums). Always in this
   /// repository; anything else is replaced by the repository's releases page.
   final Uri page;
+
+  /// The release's files whose download address is inside this repository's
+  /// releases (anything else in the reply is dropped).
+  final List<ReleaseAsset> assets;
+
+  ReleaseAsset? asset(String name) {
+    for (final a in assets) {
+      if (a.name == name) return a;
+    }
+    return null;
+  }
+}
+
+/// One file of a GitHub release.
+class ReleaseAsset {
+  const ReleaseAsset({required this.name, required this.url, required this.size});
+
+  /// `pitchy-1.1.0-android.apk`. Letters, digits, `.`, `_` and `-` only.
+  final String name;
+
+  /// Always `https://github.com/<this repo>/releases/download/...`.
+  final Uri url;
+
+  /// Bytes, as GitHub reports it (1 byte to [maxBytes]).
+  final int size;
+
+  /// Larger files are refused (the APK and installer are tens of MB).
+  static const maxBytes = 300 * 1024 * 1024;
+
+  static final _name = RegExp(r'^[A-Za-z0-9._-]{1,120}$');
+
+  /// The asset if every field is safe to use, else null. The GitHub reply is
+  /// untrusted: only this repository's release download addresses are kept.
+  static ReleaseAsset? fromJson(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final name = json['name'];
+    final url = json['browser_download_url'];
+    final size = json['size'];
+    if (name is! String || !_name.hasMatch(name) || name.startsWith('.')) return null;
+    if (size is! int || size <= 0 || size > maxBytes) return null;
+    if (url is! String) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null || !isRepoDownload(uri)) return null;
+    return ReleaseAsset(name: name, url: uri, size: size);
+  }
+
+  /// `https://github.com/<owner>/<repo>/releases/download/<tag>/<file>`, with
+  /// nothing else (no user info, port, query, `.` or `..` segments).
+  static bool isRepoDownload(Uri uri) {
+    final repo = Uri.parse(ProjectLinks.repo);
+    final s = uri.pathSegments;
+    return uri.scheme == 'https' &&
+        uri.host == repo.host &&
+        !uri.hasPort &&
+        uri.userInfo.isEmpty &&
+        !uri.hasQuery &&
+        !uri.hasFragment &&
+        s.length == 6 &&
+        s[0] == repo.pathSegments[0] &&
+        s[1] == repo.pathSegments[1] &&
+        s[2] == 'releases' &&
+        s[3] == 'download' &&
+        s.skip(4).every((p) => p.isNotEmpty && p != '.' && p != '..');
+  }
 }
 
 /// GitHub has no published release yet (404).
@@ -43,11 +104,12 @@ class CheckFailed extends UpdateResult {
   final bool limited;
 }
 
-/// Check for Updates (P-08 option A, user 2026-11-26): asks GitHub for the
-/// newest published release and compares its tag with the installed version.
-/// It never downloads or installs anything, sends no credentials, and treats
-/// the reply as untrusted (only a version number and a link in this repo are
-/// used).
+/// Check for Updates (P-08 option A, user 2026-11-26; P-26): asks GitHub for
+/// the newest published release and compares its tag with the installed
+/// version. It sends no credentials and treats the reply as untrusted: only a
+/// version number, a page and file links inside this repository are used.
+/// Downloading and installing is [UpdateInstaller]'s job, and only after the
+/// user confirms.
 class UpdateChecker {
   UpdateChecker({required this.installedVersion, http.Client? client})
     : _client = client ?? http.Client();
@@ -93,7 +155,15 @@ class UpdateChecker {
     final installed = _parse(installedVersion);
     if (latest == null || installed == null) return const CheckFailed();
     if (_compare(latest, installed) <= 0) return const UpToDate();
-    return UpdateAvailable(version: latest.join('.'), page: _safePage(body['html_url']));
+    final rawAssets = body['assets'];
+    return UpdateAvailable(
+      version: latest.join('.'),
+      page: _safePage(body['html_url']),
+      assets: [
+        if (rawAssets is List)
+          for (final a in rawAssets) ?ReleaseAsset.fromJson(a),
+      ],
+    );
   }
 
   /// `v1.2.3`, `1.2.3` or `1.2.3+4` → [1, 2, 3]; anything else → null.
@@ -117,99 +187,5 @@ class UpdateChecker {
       if (parsed != null && parsed.scheme == 'https') return parsed;
     }
     return Uri.parse(releases);
-  }
-}
-
-/// Opens the Check for Updates dialog and runs one check.
-Future<void> showUpdateCheck(BuildContext context) {
-  final scope = AppScope.of(context);
-  return showDialog<void>(
-    context: context,
-    builder: (_) => _UpdateDialog(checker: scope.updates, installed: scope.info.version),
-  );
-}
-
-class _UpdateDialog extends StatefulWidget {
-  const _UpdateDialog({required this.checker, required this.installed});
-
-  final UpdateChecker checker;
-  final String installed;
-
-  @override
-  State<_UpdateDialog> createState() => _UpdateDialogState();
-}
-
-class _UpdateDialogState extends State<_UpdateDialog> {
-  UpdateResult? _result;
-
-  @override
-  void initState() {
-    super.initState();
-    _run();
-  }
-
-  void _run() {
-    setState(() => _result = null);
-    unawaited(
-      widget.checker.check().then((r) {
-        if (mounted) setState(() => _result = r);
-      }),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final you = 'Pitchy ${widget.installed}';
-    final result = _result;
-    final (String message, List<Widget> actions) = switch (result) {
-      null => ('Checking for a newer version…', const <Widget>[]),
-      UpdateAvailable(:final version, :final page) => (
-        'Pitchy $version is available. You have ${widget.installed}.',
-        [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Later')),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              unawaited(openExternalLink(context, page));
-            },
-            child: const Text('Open download page'),
-          ),
-        ],
-      ),
-      UpToDate() => ('You have the latest version, $you.', const <Widget>[]),
-      NoReleaseYet() => ('No version has been published yet. You have $you.', const <Widget>[]),
-      CheckFailed(limited: true) => (
-        'GitHub is limiting update checks right now. Try again in an hour.',
-        const <Widget>[],
-      ),
-      CheckFailed() => (
-        'Couldn’t check for updates. Check your connection and try again.',
-        [TextButton(onPressed: _run, child: const Text('Try again'))],
-      ),
-    };
-    return AlertDialog(
-      icon: const Icon(Icons.system_update_alt),
-      title: const Text('Check for updates'),
-      content: Semantics(
-        liveRegion: true,
-        child: Row(
-          children: [
-            if (result == null) ...[
-              const SizedBox.square(
-                dimension: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              ),
-              const SizedBox(width: 16),
-            ],
-            Expanded(child: Text(message)),
-          ],
-        ),
-      ),
-      actions: [
-        ...actions,
-        if (result is! UpdateAvailable)
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
-      ],
-    );
   }
 }

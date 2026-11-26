@@ -7,7 +7,7 @@ import '../../core/app_scope.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/pitchy_logo.dart';
-import 'update_check.dart';
+import 'update_dialog.dart';
 
 /// Quick Settings (P-17): a modal drawer from the left with the Light/Dark
 /// switch, Check for Updates, About Pitchy and Open full settings. Closes with

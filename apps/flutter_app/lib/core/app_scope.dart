@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../features/conversational_agent/chat_session.dart';
 import '../features/match_management/match_controller.dart';
 import '../features/settings/update_check.dart';
+import '../features/settings/update_installer.dart';
 import 'config/app_config.dart';
 import 'config/app_info.dart';
 import 'network/pitchy_api.dart';
@@ -24,6 +25,7 @@ class AppScope extends InheritedWidget {
     required this.match,
     required this.chatSession,
     required this.updates,
+    required this.updateInstaller,
     required super.child,
   });
 
@@ -43,6 +45,9 @@ class AppScope extends InheritedWidget {
   /// Check for Updates against GitHub releases (P-08).
   final UpdateChecker updates;
 
+  /// Downloads, verifies and hands an update to the system installer (P-26).
+  final UpdateInstaller updateInstaller;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing above this widget');
@@ -57,5 +62,6 @@ class AppScope extends InheritedWidget {
       old.match != match ||
       old.chatSession != chatSession ||
       old.updates != updates ||
+      old.updateInstaller != updateInstaller ||
       old.config != config;
 }

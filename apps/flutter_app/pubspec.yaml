@@ -39,6 +39,9 @@ dependencies:
   shared_preferences: ^2.5.6
   package_info_plus: ^10.2.2
   url_launcher: ^6.3.3
+  # SHA-256 of downloaded updates before they are installed (user approved,
+  # 2026-11-26). Dart team (dart.dev), pure Dart.
+  crypto: ^3.0.8
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +74,8 @@ flutter:
   assets:
     # PLACEHOLDER logo until the team supplies the real one (P-14).
     - assets/images/pitchy_logo_placeholder.png
+    # Support Pitchy: the Maya / QR Ph code (user, 2026-11-26, P-26).
+    - assets/images/maya_qr.jpg
     # Shown on the open-source licences page (lib/core/app_licenses.dart).
     - assets/fonts/roboto_license.txt
 

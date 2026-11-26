@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Pitchy talks to its backend API over HTTPS. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- In-app updater (P-26): hands a downloaded, checksum-verified update to
+         Android's installer. Android still asks the user every time. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
         android:label="Pitchy"
         android:name="${applicationName}"

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_scope.dart';
+import '../../core/config/donations.dart';
 import '../../core/config/project_links.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
@@ -11,7 +12,7 @@ import '../../shared/services/mock/fixtures.dart' show MockScenario;
 import '../../shared/services/mock/mock_pitchy_api.dart';
 import '../../shared/widgets/link_text.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
-import 'update_check.dart';
+import 'update_dialog.dart';
 
 /// Full Settings (P-16, P-17). Rows whose content the team hasn't supplied yet
 /// are shown disabled with "Not set up yet", never with invented content.
@@ -83,12 +84,21 @@ class SettingsScreen extends StatelessWidget {
             ),
             const Divider(),
             const _SectionHeader('Support Pitchy'),
-            const ListTile(
-              enabled: false,
-              leading: Icon(Icons.volunteer_activism_outlined),
-              title: Text('Support development'),
-              subtitle: Text('Optional donations. $_notYet'),
-            ),
+            if (Donations.maya != null)
+              ListTile(
+                leading: const Icon(Icons.volunteer_activism_outlined),
+                title: const Text('Support development'),
+                subtitle: const Text('Optional donations through Maya (QR Ph).'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.support),
+              )
+            else
+              const ListTile(
+                enabled: false,
+                leading: Icon(Icons.volunteer_activism_outlined),
+                title: Text('Support development'),
+                subtitle: Text('Optional donations. $_notYet'),
+              ),
             const Divider(),
             const _SectionHeader('Updates'),
             ListTile(
@@ -112,17 +122,17 @@ class SettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(Routes.credits),
             ),
-            const ListTile(
-              enabled: false,
-              leading: Icon(Icons.privacy_tip_outlined),
-              title: Text('Privacy policy'),
-              subtitle: Text(_notYet),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('Privacy policy'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Routes.privacy),
             ),
-            const ListTile(
-              enabled: false,
-              leading: Icon(Icons.health_and_safety_outlined),
-              title: Text('Safety disclaimer'),
-              subtitle: Text(_notYet),
+            ListTile(
+              leading: const Icon(Icons.health_and_safety_outlined),
+              title: const Text('Safety disclaimer'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Routes.disclaimer),
             ),
             if (kDebugMode) ...[
               const Divider(),

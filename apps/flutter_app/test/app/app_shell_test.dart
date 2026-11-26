@@ -118,10 +118,10 @@ void main() {
       );
       expect(find.text(row), findsOneWidget, reason: row);
     }
-    final privacy = tester.widget<ListTile>(
-      find.ancestor(of: find.text('Privacy policy'), matching: find.byType(ListTile)),
+    final donate = tester.widget<ListTile>(
+      find.ancestor(of: find.text('Support development'), matching: find.byType(ListTile)),
     );
-    expect(privacy.enabled, isFalse);
+    expect(donate.enabled, isTrue, reason: 'the Maya QR is set up (P-26)');
   });
 
   testWidgets('Custom theme shows the fixed colour set', (tester) async {

@@ -21,6 +21,10 @@ abstract final class PrefKeys {
 
   /// The Ask Pitchy role (P-03). A conversational context, not an account.
   static const chatRole = 'chat.role';
+
+  /// When the automatic update check last got an answer from GitHub (UTC,
+  /// ISO 8601), so it runs at most once a day (P-26).
+  static const lastUpdateCheck = 'updates.lastCheck';
 }
 
 class SharedPreferencesStore implements Preferences {

@@ -1,6 +1,7 @@
 // Check for updates (P-08 option A, user 2026-11-26): ask GitHub for the
-// newest published release and compare it with the installed version. Never
-// downloads or installs anything; never claims "up to date" when it couldn't
+// newest published release and compare it with the installed version. The
+// check itself never downloads or installs anything (that is the updater,
+// P-26, after the user confirms); never claims "up to date" when it couldn't
 // check.
 
 import 'dart:convert';
@@ -114,7 +115,8 @@ void main() {
 
     testWidgets('an update: the version and a button to its release page', (tester) async {
       await open(tester, _checker((_) => _release('v1.1.0')));
-      expect(find.text('Pitchy 1.1.0 is available. You have 1.0.0.'), findsOneWidget);
+      // The harness device can't install itself, so the page is offered.
+      expect(find.text('There’s a new Pitchy (1.1.0). You have 1.0.0.'), findsOneWidget);
       expect(find.text('Open download page'), findsOneWidget);
     });
 

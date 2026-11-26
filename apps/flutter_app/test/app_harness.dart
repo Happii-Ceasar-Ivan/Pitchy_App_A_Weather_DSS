@@ -9,6 +9,7 @@ import 'package:pitchy/core/routing/app_router.dart';
 import 'package:pitchy/core/storage/preferences.dart';
 import 'package:pitchy/core/storage/saved_copies.dart';
 import 'package:pitchy/features/settings/update_check.dart';
+import 'package:pitchy/features/settings/update_installer.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
 import 'package:pitchy/shared/services/mock/mock_pitchy_api.dart';
 
@@ -28,6 +29,8 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
   bool settle = true,
   DateTime? now,
   UpdateChecker? updates,
+  UpdateInstaller? updateInstaller,
+  bool checkForUpdatesOnOpen = false,
 }) async {
   final clockNow = now ?? testNow;
   tester.view.devicePixelRatio = 1;
@@ -57,6 +60,13 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
             installedVersion: testInfo.version,
             client: MockClient((_) async => http.Response('{}', 404)),
           ),
+      updateInstaller:
+          updateInstaller ??
+          UpdateInstaller(
+            platform: const NoUpdatePlatform(),
+            client: MockClient((_) async => http.Response('', 404)),
+          ),
+      checkForUpdatesOnOpen: checkForUpdatesOnOpen,
     ),
   );
   if (settle) await tester.pumpAndSettle();
