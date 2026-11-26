@@ -399,6 +399,25 @@ class _EntryScreen extends StatelessWidget {
                 'Only changes how answers are worded. It isn’t an account.',
                 style: text.bodySmall?.copyWith(color: palette.inkMuted),
               ),
+              const SizedBox(height: 16),
+              // AI providers' free tiers may keep prompts (ai-providers.md).
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(Icons.privacy_tip_outlined, size: 18, color: palette.inkMuted),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Don’t type names or other personal details: questions go to an outside AI '
+                      'service to write the answer.',
+                      style: text.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
               if (m != null) ...[
                 Text('Your match', style: text.titleSmall),
@@ -843,7 +862,7 @@ class _ReplyCard extends StatelessWidget {
 }
 
 /// Reply placeholder while the question is with the server. After a few
-/// seconds it says why it can be slow (cold start, up to about 40 s).
+/// seconds it says why it can be slow (cold start, up to about a minute).
 class _Thinking extends StatefulWidget {
   const _Thinking();
 
@@ -900,7 +919,7 @@ class _ThinkingState extends State<_Thinking> {
             Semantics(
               liveRegion: true,
               child: Text(
-                'Still working. The server may be starting up; this can take up to 40 seconds.',
+                'Still working. The server may be starting up; this can take up to a minute.',
                 style: text.bodySmall?.copyWith(color: palette.inkMuted),
               ),
             ),

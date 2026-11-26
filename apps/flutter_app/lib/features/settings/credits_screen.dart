@@ -15,6 +15,11 @@ class CreditsScreen extends StatelessWidget {
           'Astronomical Services Administration (panahon.gov.ph).',
       'https://www.panahon.gov.ph/',
     ),
+    (
+      'Lightning data: Powered by Vaisala Xweather',
+      'Real-time lightning detection near the venue, shown on the Safety tab.',
+      'https://www.xweather.com/',
+    ),
     ('Roboto typeface', 'Google, Apache License 2.0.', 'https://fonts.google.com/specimen/Roboto'),
     ('Material icons', 'Google, Apache License 2.0.', 'https://fonts.google.com/icons'),
   ];

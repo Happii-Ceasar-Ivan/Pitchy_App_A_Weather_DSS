@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/app.dart';
 import 'package:pitchy/core/config/app_config.dart';
@@ -6,6 +8,7 @@ import 'package:pitchy/core/config/app_info.dart';
 import 'package:pitchy/core/routing/app_router.dart';
 import 'package:pitchy/core/storage/preferences.dart';
 import 'package:pitchy/core/storage/saved_copies.dart';
+import 'package:pitchy/features/settings/update_check.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
 import 'package:pitchy/shared/services/mock/mock_pitchy_api.dart';
 
@@ -24,6 +27,7 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
   Duration latency = Duration.zero,
   bool settle = true,
   DateTime? now,
+  UpdateChecker? updates,
 }) async {
   final clockNow = now ?? testNow;
   tester.view.devicePixelRatio = 1;
@@ -46,6 +50,13 @@ Future<(MockPitchyApi, MemoryPreferences)> pumpPitchyApp(
       savedCopies: savedCopies,
       initialLocation: location,
       clock: () => clockNow,
+      // Never calls GitHub from tests: no release published.
+      updates:
+          updates ??
+          UpdateChecker(
+            installedVersion: testInfo.version,
+            client: MockClient((_) async => http.Response('{}', 404)),
+          ),
     ),
   );
   if (settle) await tester.pumpAndSettle();

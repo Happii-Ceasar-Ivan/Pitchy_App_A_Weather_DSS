@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_scope.dart';
+import '../../core/config/project_links.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/pitchy_palette.dart';
 import '../../shared/services/mock/fixtures.dart' show MockScenario;
 import '../../shared/services/mock/mock_pitchy_api.dart';
+import '../../shared/widgets/link_text.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 import 'update_check.dart';
 
@@ -17,6 +19,9 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   static const _notYet = 'Not set up yet';
+
+  /// GitHub issues are public (user chose GitHub Issues, 2026-11-26).
+  static const _publicIssues = 'Opens GitHub Issues. Posts are public: leave out personal details.';
 
   @override
   Widget build(BuildContext context) {
@@ -62,17 +67,19 @@ class SettingsScreen extends StatelessWidget {
             ],
             const Divider(),
             const _SectionHeader('Feedback and contact'),
-            const ListTile(
-              enabled: false,
-              leading: Icon(Icons.feedback_outlined),
-              title: Text('Send feedback'),
-              subtitle: Text(_notYet),
+            ListTile(
+              leading: const Icon(Icons.feedback_outlined),
+              title: const Text('Send feedback'),
+              subtitle: const Text(_publicIssues),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () => openExternalLink(context, ProjectLinks.feedback),
             ),
-            const ListTile(
-              enabled: false,
-              leading: Icon(Icons.support_agent),
-              title: Text('Contact support'),
-              subtitle: Text(_notYet),
+            ListTile(
+              leading: const Icon(Icons.support_agent),
+              title: const Text('Contact support'),
+              subtitle: const Text(_publicIssues),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () => openExternalLink(context, ProjectLinks.support),
             ),
             const Divider(),
             const _SectionHeader('Support Pitchy'),

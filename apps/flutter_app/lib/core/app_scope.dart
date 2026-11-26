@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../features/conversational_agent/chat_session.dart';
 import '../features/match_management/match_controller.dart';
+import '../features/settings/update_check.dart';
 import 'config/app_config.dart';
 import 'config/app_info.dart';
 import 'network/pitchy_api.dart';
@@ -22,6 +23,7 @@ class AppScope extends InheritedWidget {
     required this.theme,
     required this.match,
     required this.chatSession,
+    required this.updates,
     required super.child,
   });
 
@@ -38,6 +40,9 @@ class AppScope extends InheritedWidget {
   /// The anonymous chat session, shared by every chat in this app run.
   final ChatSession chatSession;
 
+  /// Check for Updates against GitHub releases (P-08).
+  final UpdateChecker updates;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing above this widget');
@@ -51,5 +56,6 @@ class AppScope extends InheritedWidget {
       old.theme != theme ||
       old.match != match ||
       old.chatSession != chatSession ||
+      old.updates != updates ||
       old.config != config;
 }

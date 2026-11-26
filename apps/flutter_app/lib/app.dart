@@ -12,6 +12,8 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/conversational_agent/chat_session.dart';
 import 'features/match_management/match_controller.dart';
+import 'features/settings/update_check.dart';
+import 'shared/widgets/demo_data_strip.dart';
 
 class PitchyApp extends StatefulWidget {
   const PitchyApp({
@@ -23,6 +25,7 @@ class PitchyApp extends StatefulWidget {
     this.savedCopies,
     this.initialLocation = Routes.dashboard,
     this.clock,
+    this.updates,
   });
 
   final AppConfig config;
@@ -39,11 +42,16 @@ class PitchyApp extends StatefulWidget {
   /// and check that a kickoff isn't in the past.
   final DateTime Function()? clock;
 
+  /// For tests; a real check against GitHub releases otherwise.
+  final UpdateChecker? updates;
+
   @override
   State<PitchyApp> createState() => _PitchyAppState();
 }
 
 class _PitchyAppState extends State<PitchyApp> {
+  late final UpdateChecker _updates =
+      widget.updates ?? UpdateChecker(installedVersion: widget.info.version);
   late final GoRouter _router = buildRouter(initialLocation: widget.initialLocation);
   late final ThemeController _theme = ThemeController(preferences: widget.preferences);
   late final SavedCopyStore _savedCopies =
@@ -75,6 +83,7 @@ class _PitchyAppState extends State<PitchyApp> {
     theme: _theme,
     match: _match,
     chatSession: _chatSession,
+    updates: _updates,
     child: ListenableBuilder(
       listenable: _theme,
       builder: (context, _) => MaterialApp.router(
@@ -82,6 +91,10 @@ class _PitchyAppState extends State<PitchyApp> {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.build(_theme.palette),
         routerConfig: _router,
+        // Mock builds say so on every screen; release builds never show it.
+        builder: widget.config.useMocks
+            ? (context, child) => DemoDataStrip(child: child ?? const SizedBox.shrink())
+            : null,
       ),
     ),
   );
