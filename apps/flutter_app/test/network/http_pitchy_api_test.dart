@@ -200,4 +200,10 @@ void main() {
       throwsA(isA<ApiError>().having((e) => e.retryAt, 'retryAt', retry)),
     );
   });
+
+  test('waits long enough for a cold start (measured 24 s, 43 s after a deploy)', () {
+    final api = HttpPitchyApi(baseUrl: Uri.parse('https://api.example.test'));
+    expect(api.timeout, HttpPitchyApi.defaultTimeout);
+    expect(HttpPitchyApi.defaultTimeout, const Duration(seconds: 60));
+  });
 }

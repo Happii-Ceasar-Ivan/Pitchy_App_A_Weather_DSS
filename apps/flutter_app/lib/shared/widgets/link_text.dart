@@ -1,6 +1,16 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Opens a fixed app URL in the system browser; says so if it can't.
+Future<void> openExternalLink(BuildContext context, Uri url) async {
+  final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Couldn’t open the link. It is $url')),
+    );
+  }
+}
+
 /// A tappable link that opens in the system browser. Only for fixed URLs the
 /// app ships with (credits); never for text that came from a source.
 class LinkText extends StatelessWidget {
@@ -9,14 +19,7 @@ class LinkText extends StatelessWidget {
   final String url;
   final String? label;
 
-  Future<void> _open(BuildContext context) async {
-    final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Couldn’t open the link. It is $url')),
-      );
-    }
-  }
+  Future<void> _open(BuildContext context) => openExternalLink(context, Uri.parse(url));
 
   @override
   Widget build(BuildContext context) {

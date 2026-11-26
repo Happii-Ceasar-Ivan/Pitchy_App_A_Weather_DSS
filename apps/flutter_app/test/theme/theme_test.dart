@@ -96,6 +96,8 @@ void main() {
       expect(contrast(p.onShell, p.shell), greaterThanOrEqualTo(7), reason: 'onShell');
       expect(contrast(p.onShellMuted, p.shell), greaterThanOrEqualTo(4.5), reason: 'onShellMuted');
       expect(contrast(p.accent, p.surface), greaterThanOrEqualTo(4.5), reason: 'accent');
+      // Text on accent fills (buttons, the demo-data strip).
+      expect(contrast(p.onAccent, p.accent), greaterThanOrEqualTo(4.5), reason: 'onAccent');
       for (final line in p.lines.values) {
         expect(contrast(line, p.surface), greaterThanOrEqualTo(3), reason: 'line colour');
       }

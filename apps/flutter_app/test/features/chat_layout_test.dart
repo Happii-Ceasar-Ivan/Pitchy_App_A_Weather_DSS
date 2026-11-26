@@ -110,6 +110,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final withMatch in [true, false]) {
+    testWidgets(
+      'entry screen says not to type personal details (${withMatch ? 'match' : 'general'})',
+      (
+        tester,
+      ) async {
+        // AI providers' free tiers may keep prompts (docs/decisions/ai-providers.md).
+        await pumpPitchyApp(
+          tester,
+          location: Routes.chat,
+          prefs: withMatch ? withActiveMatch() : {},
+          size: const Size(390, 1400),
+        );
+        expect(
+          find.text(
+            'Don’t type names or other personal details: questions go to an outside AI service '
+            'to write the answer.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+  }
+
   testWidgets('screen readers can name and open the entry screen role menu', (tester) async {
     final semantics = tester.ensureSemantics();
     await pumpPitchyApp(tester, location: Routes.chat, prefs: withActiveMatch());
@@ -127,6 +151,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getSemantics(menu).getSemanticsData().value, 'Referee');
     semantics.dispose();
+  });
+
+  testWidgets('a slow answer says the server may take up to a minute to start', (tester) async {
+    // Every mock call takes 10 s here; step the clock by hand.
+    await pumpPitchyApp(
+      tester,
+      location: Routes.chat,
+      prefs: {...withActiveMatch(), PrefKeys.chatRole: 'coach'},
+      latency: const Duration(seconds: 10),
+      settle: false,
+    );
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(seconds: 11));
+    }
+    await tester.tap(find.text('Start chatting'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.enterText(find.byType(TextField), 'Is it hot?');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send question'));
+    // One frame builds the answering card (its timer starts there), then 7 s.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 7));
+    expect(
+      find.text('Still working. The server may be starting up; this can take up to a minute.'),
+      findsOneWidget,
+    );
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(seconds: 11));
+    }
   });
 
   group('wide window', () {

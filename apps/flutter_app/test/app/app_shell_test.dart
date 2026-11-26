@@ -80,13 +80,12 @@ void main() {
     expect(prefs.getString(PrefKeys.themeMode), PitchyThemeMode.pitchGreen.name);
   });
 
-  testWidgets('Check for updates says plainly that updates aren’t set up', (tester) async {
+  testWidgets('Check for updates says when nothing is published yet', (tester) async {
     await pumpPitchyApp(tester);
     await _openDrawer(tester);
     await tester.tap(find.text('Check for updates'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('You have Pitchy 1.0.0 (build 1)'), findsOneWidget);
-    expect(find.textContaining('aren’t set up yet'), findsOneWidget);
+    expect(find.text('No version has been published yet. You have Pitchy 1.0.0.'), findsOneWidget);
   });
 
   testWidgets('Full settings has every row; rows without content are disabled', (tester) async {
@@ -119,10 +118,10 @@ void main() {
       );
       expect(find.text(row), findsOneWidget, reason: row);
     }
-    final privacy = tester.widget<ListTile>(
-      find.ancestor(of: find.text('Privacy policy'), matching: find.byType(ListTile)),
+    final donate = tester.widget<ListTile>(
+      find.ancestor(of: find.text('Support development'), matching: find.byType(ListTile)),
     );
-    expect(privacy.enabled, isFalse);
+    expect(donate.enabled, isTrue, reason: 'the Maya QR is set up (P-26)');
   });
 
   testWidgets('Custom theme shows the fixed colour set', (tester) async {
@@ -142,6 +141,7 @@ void main() {
     await tester.tap(find.text('About Pitchy'));
     await tester.pumpAndSettle();
     expect(find.text('Version 1.0.0 (build 1)'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Credits'), 100);
     await tester.tap(find.text('Credits'));
     await tester.pumpAndSettle();
     expect(find.text('Weather data by Open-Meteo.com'), findsOneWidget);

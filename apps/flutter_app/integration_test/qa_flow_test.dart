@@ -9,6 +9,8 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/app.dart';
@@ -16,6 +18,8 @@ import 'package:pitchy/core/config/app_config.dart';
 import 'package:pitchy/core/config/app_info.dart';
 import 'package:pitchy/core/storage/preferences.dart';
 import 'package:pitchy/core/storage/saved_copies.dart';
+import 'package:pitchy/features/settings/update_check.dart';
+import 'package:pitchy/features/settings/update_installer.dart';
 import 'package:pitchy/shared/services/mock/fixtures.dart';
 import 'package:pitchy/shared/services/mock/mock_pitchy_api.dart';
 import 'package:pitchy/shared/widgets/request_states.dart';
@@ -73,6 +77,16 @@ Future<MockPitchyApi> _launch(
       preferences: prefs,
       savedCopies: store,
       clock: () => _now,
+      // Device QA never asks GitHub or installs anything.
+      checkForUpdatesOnOpen: false,
+      updates: UpdateChecker(
+        installedVersion: '1.0.0',
+        client: MockClient((_) async => http.Response('{}', 404)),
+      ),
+      updateInstaller: UpdateInstaller(
+        platform: const NoUpdatePlatform(),
+        client: MockClient((_) async => http.Response('', 404)),
+      ),
     ),
   );
   await t.pumpAndSettle();
@@ -122,6 +136,9 @@ void main() {
     await t.pumpAndSettle();
     await _shot(t, 'a1-setup-form');
     await t.scrollUntilVisible(find.text('Show conditions'), 200);
+    // scrollUntilVisible can stop with the button a few pixels past the edge.
+    await t.ensureVisible(find.text('Show conditions'));
+    await t.pumpAndSettle();
     await t.tap(find.text('Show conditions'));
     await t.pumpAndSettle();
     expect(find.text('Kickoff Mon 23 Nov, 3:00 PM PHT'), findsOneWidget);

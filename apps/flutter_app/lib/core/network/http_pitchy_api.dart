@@ -23,10 +23,15 @@ class HttpPitchyApi implements PitchyApi {
   HttpPitchyApi({
     required Uri baseUrl,
     http.Client? client,
-    this.timeout = const Duration(seconds: 40),
+    this.timeout = defaultTimeout,
     this.savedCopies,
   }) : _base = baseUrl,
        _client = client ?? http.Client();
+
+  /// Longer than a cold start of the backend (scaled to zero): measured
+  /// about 24 s, and 43 s once on the first start after a deploy (backend
+  /// live checks, 2026-11-26).
+  static const defaultTimeout = Duration(seconds: 60);
 
   final Uri _base;
   final http.Client _client;

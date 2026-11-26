@@ -8,7 +8,10 @@ import '../../features/match_management/match_setup_screen.dart';
 import '../../features/safety/safety_screen.dart';
 import '../../features/settings/about_screen.dart';
 import '../../features/settings/credits_screen.dart';
+import '../../features/settings/policy_pages.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/settings/support_screen.dart';
+import '../config/donations.dart';
 import 'app_shell.dart';
 
 /// Route paths. Screen flow: docs/frontend/f0-screen-flow.md (local).
@@ -20,6 +23,9 @@ abstract final class Routes {
   static const settings = '/settings';
   static const about = '/about';
   static const credits = '/credits';
+  static const privacy = '/privacy';
+  static const disclaimer = '/disclaimer';
+  static const support = '/support';
   static const stateGallery = '/dev/states';
 }
 
@@ -45,6 +51,19 @@ GoRouter buildRouter({String initialLocation = Routes.dashboard}) => GoRouter(
     GoRoute(path: Routes.settings, builder: (_, _) => const SettingsScreen()),
     GoRoute(path: Routes.about, builder: (_, _) => const AboutScreen()),
     GoRoute(path: Routes.credits, builder: (_, _) => const CreditsScreen()),
+    GoRoute(
+      path: Routes.privacy,
+      builder: (_, _) => const PolicyScreen(page: PolicyPages.privacy),
+    ),
+    GoRoute(
+      path: Routes.disclaimer,
+      builder: (_, _) => const PolicyScreen(page: PolicyPages.disclaimer),
+    ),
+    if (Donations.maya case final qr?)
+      GoRoute(
+        path: Routes.support,
+        builder: (_, _) => SupportScreen(qr: qr, saver: QrSaver.forThisDevice()),
+      ),
     if (kDebugMode)
       GoRoute(path: Routes.stateGallery, builder: (_, _) => const StateGalleryScreen()),
   ],
