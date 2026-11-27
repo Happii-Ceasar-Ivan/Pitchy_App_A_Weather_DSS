@@ -1,5 +1,5 @@
 // P-22: "Ask Pitchy" is longer than the old name; it must fit whole in the
-// bottom bar (phone) and the rail (wide), at 100% and 200% text. Real Roboto
+// bottom bar (phone) and the rail (wide), at 100% and 200% text. Real Switzer
 // glyphs, so the widths are the ones a device draws.
 
 import 'package:flutter/rendering.dart';

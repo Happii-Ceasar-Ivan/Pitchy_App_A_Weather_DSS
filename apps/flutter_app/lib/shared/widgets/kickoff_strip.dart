@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/match.dart';
 import 'skeletons.dart';
+import 'source_rail.dart' show monoTimeRuns;
 
 /// The strip under the top bar naming the match: venue and kickoff in PHT, with
 /// a way to change the match. Shell-coloured, so it reads as part of the board.
@@ -46,9 +47,11 @@ class KickoffStrip extends StatelessWidget {
                       maxLines: large ? null : 2,
                       overflow: large ? null : TextOverflow.ellipsis,
                     );
-                    final kickoff = Text(
-                      'Kickoff ${formatPhtDateTime(match.kickoffAt)}',
-                      style: text.titleMedium?.copyWith(color: p.onShell),
+                    final kickoff = Text.rich(
+                      monoTimeRuns(
+                        'Kickoff ${formatPhtDateTime(match.kickoffAt)}',
+                        text.titleMedium?.copyWith(color: p.onShell),
+                      ),
                       maxLines: large ? null : 2,
                       overflow: large ? null : TextOverflow.ellipsis,
                     );

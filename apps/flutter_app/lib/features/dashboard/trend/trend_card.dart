@@ -372,15 +372,35 @@ class _Readout extends StatelessWidget {
     return ExcludeSemantics(
       child: SizedBox(
         height: _Readout.height(context),
-        child: Text(
-          parts.join(' · '),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: text.bodyMedium?.copyWith(
-            color: p.hasValue && p.current && !SavedCopyScope.isActive(context)
-                ? context.palette.ink
-                : context.palette.inkMuted,
-          ),
+        child: Builder(
+          builder: (context) {
+            final style = text.bodyMedium?.copyWith(
+              color: p.hasValue && p.current && !SavedCopyScope.isActive(context)
+                  ? context.palette.ink
+                  : context.palette.inkMuted,
+            );
+            // The hour range ("3–4 PM") is a Line Board figure: mono.
+            final hours = parts.first;
+            final run = RegExp(r'\d{1,2}(?: [AP]M)?–\d{1,2} [AP]M').firstMatch(hours);
+            final rest = parts.skip(1).map((e) => ' · $e').join();
+            return Text.rich(
+              TextSpan(
+                style: style,
+                children: [
+                  if (run == null)
+                    TextSpan(text: hours)
+                  else ...[
+                    TextSpan(text: hours.substring(0, run.start)),
+                    PitchyFigures.figureSpans(run.group(0)!, style ?? const TextStyle()),
+                    TextSpan(text: hours.substring(run.end)),
+                  ],
+                  TextSpan(text: rest),
+                ],
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            );
+          },
         ),
       ),
     );

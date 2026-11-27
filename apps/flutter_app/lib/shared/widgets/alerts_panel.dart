@@ -4,6 +4,7 @@ import '../../core/errors/api_failure.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/motion.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/alerts.dart';
 import '../models/weather.dart';
@@ -97,10 +98,9 @@ class _Frame extends StatelessWidget {
           header,
           row,
           AnimatedSize(
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
+            duration: PitchyMotion.of(context).expand,
+            reverseDuration: PitchyMotion.of(context).collapse,
+            curve: PitchyMotion.enter,
             alignment: Alignment.topCenter,
             child: details ?? const SizedBox(width: double.infinity),
           ),

@@ -20,7 +20,12 @@ class CreditsScreen extends StatelessWidget {
       'Real-time lightning detection near the venue, shown on the Safety tab.',
       'https://www.xweather.com/',
     ),
-    ('Roboto typeface', 'Google, Apache License 2.0.', 'https://fonts.google.com/specimen/Roboto'),
+    (
+      'Switzer typeface',
+      'By Indian Type Foundry, ITF Free Font License.',
+      'https://www.fontshare.com/fonts/switzer',
+    ),
+    ('IBM Plex Mono', 'By IBM, SIL Open Font License 1.1.', 'https://github.com/IBM/plex'),
     ('Material icons', 'Google, Apache License 2.0.', 'https://fonts.google.com/icons'),
   ];
 

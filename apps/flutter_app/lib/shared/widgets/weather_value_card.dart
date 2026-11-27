@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/motion.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'dashed_border.dart';
@@ -204,8 +205,9 @@ class WeatherValueCard extends StatelessWidget {
                 ),
               ),
               AnimatedSize(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
+                duration: PitchyMotion.of(context).expand,
+                reverseDuration: PitchyMotion.of(context).collapse,
+                curve: PitchyMotion.enter,
                 alignment: Alignment.topCenter,
                 child: expanded && slot != null
                     ? _Details(quantity: quantity, slot: slot!, used: used)

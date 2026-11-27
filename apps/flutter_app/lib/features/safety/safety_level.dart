@@ -38,9 +38,8 @@ SafetyTone? safetyToneFor({String? severity, String? levelId}) =>
 
 (Color bg, Color fg) safetyToneColours(BuildContext context, SafetyTone tone) {
   final s = context.safetyColors;
-  final p = context.palette;
   return switch (tone) {
-    SafetyTone.advisory => (Color.alphaBlend(p.accent.withValues(alpha: 0.12), p.surface), p.ink),
+    SafetyTone.advisory => (s.calmInfo, s.onCalmInfo),
     SafetyTone.warning => (s.warning, s.onWarning),
     SafetyTone.danger => (s.danger, s.onDanger),
   };
@@ -48,7 +47,7 @@ SafetyTone? safetyToneFor({String? severity, String? levelId}) =>
 
 /// The backend's level label on its fixed colour, with an icon so colour is
 /// never the only signal. Advisory and neutral levels get an outline and an
-/// info icon.
+/// info icon. Every colour here is fixed (SafetyColors), never themed.
 class SafetyLevelPill extends StatelessWidget {
   const SafetyLevelPill({
     super.key,
@@ -67,8 +66,8 @@ class SafetyLevelPill extends StatelessWidget {
   /// The backend's label, verbatim.
   final String label;
 
-  /// Overrides the neutral icon (for example "No level"). Warning and danger
-  /// levels always keep their own icons.
+  /// Overrides the neutral icon (for example "No level"). Advisory, warning
+  /// and danger levels always keep their own icons.
   final IconData? icon;
 
   /// Minimum height of the pill.
@@ -84,7 +83,9 @@ class SafetyLevelPill extends StatelessWidget {
     final shownIcon = switch (tone) {
       SafetyTone.danger => Icons.warning,
       SafetyTone.warning => Icons.warning_amber_rounded,
-      SafetyTone.advisory || null => icon ?? Icons.info_outline,
+      // One icon per level everywhere (Q6): advisory is always the info icon.
+      SafetyTone.advisory => Icons.info_outline,
+      null => icon ?? Icons.info_outline,
     };
     return Semantics(
       label: 'Level: $label',
@@ -97,7 +98,7 @@ class SafetyLevelPill extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radiusCard),
           border: switch (tone) {
             null => Border.all(color: palette.hairline),
-            SafetyTone.advisory => Border.all(color: palette.accent.withValues(alpha: 0.5)),
+            SafetyTone.advisory => Border.all(color: context.safetyColors.calmInfoBorder),
             _ => null,
           },
         ),

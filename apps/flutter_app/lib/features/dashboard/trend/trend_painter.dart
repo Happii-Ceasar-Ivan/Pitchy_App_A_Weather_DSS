@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/theme/app_theme.dart';
 import 'trend_series.dart';
 
 /// Colours and text the chart paints with. All from the palette; the line
@@ -57,11 +58,13 @@ class TrendLayout {
   late final double top;
   late final Rect plot;
 
-  TextPainter painter(String text, {Color? color}) => TextPainter(
-    text: TextSpan(
-      text: text,
-      style: style.label.copyWith(color: color),
-    ),
+  TextPainter painter(String text, {Color? color, bool mono = false}) => TextPainter(
+    text: mono
+        ? PitchyFigures.figureSpans(text, style.label.copyWith(color: color))
+        : TextSpan(
+            text: text,
+            style: style.label.copyWith(color: color),
+          ),
     textDirection: TextDirection.ltr,
     textScaler: style.textScaler,
   )..layout();
@@ -207,12 +210,12 @@ class TrendPainter extends CustomPainter {
 
     // Hour labels under the strip; every second one when they'd crowd.
     final labelTop = stripTop + TrendLayout.stripHeight + 4;
-    final widest = l.painter('12 PM').width + 8;
+    final widest = l.painter('12 PM', mono: true).width + 8;
     final hourWidth = series.points.isEmpty ? plot.width : plot.width / series.points.length;
     final every = hourWidth <= 0 ? 1 : (widest / hourWidth).ceil().clamp(1, 6);
     for (var i = 0; i < series.points.length; i += every) {
       final p = series.points[i];
-      final tp = l.painter(TrendSeries.hourLabel(p.from));
+      final tp = l.painter(TrendSeries.hourLabel(p.from), mono: true);
       final x = _safeClamp(l.xOf(p.middle) - tp.width / 2, 0, size.width - tp.width);
       tp.paint(canvas, Offset(x, labelTop));
     }

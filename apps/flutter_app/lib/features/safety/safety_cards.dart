@@ -206,7 +206,9 @@ class SafetySkeleton extends StatelessWidget {
           actionLines: 5,
           decidedLines: 2,
           hasValue: true,
-          limitationLines: 13,
+          // Line counts match the heatBelow fixture at phone width in Switzer
+          // (re-measured for the P-28 font change: limitations 13 -> 12).
+          limitationLines: 12,
           limitationGaps: 2,
         ),
         SizedBox(height: safetyCardGap),

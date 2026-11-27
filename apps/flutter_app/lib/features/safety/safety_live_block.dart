@@ -367,8 +367,10 @@ class LightningLiveSkeleton extends StatelessWidget {
             SkeletonLine(style: text.bodyMedium, widthFactor: 1),
             SkeletonLine(style: text.bodyMedium, widthFactor: 0.6),
             const SizedBox(height: 8),
-            for (var n = 0; n < 4; n++)
-              SkeletonLine(style: text.bodyMedium, widthFactor: n == 3 ? 0.5 : 1),
+            // The description wraps to three lines at phone width in Switzer
+            // (re-measured for the P-28 font change).
+            for (var n = 0; n < 3; n++)
+              SkeletonLine(style: text.bodyMedium, widthFactor: n == 2 ? 0.5 : 1),
             const SizedBox(height: 48),
           ],
         ),

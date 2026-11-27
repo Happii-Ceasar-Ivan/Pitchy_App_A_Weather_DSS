@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/errors/api_failure.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/motion.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/match.dart';
@@ -532,10 +533,9 @@ class SafetyExpander extends StatelessWidget {
         ),
       ),
       AnimatedSize(
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
+        duration: PitchyMotion.of(context).expand,
+        reverseDuration: PitchyMotion.of(context).collapse,
+        curve: PitchyMotion.enter,
         alignment: Alignment.topCenter,
         child: expanded ? child : const SizedBox(width: double.infinity),
       ),

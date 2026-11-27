@@ -140,6 +140,25 @@ class _SourceRailState extends State<SourceRail> {
   }
 }
 
+final _timeRun = RegExp(r'\d{1,2}:\d{2} [AP]M|\d+ (?:min|h|d)(?= ago)');
+
+/// [text] as a span in [style] with each clock time or age figure ("3:00 PM",
+/// "5 min") in the Line Board's mono face. The words, and the text itself, are
+/// unchanged.
+TextSpan monoTimeRuns(String text, TextStyle? style) {
+  final base = style ?? const TextStyle();
+  final spans = <InlineSpan>[];
+  var at = 0;
+  for (final m in _timeRun.allMatches(text)) {
+    if (m.start > at) spans.add(TextSpan(text: text.substring(at, m.start)));
+    // Only the figures go mono ("3:00", "9"); "PM", "h" and "min" stay.
+    spans.add(PitchyFigures.figureSpans(m.group(0)!, base));
+    at = m.end;
+  }
+  if (at < text.length) spans.add(TextSpan(text: text.substring(at)));
+  return TextSpan(style: base, children: spans);
+}
+
 class _RailTitle extends StatelessWidget {
   const _RailTitle({required this.checkedAt});
 
@@ -396,9 +415,8 @@ class _SourceLine extends StatelessWidget {
                     // full text is in the tooltip and the screen-reader label.
                     Tooltip(
                       message: _detail(),
-                      child: Text(
-                        _detail(),
-                        style: text.bodySmall,
+                      child: Text.rich(
+                        monoTimeRuns(_detail(), text.bodySmall),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

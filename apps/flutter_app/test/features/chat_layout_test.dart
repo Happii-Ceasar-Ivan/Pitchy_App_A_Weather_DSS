@@ -1,6 +1,6 @@
 // F4 P2 layout leftovers on the chat (Ask Pitchy): phone height used by the
 // notice and composer, reference text size, and the measure on wide windows.
-// Real Roboto glyphs, so heights and widths are the ones a device draws.
+// Real Switzer glyphs, so heights and widths are the ones a device draws.
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';

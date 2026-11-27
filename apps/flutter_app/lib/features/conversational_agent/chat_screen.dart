@@ -10,6 +10,7 @@ import '../../core/routing/app_router.dart';
 import '../../core/routing/app_shell.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/motion.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/conversation.dart';
 import '../../shared/models/match.dart';
@@ -90,6 +91,11 @@ class _ChatState extends State<_Chat> {
   final _inputFocus = FocusNode();
   int _seen = 0;
 
+  /// Replies that arrived during this session and have not played their cue yet.
+  /// History never enters this set; each reply plays its cue once.
+  final _arrived = <int>{};
+  int _lastReplyId = -1;
+
   /// False until the user presses Start on the entry screen (each time the
   /// tab opens with no conversation yet).
   bool _started = false;
@@ -121,23 +127,31 @@ class _ChatState extends State<_Chat> {
 
   /// Keeps the newest message in view when one arrives.
   void _followNewEntries() {
-    final count = _chat.entries.length + (_chat.sending ? 1 : 0);
-    if (count == _seen) return;
+    final entries = _chat.entries;
+    // A reply replaces the "thinking" row, so the count can stay the same:
+    // a new reply also scrolls, so it (and its cue) is always in view.
+    var newReply = false;
+    if (entries.isNotEmpty && entries.last is BotReply) {
+      final id = entries.last.id;
+      if (id > _lastReplyId) {
+        _lastReplyId = id;
+        _arrived
+          ..clear()
+          ..add(id);
+        newReply = true;
+      }
+    }
+    final count = entries.length + (_chat.sending ? 1 : 0);
+    if (count == _seen && !newReply) return;
     _seen = count;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scroll.hasClients) return;
-      final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      final motion = PitchyMotion.of(context);
       final end = _scroll.position.maxScrollExtent;
-      if (reduce) {
+      if (motion.reduced) {
         _scroll.jumpTo(end);
       } else {
-        unawaited(
-          _scroll.animateTo(
-            end,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut,
-          ),
-        );
+        unawaited(_scroll.animateTo(end, duration: motion.scroll, curve: PitchyMotion.enter));
       }
     });
   }
@@ -202,9 +216,14 @@ class _ChatState extends State<_Chat> {
                                   canResend: _chat.canSend,
                                   onResend: () => unawaited(_chat.resend(e)),
                                 ),
-                                BotReply() => _BotBubble(
-                                  key: ValueKey('r${e.id}'),
-                                  reply: e.response,
+                                BotReply() => _ArrivalCue(
+                                  key: ValueKey('arrive${e.id}'),
+                                  // Only the newest reply, once.
+                                  play: e.id == _lastReplyId && _arrived.remove(e.id),
+                                  child: _BotBubble(
+                                    key: ValueKey('r${e.id}'),
+                                    reply: e.response,
+                                  ),
                                 ),
                               },
                             if (_chat.sending) const _Thinking(),
@@ -792,6 +811,59 @@ class _ReplyLine extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// The cue for a reply that just arrived: opacity 0 to 1 with a small upward
+/// rise, once. Reduced motion: a short opacity fade, no movement. It never
+/// changes the child's layout box and adds no semantics.
+class _ArrivalCue extends StatefulWidget {
+  const _ArrivalCue({super.key, required this.play, required this.child});
+
+  /// Decided when the reply is first built; later rebuilds do not replay it.
+  final bool play;
+  final Widget child;
+
+  @override
+  State<_ArrivalCue> createState() => _ArrivalCueState();
+}
+
+class _ArrivalCueState extends State<_ArrivalCue> with SingleTickerProviderStateMixin {
+  AnimationController? _controller;
+  CurvedAnimation? _curved;
+  double _rise = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.play || _controller != null) return;
+    final motion = PitchyMotion.of(context);
+    _rise = motion.rise;
+    final controller = AnimationController(vsync: this, duration: motion.fade)..forward();
+    _controller = controller;
+    _curved = CurvedAnimation(parent: controller, curve: PitchyMotion.enter);
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = _curved;
+    if (curved == null) return widget.child;
+    return FadeTransition(
+      opacity: curved,
+      child: AnimatedBuilder(
+        animation: curved,
+        builder: (context, child) =>
+            Transform.translate(offset: Offset(0, _rise * (1 - curved.value)), child: child),
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 class _BotBubble extends StatelessWidget {

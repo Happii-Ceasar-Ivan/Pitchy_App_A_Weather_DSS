@@ -26,14 +26,19 @@ Future<void> pumpThemed(
   );
 }
 
-/// Loads the app's bundled Roboto and the Material icon font, so layout tests
+/// Loads the app's bundled Switzer and IBM Plex Mono and the Material icon font, so layout tests
 /// measure real glyph widths instead of the wide square test font.
 Future<void> loadAppFonts() async {
-  final roboto = FontLoader('Roboto');
-  for (final f in ['regular', 'medium', 'bold']) {
-    roboto.addFont(rootBundle.load('assets/fonts/roboto-$f.ttf'));
+  final switzer = FontLoader('Switzer');
+  for (final w in ['Regular', 'Medium', 'Semibold', 'Bold']) {
+    switzer.addFont(rootBundle.load('assets/fonts/switzer/Switzer-$w.otf'));
   }
-  await roboto.load();
+  await switzer.load();
+  final plex = FontLoader('IBMPlexMono');
+  for (final w in ['Regular', 'Medium', 'SemiBold']) {
+    plex.addFont(rootBundle.load('assets/fonts/ibm_plex_mono/IBMPlexMono-$w.ttf'));
+  }
+  await plex.load();
   final root = Platform.environment['FLUTTER_ROOT'];
   if (root == null) return;
   final icons = File('$root/bin/cache/artifacts/material_fonts/materialicons-regular.otf');

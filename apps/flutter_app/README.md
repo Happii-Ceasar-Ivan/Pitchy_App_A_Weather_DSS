@@ -8,6 +8,14 @@ The Pitchy client for **Android (APK)** and **Windows (.exe)**, built from one F
 - Windows builds: Visual Studio Build Tools with "Desktop development with C++".
 - Android builds: Android SDK platform 36 and build-tools 36, JDK 17.
 
+## Fonts (once, before run, build or test)
+
+```
+dart run tool/fetch_switzer.dart
+```
+
+Switzer (ITF Free Font License) may not be stored in this public repository, so the script downloads it unchanged from Fontshare into `assets/fonts/switzer/` (git-ignored). Without it, run, build and test fail with "unable to locate asset". This happens only on the developer's PC or in CI: the app bundles every font and never downloads one on a user's device. IBM Plex Mono (OFL) is committed in `assets/fonts/ibm_plex_mono/`.
+
 ## Run
 
 ```

@@ -22,11 +22,16 @@ import 'package:pitchy/shared/widgets/weather_value_card.dart';
 final _now = DateTime.utc(2026, 11, 28, 4);
 
 Future<void> _loadFonts() async {
-  final roboto = FontLoader('Roboto');
-  for (final f in ['regular', 'medium', 'bold']) {
-    roboto.addFont(rootBundle.load('assets/fonts/roboto-$f.ttf'));
+  final switzer = FontLoader('Switzer');
+  for (final w in ['Regular', 'Medium', 'Semibold', 'Bold']) {
+    switzer.addFont(rootBundle.load('assets/fonts/switzer/Switzer-$w.otf'));
   }
-  await roboto.load();
+  await switzer.load();
+  final plex = FontLoader('IBMPlexMono');
+  for (final w in ['Regular', 'Medium', 'SemiBold']) {
+    plex.addFont(rootBundle.load('assets/fonts/ibm_plex_mono/IBMPlexMono-$w.ttf'));
+  }
+  await plex.load();
   final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? r'D:\dev\flutter';
   final icons = File('$flutterRoot/bin/cache/artifacts/material_fonts/materialicons-regular.otf');
   final loader = FontLoader('MaterialIcons')

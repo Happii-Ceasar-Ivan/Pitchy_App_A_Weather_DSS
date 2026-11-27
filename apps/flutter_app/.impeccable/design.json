@@ -1,37 +1,37 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-22T17:41:29+00:00",
+  "generatedAt": "2026-11-27T15:48:02+00:00",
   "title": "Design System: Pitchy",
   "extensions": {
     "colorMeta": {
       "shell-navy": {
         "role": "primary",
-        "displayName": "Line Board Navy",
-        "canonical": "#0F2540",
+        "displayName": "Midnight Navy",
+        "canonical": "#031A31",
         "tonalRamp": [
-          "#050C14",
-          "#1A2635",
-          "#324359",
-          "#4D637F",
-          "#6D84A2",
-          "#93A7C0",
-          "#BBCBDF",
-          "#E5F0FE"
+          "#041F3A",
+          "#073C71",
+          "#0A5AA9",
+          "#0E77E0",
+          "#3795F3",
+          "#6EB2F6",
+          "#A8D0F8",
+          "#E4EDF7"
         ]
       },
       "shell-navy-raised": {
         "role": "primary",
         "displayName": "Shell Navy Raised",
-        "canonical": "#16304F",
+        "canonical": "#0B2742",
         "tonalRamp": [
-          "#050C15",
-          "#192636",
-          "#30435B",
-          "#4A6382",
-          "#6A85A6",
-          "#91A7C3",
-          "#B9CBE1",
-          "#E3F0FF"
+          "#091F34",
+          "#113D67",
+          "#1A5B9A",
+          "#2279CC",
+          "#4996E1",
+          "#7BB3E9",
+          "#AFD0F0",
+          "#E5EDF5"
         ]
       },
       "on-shell": {
@@ -52,16 +52,16 @@
       "on-shell-muted": {
         "role": "neutral",
         "displayName": "On Shell Muted",
-        "canonical": "#CAD6E4",
+        "canonical": "#C3D3E2",
         "tonalRamp": [
-          "#090B0F",
-          "#21262B",
-          "#3C434B",
-          "#59626D",
-          "#79838F",
-          "#9EA6B0",
-          "#C3CAD2",
-          "#EAEFF4"
+          "#141F29",
+          "#273D51",
+          "#3A5B79",
+          "#4E78A1",
+          "#7096BA",
+          "#97B3CD",
+          "#C0D0DF",
+          "#E9EDF1"
         ]
       },
       "ground": {
@@ -111,17 +111,17 @@
       },
       "ink": {
         "role": "neutral",
-        "displayName": "Navy Ink",
-        "canonical": "#0F2540",
+        "displayName": "Midnight Ink",
+        "canonical": "#031A31",
         "tonalRamp": [
-          "#050C14",
-          "#1A2635",
-          "#324359",
-          "#4D637F",
-          "#6D84A2",
-          "#93A7C0",
-          "#BBCBDF",
-          "#E5F0FE"
+          "#041F3A",
+          "#073C71",
+          "#0A5AA9",
+          "#0E77E0",
+          "#3795F3",
+          "#6EB2F6",
+          "#A8D0F8",
+          "#E4EDF7"
         ]
       },
       "ink-muted": {
@@ -137,21 +137,6 @@
           "#99A6B9",
           "#C0CAD9",
           "#E8EFF9"
-        ]
-      },
-      "accent-blue": {
-        "role": "primary",
-        "displayName": "Signal Blue",
-        "canonical": "#1F5FCC",
-        "tonalRamp": [
-          "#000827",
-          "#032155",
-          "#113D87",
-          "#225BBD",
-          "#447FE4",
-          "#74A5F8",
-          "#A3CAFF",
-          "#D4F0FF"
         ]
       },
       "on-accent": {
@@ -172,31 +157,31 @@
       "dark-shell": {
         "role": "primary",
         "displayName": "Night Shell",
-        "canonical": "#07111F",
+        "canonical": "#020F1E",
         "tonalRamp": [
-          "#080B10",
-          "#1F262E",
-          "#3A434F",
-          "#566273",
-          "#778395",
-          "#9BA6B5",
-          "#C2CAD5",
-          "#E9EFF7"
+          "#041D39",
+          "#083871",
+          "#0B54A8",
+          "#0F70DF",
+          "#388EF2",
+          "#6FADF5",
+          "#A8CDF7",
+          "#E4ECF7"
         ]
       },
       "dark-shell-raised": {
         "role": "primary",
         "displayName": "Dark Shell Raised",
-        "canonical": "#0D1B2E",
+        "canonical": "#0A1F36",
         "tonalRamp": [
-          "#070B12",
-          "#1E2631",
-          "#374353",
-          "#536277",
-          "#74849A",
-          "#99A6B9",
-          "#BFCAD9",
-          "#E8EFFA"
+          "#0A1E34",
+          "#133A65",
+          "#1C5797",
+          "#2573C9",
+          "#4B91DE",
+          "#7DB0E7",
+          "#B0CEEF",
+          "#E6EDF5"
         ]
       },
       "dark-on-shell": {
@@ -217,46 +202,46 @@
       "dark-ground": {
         "role": "neutral",
         "displayName": "Dark Ground",
-        "canonical": "#0B1626",
+        "canonical": "#041426",
         "tonalRamp": [
-          "#080B11",
-          "#1F252F",
-          "#394350",
-          "#566274",
-          "#768396",
-          "#9BA6B6",
-          "#C1CAD7",
-          "#E9EFF8"
+          "#061D37",
+          "#0B396D",
+          "#1155A2",
+          "#1771D8",
+          "#3F90EB",
+          "#74AEF0",
+          "#ABCDF4",
+          "#E4EDF6"
         ]
       },
       "dark-surface": {
         "role": "neutral",
         "displayName": "Dark Surface",
-        "canonical": "#122238",
+        "canonical": "#0B223A",
         "tonalRamp": [
-          "#070B13",
-          "#1D2632",
-          "#364355",
-          "#52627A",
-          "#72849D",
-          "#97A6BB",
-          "#BECADB",
-          "#E7EFFB"
+          "#0A1E33",
+          "#133B65",
+          "#1D5897",
+          "#2675C8",
+          "#4C93DD",
+          "#7EB1E6",
+          "#B1CFEF",
+          "#E6EDF5"
         ]
       },
       "dark-hairline": {
         "role": "neutral",
         "displayName": "Dark Hairline",
-        "canonical": "#2B3E58",
+        "canonical": "#1E3754",
         "tonalRamp": [
-          "#060B13",
-          "#1C2633",
-          "#354356",
-          "#50637C",
-          "#70849F",
-          "#96A6BD",
-          "#BDCADC",
-          "#E6EFFC"
+          "#101E2D",
+          "#203A59",
+          "#2F5684",
+          "#3F73B0",
+          "#6291C7",
+          "#8EAFD7",
+          "#BACEE5",
+          "#E8EDF2"
         ]
       },
       "dark-ink": {
@@ -277,31 +262,31 @@
       "dark-ink-muted": {
         "role": "neutral",
         "displayName": "Dark Ink Muted",
-        "canonical": "#AAB8CA",
+        "canonical": "#A6B6C8",
         "tonalRamp": [
-          "#080B10",
-          "#20262D",
-          "#3A434E",
-          "#576271",
-          "#778493",
-          "#9CA6B3",
-          "#C2CAD4",
-          "#E9EFF6"
+          "#171E26",
+          "#2E3B4A",
+          "#44586F",
+          "#5B7593",
+          "#7C93AE",
+          "#A0B1C4",
+          "#C5CFDA",
+          "#EBEDF0"
         ]
       },
       "dark-accent": {
         "role": "primary",
-        "displayName": "Dark Accent",
-        "canonical": "#8CB2FF",
+        "displayName": "Dark Accent (Glacier)",
+        "canonical": "#8BB9D9",
         "tonalRamp": [
-          "#030A1E",
-          "#142345",
-          "#294070",
-          "#415F9E",
-          "#6081C3",
-          "#89A5DC",
-          "#B3CAF5",
-          "#DFEFFF"
+          "#0F212E",
+          "#1E425B",
+          "#2C6287",
+          "#3B82B3",
+          "#5F9ECB",
+          "#8BB9D9",
+          "#B9D4E7",
+          "#E8EEF3"
         ]
       },
       "pitch-shell": {
@@ -739,16 +724,16 @@
       "state-stale-fg-dark": {
         "role": "fixed",
         "displayName": "State Stale Fg Dark",
-        "canonical": "#FFCF7A",
+        "canonical": "#E3BF95",
         "tonalRamp": [
-          "#150800",
-          "#352000",
-          "#593C00",
-          "#805900",
-          "#A37B2C",
-          "#C1A065",
-          "#DFC599",
-          "#FEECCE"
+          "#30200D",
+          "#5F3F19",
+          "#8E5E25",
+          "#BC7C32",
+          "#D39957",
+          "#DFB685",
+          "#EAD2B5",
+          "#F3EEE7"
         ],
         "fixed": true
       },
@@ -1111,6 +1096,194 @@
           "#C6C9CD",
           "#ECEFF1"
         ]
+      },
+      "on-shell-accent": {
+        "role": "primary",
+        "displayName": "Glacier",
+        "canonical": "#8BB9D9",
+        "tonalRamp": [
+          "#0F212E",
+          "#1E425B",
+          "#2C6287",
+          "#3B82B3",
+          "#5F9ECB",
+          "#8BB9D9",
+          "#B9D4E7",
+          "#E8EEF3"
+        ]
+      },
+      "accent-glacier-deep": {
+        "role": "primary",
+        "displayName": "Glacier Deep",
+        "canonical": "#1D5A86",
+        "tonalRamp": [
+          "#0B2232",
+          "#154263",
+          "#206393",
+          "#2A84C4",
+          "#50A0D9",
+          "#81BAE4",
+          "#B2D4ED",
+          "#E6EEF4"
+        ]
+      },
+      "dark-on-shell-muted": {
+        "role": "neutral",
+        "displayName": "Dark On Shell Muted",
+        "canonical": "#A6B6C8",
+        "tonalRamp": [
+          "#171E26",
+          "#2E3B4A",
+          "#44586F",
+          "#5B7593",
+          "#7C93AE",
+          "#A0B1C4",
+          "#C5CFDA",
+          "#EBEDF0"
+        ]
+      },
+      "dark-on-accent": {
+        "role": "primary",
+        "displayName": "Dark On Accent",
+        "canonical": "#031A31",
+        "tonalRamp": [
+          "#041F3A",
+          "#073C71",
+          "#0A5AA9",
+          "#0E77E0",
+          "#3795F3",
+          "#6EB2F6",
+          "#A8D0F8",
+          "#E4EDF7"
+        ]
+      },
+      "calm-info": {
+        "role": "fixed",
+        "displayName": "Calm Info",
+        "canonical": "#E4EBF0",
+        "tonalRamp": [
+          "#162027",
+          "#2B3F4D",
+          "#405E73",
+          "#557D99",
+          "#769AB3",
+          "#9CB6C8",
+          "#C3D2DD",
+          "#EAEEF0"
+        ],
+        "fixed": true
+      },
+      "calm-info-border": {
+        "role": "fixed",
+        "displayName": "Calm Info Border",
+        "canonical": "#8EADC3",
+        "tonalRamp": [
+          "#152028",
+          "#2A3F4F",
+          "#3E5E75",
+          "#537D9C",
+          "#749AB5",
+          "#9BB6CA",
+          "#C2D2DE",
+          "#EAEEF0"
+        ],
+        "fixed": true
+      },
+      "on-calm-info": {
+        "role": "fixed",
+        "displayName": "On Calm Info",
+        "canonical": "#031A31",
+        "tonalRamp": [
+          "#041F3A",
+          "#073C71",
+          "#0A5AA9",
+          "#0E77E0",
+          "#3795F3",
+          "#6EB2F6",
+          "#A8D0F8",
+          "#E4EDF7"
+        ],
+        "fixed": true
+      },
+      "calm-info-dark": {
+        "role": "fixed",
+        "displayName": "Calm Info Dark",
+        "canonical": "#1A344D",
+        "tonalRamp": [
+          "#0F1F2E",
+          "#1E3D5A",
+          "#2D5A86",
+          "#3C78B2",
+          "#6096C9",
+          "#8CB3D8",
+          "#B9D0E6",
+          "#E8EDF3"
+        ],
+        "fixed": true
+      },
+      "calm-info-border-dark": {
+        "role": "fixed",
+        "displayName": "Calm Info Border Dark",
+        "canonical": "#4B6E8C",
+        "tonalRamp": [
+          "#151F28",
+          "#2A3E4E",
+          "#3F5C75",
+          "#537A9B",
+          "#7497B5",
+          "#9BB4C9",
+          "#C2D1DD",
+          "#EAEDF0"
+        ],
+        "fixed": true
+      },
+      "on-calm-info-dark": {
+        "role": "fixed",
+        "displayName": "On Calm Info Dark",
+        "canonical": "#EAF0F7",
+        "tonalRamp": [
+          "#111E2C",
+          "#213A57",
+          "#315782",
+          "#4273AD",
+          "#6591C4",
+          "#90AFD5",
+          "#BBCEE4",
+          "#E8EDF2"
+        ],
+        "fixed": true
+      },
+      "request-error-ink-dark": {
+        "role": "fixed",
+        "displayName": "Request Error Ink Dark",
+        "canonical": "#FF8A80",
+        "tonalRamp": [
+          "#3D0500",
+          "#780900",
+          "#B30E00",
+          "#EE1300",
+          "#FF3B2A",
+          "#FF7165",
+          "#FDA9A2",
+          "#F8E4E2"
+        ],
+        "fixed": true
+      },
+      "on-request-error-ink-dark": {
+        "role": "fixed",
+        "displayName": "On Request Error Ink Dark",
+        "canonical": "#07111F",
+        "tonalRamp": [
+          "#0B1B32",
+          "#163662",
+          "#215092",
+          "#2C6BC2",
+          "#5189D8",
+          "#82AAE3",
+          "#B3CBEC",
+          "#E6ECF4"
+        ],
+        "fixed": true
       }
     },
     "typographyMeta": {
@@ -1120,15 +1293,15 @@
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Weather card values."
+        "purpose": "Weather card values (Switzer 700, -0.4px)."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Top-bar screen name."
+        "purpose": "Top-bar screen name (Switzer 600)."
       },
       "title-small": {
         "displayName": "Title small",
-        "purpose": "Source names on the rail."
+        "purpose": "Source names on the rail; safety-level pill (700)."
       },
       "body": {
         "displayName": "Body",
@@ -1145,14 +1318,74 @@
       "label-small": {
         "displayName": "Label small",
         "purpose": "Dense state pills and validity ticks."
+      },
+      "figure-mono": {
+        "displayName": "Figure mono",
+        "purpose": "IBM Plex Mono digits only: rail time figures, kickoff time, trend axis and readout. Weight capped at 600."
       }
     },
-    "shadows": [],
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "elevation 6; shadow rgba(3,26,49,0.12) light, rgba(0,0,0,0.40) dark",
+        "purpose": "Drawer, dialogs, snackbars. The only shadow in the system."
+      },
+      {
+        "name": "menu",
+        "value": "elevation 3; same shadow colour, with a 1px hairline border",
+        "purpose": "Popup menus and menus."
+      }
+    ],
     "motion": [
       {
-        "name": "card-expand",
-        "value": "220ms cubic-bezier(0.33, 1, 0.68, 1)",
-        "purpose": "Weather card expand/collapse size animation (Curves.easeOutCubic)."
+        "name": "press",
+        "value": "100ms",
+        "purpose": "Press feedback."
+      },
+      {
+        "name": "quick",
+        "value": "150ms",
+        "purpose": "Small state changes; ceiling for any reduced-motion fade."
+      },
+      {
+        "name": "standard",
+        "value": "200ms",
+        "purpose": "Route entrance and the new chat reply."
+      },
+      {
+        "name": "expand",
+        "value": "220ms",
+        "purpose": "Expand; collapse uses the 150ms exit."
+      },
+      {
+        "name": "overlay",
+        "value": "250ms",
+        "purpose": "Drawer, dialogs and other overlays; scroll-to-new."
+      },
+      {
+        "name": "exit",
+        "value": "150ms",
+        "purpose": "Every exit is faster than its entrance."
+      },
+      {
+        "name": "ease-enter",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Strong ease-out for anything entering."
+      },
+      {
+        "name": "ease-move",
+        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+        "purpose": "Something moving between two places."
+      },
+      {
+        "name": "ease-colour",
+        "value": "ease",
+        "purpose": "Theme switch and hover colour changes."
+      },
+      {
+        "name": "reduced",
+        "value": "opacity only, <=150ms; expand, collapse and scroll instant; rise 0",
+        "purpose": "When the system removes animations."
       }
     ],
     "breakpoints": [
@@ -1197,6 +1430,11 @@
         "name": "validity",
         "value": "4px track, 6px bar, 2px kickoff tick",
         "purpose": "Forecast validity to true time scale."
+      },
+      {
+        "name": "focus-ring",
+        "value": "2px accent (ink on filled buttons)",
+        "purpose": "Keyboard focus, never only a colour wash."
       }
     ]
   },
@@ -1207,7 +1445,7 @@
       "refersTo": "top-bar",
       "description": "Every screen: placeholder logo left of the screen name on the shell colour.",
       "html": "<header class=\"ds-topbar\"><span class=\"ds-logo\" aria-label=\"Pitchy (placeholder logo)\">P</span><span class=\"ds-topbar-title\">Dashboard</span></header>",
-      "css": ".ds-topbar{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;background:#0F2540;color:#FFFFFF;font-family:Roboto, system-ui, sans-serif;} .ds-logo{width:32px;height:32px;border-radius:8px;background:#FFFFFF;color:#0F2540;display:grid;place-items:center;font-weight:700;font-size:20px;} .ds-topbar-title{font-size:22px;line-height:28px;font-weight:700;}"
+      "css": ".ds-topbar{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;background:#031A31;color:#FFFFFF;font-family:Switzer, system-ui, sans-serif;} .ds-logo{width:32px;height:32px;border-radius:8px;background:#FFFFFF;color:#031A31;display:grid;place-items:center;font-weight:700;font-size:20px;} .ds-topbar-title{font-size:22px;line-height:28px;font-weight:700;}"
     },
     {
       "name": "State Pill: Current",
@@ -1215,7 +1453,7 @@
       "refersTo": "state-pill-current",
       "description": "Fixed state colour, icon and uppercase word.",
       "html": "<span class=\"ds-pill ds-pill-current\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z\"/></svg>CURRENT</span>",
-      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Roboto, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;font-variant-numeric:tabular-nums;} .ds-pill-current{background:#E1F3EC;color:#0B5C43;}"
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Switzer, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;font-variant-numeric:tabular-nums;} .ds-pill-current{background:#E1F3EC;color:#0B5C43;}"
     },
     {
       "name": "State Pill: Stale",
@@ -1223,7 +1461,7 @@
       "refersTo": "state-pill-stale",
       "description": "Stale is stamped with a dashed outline so it reads without colour.",
       "html": "<span class=\"ds-pill ds-pill-stale\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.95 8.95 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z\"/></svg>STALE</span>",
-      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Roboto, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;} .ds-pill-stale{background:#FFF0D2;color:#6E4300;outline:1.5px dashed #6E4300;outline-offset:-1px;}"
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Switzer, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;} .ds-pill-stale{background:#FFF0D2;color:#6E4300;outline:1.5px dashed #6E4300;outline-offset:-1px;}"
     },
     {
       "name": "State Pill: Unavailable",
@@ -1231,7 +1469,7 @@
       "refersTo": "state-pill-unavailable",
       "description": "Unavailable keeps its place on the board with icon and word.",
       "html": "<span class=\"ds-pill ds-pill-unavailable\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M19.35 10.04A7.49 7.49 0 0 0 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46A5.497 5.497 0 0 1 17.5 11v.5H19a2.996 2.996 0 0 1 1.17 5.76l1.45 1.45A4.97 4.97 0 0 0 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2L21 20.73 4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z\"/></svg>UNAVAILABLE</span>",
-      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Roboto, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;} .ds-pill-unavailable{background:#E2E5EA;color:#2E3440;}"
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-family:Switzer, system-ui, sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:0.5px;} .ds-pill-unavailable{background:#E2E5EA;color:#2E3440;}"
     },
     {
       "name": "Weather Value Card",
@@ -1239,7 +1477,7 @@
       "refersTo": "weather-card",
       "description": "Collapsed card: label, large tabular value, unit, slot time with source line dot.",
       "html": "<button class=\"ds-wcard\" aria-expanded=\"false\"><span class=\"ds-wcard-label\">Air temperature</span><span class=\"ds-wcard-value\">32.4<span class=\"ds-wcard-unit\"> °C</span></span><span class=\"ds-wcard-slot\"><span class=\"ds-dot\" style=\"background:#13786A\"></span>4 AM–5 AM PHT</span></button>",
-      "css": ".ds-wcard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:180px;padding:14px;background:#FFFFFF;color:#0F2540;border:1px solid #D3DAE3;border-radius:12px;font-family:Roboto, system-ui, sans-serif;font-variant-numeric:tabular-nums;text-align:left;cursor:pointer;transition:background 0.15s;} .ds-wcard:hover{background:#F5F7FA;} .ds-wcard:focus-visible{outline:2px solid #1F5FCC;outline-offset:2px;} .ds-wcard-label{font-size:14px;font-weight:700;color:#45556B;} .ds-wcard-value{font-size:28px;line-height:36px;font-weight:700;} .ds-wcard-unit{font-size:16px;font-weight:700;} .ds-wcard-slot{display:flex;align-items:center;gap:6px;font-size:12px;color:#45556B;} .ds-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}"
+      "css": ".ds-wcard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:180px;padding:14px;background:#FFFFFF;color:#031A31;border:1px solid #D3DAE3;border-radius:12px;font-family:Switzer, system-ui, sans-serif;font-variant-numeric:tabular-nums;text-align:left;cursor:pointer;transition:background 0.15s;} .ds-wcard:hover{background:#F5F7FA;} .ds-wcard:focus-visible{outline:2px solid #1D5A86;outline-offset:2px;} .ds-wcard-label{font-size:14px;font-weight:700;color:#45556B;} .ds-wcard-value{font-size:28px;line-height:36px;font-weight:700;} .ds-wcard-unit{font-size:16px;font-weight:700;} .ds-wcard-slot{display:flex;align-items:center;gap:6px;font-size:12px;color:#45556B;} .ds-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}"
     },
     {
       "name": "Source Rail Line",
@@ -1247,7 +1485,7 @@
       "refersTo": "source-rail",
       "description": "Signature: a source as a line with a stop, state pill, detail and validity bar.",
       "html": "<div class=\"ds-rail\"><div class=\"ds-rail-head\">Sources · checked 1:37 AM PHT</div><div class=\"ds-rail-row\"><span class=\"ds-stop\" style=\"--line:#13786A;background:#13786A\"></span><div class=\"ds-rail-body\"><div class=\"ds-rail-top\"><strong>Open-Meteo</strong><span class=\"ds-pill-d\">CURRENT</span></div><div class=\"ds-rail-detail\">Current until 3:37 AM PHT</div><div class=\"ds-vbar\"><span style=\"left:0;right:0;background:#13786A\"></span><i style=\"left:25%\"></i></div></div></div><div class=\"ds-rail-row\"><span class=\"ds-stop\" style=\"--line:#5E3FB0\"></span><div class=\"ds-rail-body\"><div class=\"ds-rail-top\"><strong>PAGASA ATMO</strong><span class=\"ds-pill-d ds-stale\">STALE</span></div><div class=\"ds-rail-detail\">Fetched Sun 22 Nov, 4:37 PM PHT · 9 h ago</div></div></div></div>",
-      "css": ".ds-rail{width:340px;padding:14px 16px 8px;background:#FFFFFF;border:1px solid #D3DAE3;border-radius:12px;font-family:Roboto, system-ui, sans-serif;color:#0F2540;font-variant-numeric:tabular-nums;} .ds-rail-head{font-size:14px;font-weight:700;color:#45556B;margin-bottom:6px;} .ds-rail-row{display:flex;gap:10px;padding:10px 0;} .ds-stop{flex:none;width:12px;height:12px;margin:3px 4px 0;border-radius:50%;border:3px solid var(--line);background:#FFFFFF;} .ds-rail-body{flex:1;} .ds-rail-top{display:flex;justify-content:space-between;align-items:center;font-size:14px;} .ds-rail-detail{font-size:12px;color:#45556B;margin-top:2px;} .ds-pill-d{font-size:11px;font-weight:700;padding:2px 6px;border-radius:999px;background:#E1F3EC;color:#0B5C43;} .ds-pill-d.ds-stale{background:#FFF0D2;color:#6E4300;outline:1.5px dashed #6E4300;outline-offset:-1px;} .ds-vbar{position:relative;height:10px;margin-top:8px;} .ds-vbar::before{content:'';position:absolute;left:0;right:0;top:3px;height:4px;border-radius:2px;background:#D3DAE3;} .ds-vbar span{position:absolute;top:2px;height:6px;border-radius:3px;} .ds-vbar i{position:absolute;top:0;width:2px;height:10px;background:#0F2540;}"
+      "css": ".ds-rail{width:340px;padding:14px 16px 8px;background:#FFFFFF;border:1px solid #D3DAE3;border-radius:12px;font-family:Switzer, system-ui, sans-serif;color:#031A31;font-variant-numeric:tabular-nums;} .ds-rail-head{font-size:14px;font-weight:700;color:#45556B;margin-bottom:6px;} .ds-rail-row{display:flex;gap:10px;padding:10px 0;} .ds-stop{flex:none;width:12px;height:12px;margin:3px 4px 0;border-radius:50%;border:3px solid var(--line);background:#FFFFFF;} .ds-rail-body{flex:1;} .ds-rail-top{display:flex;justify-content:space-between;align-items:center;font-size:14px;} .ds-rail-detail{font-size:12px;color:#45556B;margin-top:2px;} .ds-pill-d{font-size:11px;font-weight:700;padding:2px 6px;border-radius:999px;background:#E1F3EC;color:#0B5C43;} .ds-pill-d.ds-stale{background:#FFF0D2;color:#6E4300;outline:1.5px dashed #6E4300;outline-offset:-1px;} .ds-vbar{position:relative;height:10px;margin-top:8px;} .ds-vbar::before{content:'';position:absolute;left:0;right:0;top:3px;height:4px;border-radius:2px;background:#D3DAE3;} .ds-vbar span{position:absolute;top:2px;height:6px;border-radius:3px;} .ds-vbar i{position:absolute;top:0;width:2px;height:10px;background:#031A31;}"
     },
     {
       "name": "Filled Button",
@@ -1255,7 +1493,7 @@
       "refersTo": "button-filled",
       "description": "Primary action on the accent, 48px minimum height.",
       "html": "<button class=\"ds-btn-filled\">Save match</button>",
-      "css": ".ds-btn-filled{min-height:48px;min-width:64px;padding:0 24px;border:none;border-radius:999px;background:#1F5FCC;color:#FFFFFF;font-family:Roboto, system-ui, sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;cursor:pointer;transition:filter 0.15s;} .ds-btn-filled:hover{filter:brightness(1.08);} .ds-btn-filled:focus-visible{outline:2px solid #1F5FCC;outline-offset:2px;} .ds-btn-filled:active{filter:brightness(0.92);}"
+      "css": ".ds-btn-filled{min-height:48px;min-width:64px;padding:0 24px;border:none;border-radius:999px;background:#1D5A86;color:#FFFFFF;font-family:Switzer, system-ui, sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;cursor:pointer;transition:filter 0.15s;} .ds-btn-filled:hover{filter:brightness(1.08);} .ds-btn-filled:focus-visible{outline:2px solid #1D5A86;outline-offset:2px;} .ds-btn-filled:active{filter:brightness(0.92);}"
     },
     {
       "name": "Outlined Button",
@@ -1263,7 +1501,7 @@
       "refersTo": "button-outlined",
       "description": "Secondary action with a hairline border, e.g. Try again.",
       "html": "<button class=\"ds-btn-outlined\">Try again</button>",
-      "css": ".ds-btn-outlined{min-height:48px;min-width:64px;padding:0 24px;border:1px solid #D3DAE3;border-radius:999px;background:transparent;color:#1F5FCC;font-family:Roboto, system-ui, sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;} .ds-btn-outlined:hover{background:rgba(31,95,204,0.08);} .ds-btn-outlined:focus-visible{background:rgba(31,95,204,0.24);outline:none;}"
+      "css": ".ds-btn-outlined{min-height:48px;min-width:64px;padding:0 24px;border:1px solid #D3DAE3;border-radius:999px;background:transparent;color:#1D5A86;font-family:Switzer, system-ui, sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;} .ds-btn-outlined:hover{background:rgba(29,90,134,0.08);} .ds-btn-outlined:focus-visible{background:rgba(29,90,134,0.24);outline:none;}"
     },
     {
       "name": "Saved Copy Banner",
@@ -1271,7 +1509,7 @@
       "refersTo": "notice-banner-saved-copy",
       "description": "Offline saved copy in Stale colours; never claims to be live.",
       "html": "<div class=\"ds-banner\" role=\"status\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M19.35 10.04A7.49 7.49 0 0 0 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46A5.497 5.497 0 0 1 17.5 11v.5H19a2.996 2.996 0 0 1 1.17 5.76l1.45 1.45A4.97 4.97 0 0 0 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2L21 20.73 4.27 4 3 5.27z\"/></svg><span>Saved copy from 3:05 PM PHT, not live. Pitchy can’t reach its server.</span></div>",
-      "css": ".ds-banner{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#FFF0D2;color:#6E4300;font-family:Roboto, system-ui, sans-serif;font-size:14px;line-height:20px;font-weight:700;}"
+      "css": ".ds-banner{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#FFF0D2;color:#6E4300;font-family:Switzer, system-ui, sans-serif;font-size:14px;line-height:20px;font-weight:700;}"
     },
     {
       "name": "Bottom Navigation",
@@ -1279,18 +1517,19 @@
       "refersTo": "nav-bar",
       "description": "Phones below 600px: Dashboard, PitChyAT, Settings.",
       "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-on\" href=\"#\"><span class=\"ds-ind\"></span>Dashboard</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-ind\"></span>PitChyAT</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-ind\"></span>Settings</a></nav>",
-      "css": ".ds-nav{display:flex;justify-content:space-around;height:80px;align-items:center;background:#FFFFFF;border-top:1px solid #D3DAE3;font-family:Roboto, system-ui, sans-serif;} .ds-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#45556B;font-size:12px;font-weight:500;text-decoration:none;} .ds-ind{width:64px;height:32px;border-radius:16px;} .ds-nav-item.ds-on{color:#0F2540;font-weight:700;} .ds-nav-item.ds-on .ds-ind{background:#DAE4F6;} .ds-nav-item:hover .ds-ind{background:#EEF2F9;} .ds-nav-item:focus-visible{outline:2px solid #1F5FCC;outline-offset:2px;}"
+      "css": ".ds-nav{display:flex;justify-content:space-around;height:80px;align-items:center;background:#FFFFFF;border-top:1px solid #D3DAE3;font-family:Switzer, system-ui, sans-serif;} .ds-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#45556B;font-size:12px;font-weight:500;text-decoration:none;} .ds-ind{width:64px;height:32px;border-radius:16px;} .ds-nav-item.ds-on{color:#031A31;font-weight:700;} .ds-nav-item.ds-on .ds-ind{background:#D1DEE8;} .ds-nav-item:hover .ds-ind{background:#E8EEF3;} .ds-nav-item:focus-visible{outline:2px solid #1D5A86;outline-offset:2px;}"
     }
   ],
   "narrative": {
     "northStar": "The Line Board",
-    "overview": "Pitchy reads like a Metro Manila train line board. Each weather source is a line with its own fixed colour; its state is the stop, and its \"current until\" time reads like the next departure. A deep navy shell (top bar, navigation rail) frames a near-white work ground where flat, hairline-bordered cards carry the data. The board is built to be scanned at a glance, one-handed, in sun and glare: big tabular figures, an icon and a word on every state, and nothing that fades away when it gets old. Stale data stays on the board and gets a dashed stamp.\n\nThe components are standard Material 3 on purpose. The world comes in through the palette, the type weights, the density and one signature component, the source rail. Android and Windows get the same look because Roboto is bundled with the app and there are no per-platform styles. Colour is split into two layers that never mix. The themed layer (shell, ground, ink, accent) changes with Light, Dark, Pitch Green or Custom. The fixed layer (data-state colours and the safety ramp) means the same thing in every theme.\n\nThe system rejects the usual weather-app look of a hero temperature over a grid of identical tonal cards. Values sit in a small 2x2 grid (4 columns on wide windows) under the source rail. Each value is one tap from its proof: the source, fetch and validity times, and the spread across sources.",
+    "overview": "Pitchy reads like a Metro Manila train line board. Each weather source is a line with its own fixed colour; its state is the stop, and its \"current until\" time reads like the next departure. A Midnight Navy shell (top bar, navigation rail, kickoff strip) frames a near-white work ground where flat, hairline-bordered cards carry the data. The board is built to be scanned at a glance, one-handed, in sun and glare: big tabular figures, an icon and a word on every state, and nothing that fades away when it gets old. Stale data stays on the board and gets a dashed stamp.\n\nThe components are standard Material 3 on purpose. The world comes in through the palette, the type weights, the density and one signature component, the source rail. Android and Windows get the same look because every font is bundled with the app and there are no per-platform styles. Colour is split into two layers that never mix. The themed layer (shell, ground, ink, accent) changes with Light, Dark, Pitch Green or Custom. The fixed layer (data-state colours and the safety ramp) means the same thing in every theme.\n\nThe system rejects the usual weather-app look of a hero temperature over a grid of identical tonal cards. Values sit in a small 2x2 grid (4 columns on wide windows) under the source rail. Each value is one tap from its proof: the source, fetch and validity times, and the spread across sources.\n\nThe board refinement kept this world and changed its material: Midnight Navy and Glacier, Switzer for all UI, IBM Plex Mono for Line Board figures only, one overlay shadow and one motion language. Brand and product are separate: the landing page's Racing Red never enters the app.",
     "keyCharacteristics": [
-      "Navy shell around a cool near-white ground. The board is flat, with no shadows.",
+      "Midnight Navy shell around a cool near-white ground. The board is flat; only overlays cast one navy-tinted shadow.",
       "One fixed, cool line colour per weather source, used for its rail dot, validity bar and the dot on its value card.",
       "Every data state is a pill with an icon and an uppercase word. Stale also gets a dashed outline.",
-      "Tabular figures everywhere. Roboto is bundled at 400, 500 and 700.",
-      "Fixed safety and state colours sit outside every theme.",
+      "Switzer for all UI (default figures are tabular); IBM Plex Mono only for Line Board figures.",
+      "Fixed safety and state colours sit outside every theme; one icon per hazard level.",
+      "Motion is rare and short: overlays, expand and collapse, the new chat reply, the Updating spinner and press feedback.",
       "All times are labelled PHT."
     ],
     "rules": [
@@ -1315,8 +1554,13 @@
         "section": "colors"
       },
       {
+        "name": "The Hazard Severity Rule",
+        "body": "A hazard level has one icon everywhere: advisory info_outline, warning warning_amber_rounded, danger warning. Hazard colours come from SafetyColors, are fixed, and are never palette.accent or any themed colour. The backend's label is always shown with the colour (P-18, P-19).",
+        "section": "colors"
+      },
+      {
         "name": "The Tabular Everywhere Rule",
-        "body": "Every text style carries tabular figures. Numbers never set in proportional figures.",
+        "body": "Every text style carries tabular figures. Switzer's default figures are already tabular and the font has no tnum feature; the theme still requests tabular figures on every role as a fallback. Numbers never set in proportional figures.",
         "section": "typography"
       },
       {
@@ -1326,13 +1570,33 @@
       },
       {
         "name": "The Flat Board Rule",
-        "body": "No shadows. Surfaces are separated by tone and one hairline border, never by elevation.",
+        "body": "No shadows on the board. Surfaces are separated by tone and one hairline border. The one navy-tinted shadow (AppTheme.overlayShadow) is for overlays only: drawer, dialogs, snackbars, menus.",
         "section": "elevation"
       },
       {
         "name": "The One Hairline Rule",
-        "body": "Every rule, border and divider is 1px in the hairline colour. The only other outline is the Stale stamp: a 1.5px dash (4px on, 3px off) in the Stale foreground colour.",
+        "body": "Every rule, border and divider is 1px in the hairline colour. The only other outlines are the Stale stamp (a 1.5px dash, 4px on and 3px off, in the Stale foreground colour) and the 2px focus ring.",
         "section": "shapes"
+      },
+      {
+        "name": "The Font Privacy Rule",
+        "body": "Every font is bundled with the app. Nothing loads a font at runtime, and no font-fetching package is a dependency (P-28).",
+        "section": "typography"
+      },
+      {
+        "name": "The Rare Motion Rule",
+        "body": "Animate only overlays opening and closing, expand and collapse, a newly arrived chat reply, the Updating spinner and press feedback. Never tab switches, values updating, or safety and data-state elements.",
+        "section": "motion"
+      },
+      {
+        "name": "The Reduced Motion Rule",
+        "body": "Under reduced motion, movement goes and only opacity changes stay, at 150ms or less. Exits are always faster than entrances.",
+        "section": "motion"
+      },
+      {
+        "name": "The Plain Curve Rule",
+        "body": "No ease-in, no bounce, no stagger and no scale on entrances. Entrances use the strong ease-out.",
+        "section": "motion"
       }
     ],
     "dos": [
@@ -1340,16 +1604,24 @@
       "Do show every data state as a pill with its icon and word, and keep Stale data on screen with its dashed stamp.",
       "Do give each new weather source one fixed, cool line colour (light and dark variants) and use it only for that source's dot, rail stop and validity bar.",
       "Do label every time PHT, and name the day when it isn't today in PHT.",
+      "Do colour an official alert only from PAGASA's own level (P-18): watch, yellow rainfall and signal 1 are advisory; advisory, orange rainfall and signals 2-3 are warning; warning, red rainfall and signals 4-5 are danger; anything else stays neutral. Always show PAGASA's words with the colour.",
+      "Do use one icon per hazard level and colour it from SafetyColors.",
       "Do keep tap targets at least 48px, and keep cards flat with a 1px hairline border and a 12px radius.",
-      "Do keep the Pitchy logo left of the screen name in every top bar."
+      "Do set Line Board figures (rail times, kickoff time, trend axis and readout) in IBM Plex Mono digits and everything else in Switzer.",
+      "Do keep the Pitchy logo left of the screen name in every top bar.",
+      "Do make reduced motion opacity-only and no longer than 150ms, and every exit faster than its entrance."
     ],
     "donts": [
-      "Don't theme, tint or let users customise the state colours or the safety ramp. Custom changes only the shell and the accent, picked from the eight swatches.",
+      "Don't theme, tint or let users customise the state colours or the safety ramp.",
+      "Don't use palette.accent or any themed colour for a hazard level.",
       "Don't use yellow, orange or red as a source line colour, a swatch or decoration.",
       "Don't show any state by colour alone.",
-      "Don't add shadows or elevation to cards, bars or the rail.",
+      "Don't add shadows or elevation to cards, bars, chips or the rail; only overlays get the one navy-tinted shadow.",
+      "Don't animate tabs, values, safety or state elements, and don't use ease-in, bounce, stagger or scale.",
       "Don't show stale, missing or unavailable data in a way that could read as Current, and don't hide it.",
       "Don't set figures without tabular spacing.",
+      "Don't load any font at runtime or add a font-fetching package.",
+      "Don't bring the landing page's Racing Red, or any landing-page style, into the app.",
       "Don't treat the placeholder logo as final artwork."
     ]
   }

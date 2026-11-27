@@ -155,10 +155,13 @@ void main() {
     await _pumpCard(tester, _trend());
     await tester.tap(_chart);
     await tester.pumpAndSettle();
-    final before = tester.widget<Text>(find.textContaining(' PHT · ').first).data;
+    final before = tester
+        .widget<Text>(find.textContaining(' PHT · ').first)
+        .textSpan!
+        .toPlainText();
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
-    final after = tester.widget<Text>(find.textContaining(' PHT · ').first).data;
+    final after = tester.widget<Text>(find.textContaining(' PHT · ').first).textSpan!.toPlainText();
     expect(after, isNot(before));
   });
 
