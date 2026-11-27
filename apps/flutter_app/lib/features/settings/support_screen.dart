@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/config/donations.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 
 /// What saving the QR image did.
@@ -102,14 +103,14 @@ class _SupportScreenState extends State<SupportScreen> {
           final side = ((c.maxWidth - _maxWidth) / 2).clamp(16.0, double.infinity);
           final qrWidth = (c.maxWidth - 2 * side).clamp(200.0, 340.0);
           return ListView(
-            padding: EdgeInsets.fromLTRB(side, 20, side, 32),
+            padding: EdgeInsets.fromLTRB(side, PitchySpace.xl, side, PitchySpace.xxl),
             children: [
               Text(
                 'Pitchy is a student project. Donations help pay for hosting. They’re '
                 'optional: the app works the same either way.',
                 style: text.bodyLarge,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: PitchySpace.xl),
               // The image carries its own light card, so it scans in every theme.
               Center(
                 child: ClipRRect(
@@ -123,7 +124,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 ),
               ),
               if (widget.saver != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: PitchySpace.lg),
                 Center(
                   child: FilledButton.icon(
                     onPressed: _saving ? null : _save,
@@ -132,7 +133,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: PitchySpace.xl),
               for (final note in [
                 widget.saver != null
                     ? 'Save it, then upload it in Maya or any bank app that reads QR Ph. '
@@ -143,7 +144,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     'can’t confirm, refund or record a payment.',
               ])
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: PitchySpace.sm),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/app_scope.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/widgets/pitchy_logo.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 
@@ -20,12 +21,12 @@ class AboutScreen extends StatelessWidget {
     return Scaffold(
       appBar: const PitchyTopBar(title: 'About Pitchy'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(PitchySpace.lg),
         children: [
           Row(
             children: [
               const PitchyLogo(size: 56),
-              const SizedBox(width: 16),
+              const SizedBox(width: PitchySpace.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,22 +41,22 @@ class AboutScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: PitchySpace.xl),
           Text(
             'Pitchy is a multi-source weather decision-support app for football safety. For a '
             'chosen venue and kickoff time it shows weather from several sources, how current each '
             'one is, and the safety assessment and approved guidance from the Pitchy server.',
             style: text.bodyLarge,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: PitchySpace.md),
           Text(
             'It supports authorized decision-makers; it does not replace them. Ask Pitchy explains '
             'conditions and guidance, but its answers are not official decisions.',
             style: text.bodyLarge,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: PitchySpace.md),
           Text('All times are shown in Philippine Time (PHT).', style: text.bodyMedium),
-          const SizedBox(height: 24),
+          const SizedBox(height: PitchySpace.xl),
           OutlinedButton.icon(
             onPressed: () => context.push(Routes.credits),
             icon: const Icon(Icons.attribution_outlined),

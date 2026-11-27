@@ -7,6 +7,7 @@ import '../../core/errors/api_failure.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
@@ -296,7 +297,7 @@ class _Loaded extends StatelessWidget {
           const SizedBox(height: safetyCardGap),
           OfficialNoticesCard(notices: a.officialNotices, now: now),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: PitchySpace.xl),
         SafetyFooter(ruleVersion: a.ruleVersion),
       ],
     );

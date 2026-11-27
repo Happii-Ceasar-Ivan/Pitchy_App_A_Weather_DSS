@@ -337,9 +337,19 @@ Json trendWeatherJson({
   final states = {for (final src in sources) src['source_id']! as String: src['state']! as String};
   bool usable(String? sid) => states[sid] == 'current' || states[sid] == 'stale';
 
-  // Values for offsets -6 .. +4 hours from kickoff.
-  double? at(List<double?> series, int k) =>
-      k + 6 >= 0 && k + 6 < series.length ? series[k + 6] : null;
+  // Values for offsets -6 .. +4 hours from kickoff. Longer demo ranges (S7,
+  // up to +24 h) continue from the last listed value with a small fixed
+  // wobble: deterministic demo data, never shown as real weather.
+  const wobble = [-0.4, -0.2, 0.0, 0.3, 0.1, -0.3];
+  double? at(List<double?> series, int k) {
+    if (k + 6 < 0) return null;
+    if (k + 6 < series.length) return series[k + 6];
+    final last = series.lastWhere((v) => v != null, orElse: () => null);
+    if (last == null) return null;
+    final step = k + 6 - series.length;
+    final v = last + wobble[step % wobble.length] * (last.abs() < 5 ? 0.5 : 1);
+    return v < 0 ? 0 : double.parse(v.toStringAsFixed(1));
+  }
 
   Json slot(
     int i,

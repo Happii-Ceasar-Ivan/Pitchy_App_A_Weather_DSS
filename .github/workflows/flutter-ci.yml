@@ -1,0 +1,57 @@
+name: Flutter CI
+
+# Checks only: format, analyze, test. No build, no release, no artifacts.
+on:
+  push:
+    branches: [main, frontend]
+    paths: ["apps/flutter_app/**", ".github/workflows/flutter-ci.yml"]
+  pull_request:
+    paths: ["apps/flutter_app/**", ".github/workflows/flutter-ci.yml"]
+
+# Least privilege: this workflow only reads the code. No secrets are used.
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/flutter_app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.1
+          cache: true
+
+      # Switzer (ITF Free Font License) may not live in the public repo, so it
+      # is fetched unchanged from Fontshare. The Actions cache keeps it private
+      # to this repository's runs and avoids hitting Fontshare on every push.
+      - name: Cache Switzer font files
+        uses: actions/cache@v4
+        with:
+          path: apps/flutter_app/assets/fonts/switzer
+          key: switzer-${{ hashFiles('apps/flutter_app/tool/fetch_switzer.dart') }}
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Fetch Switzer (no-op on cache hit)
+        run: dart run tool/fetch_switzer.dart
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed lib test test_review tool
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

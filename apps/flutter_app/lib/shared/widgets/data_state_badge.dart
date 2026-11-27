@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../models/weather.dart';
 import 'dashed_border.dart';
 
@@ -77,7 +78,10 @@ class DataStateBadge extends StatelessWidget {
         (dense ? Theme.of(context).textTheme.labelSmall : Theme.of(context).textTheme.labelMedium)
             ?.copyWith(color: style.foreground, fontWeight: FontWeight.w700);
     final pill = Container(
-      padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 10, vertical: dense ? 2 : 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? PitchySpace.xs : PitchySpace.sm,
+        vertical: dense ? PitchySpace.xxs : PitchySpace.xs,
+      ),
       decoration: BoxDecoration(
         color: style.background,
         borderRadius: BorderRadius.circular(AppTheme.radiusPill),
@@ -86,7 +90,7 @@ class DataStateBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: dense ? 14 : 16, color: style.foreground),
-          SizedBox(width: dense ? 3 : 4),
+          const SizedBox(width: PitchySpace.xs),
           Flexible(
             child: Text(
               label.toUpperCase(),

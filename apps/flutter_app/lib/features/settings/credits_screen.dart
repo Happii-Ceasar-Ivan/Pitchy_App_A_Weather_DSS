@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/spacing.dart';
 import '../../shared/widgets/link_text.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 
@@ -20,7 +21,12 @@ class CreditsScreen extends StatelessWidget {
       'Real-time lightning detection near the venue, shown on the Safety tab.',
       'https://www.xweather.com/',
     ),
-    ('Roboto typeface', 'Google, Apache License 2.0.', 'https://fonts.google.com/specimen/Roboto'),
+    (
+      'Switzer typeface',
+      'By Indian Type Foundry, ITF Free Font License.',
+      'https://www.fontshare.com/fonts/switzer',
+    ),
+    ('IBM Plex Mono', 'By IBM, SIL Open Font License 1.1.', 'https://github.com/IBM/plex'),
     ('Material icons', 'Google, Apache License 2.0.', 'https://fonts.google.com/icons'),
   ];
 
@@ -29,7 +35,7 @@ class CreditsScreen extends StatelessWidget {
     return Scaffold(
       appBar: const PitchyTopBar(title: 'Credits'),
       body: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: PitchySpace.sm),
         itemCount: credits.length + 1,
         separatorBuilder: (_, _) => const Divider(),
         itemBuilder: (context, i) {
@@ -46,7 +52,7 @@ class CreditsScreen extends StatelessWidget {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 4),
+                const SizedBox(height: PitchySpace.xs),
                 Text(detail),
                 LinkText(url),
               ],

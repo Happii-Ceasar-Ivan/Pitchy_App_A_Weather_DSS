@@ -29,7 +29,8 @@ class CustomSwatch {
 /// Each colour passes 4.5:1 against white. No reds, oranges or yellows, so a
 /// themed colour can never be mistaken for a safety colour.
 const customSwatches = <CustomSwatch>[
-  CustomSwatch('Navy', Color(0xFF0F2540)),
+  // Midnight Navy, the default theme's shell (P-16 update, P-28, 2026-11-27).
+  CustomSwatch('Navy', Color(0xFF031A31)),
   CustomSwatch('Pitch green', Color(0xFF0E3B2E)),
   CustomSwatch('Teal', Color(0xFF0E5E55)),
   CustomSwatch('Royal blue', Color(0xFF1C4FB0)),
@@ -47,6 +48,7 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
     required this.shellRaised,
     required this.onShell,
     required this.onShellMuted,
+    required this.onShellAccent,
     required this.ground,
     required this.surface,
     required this.hairline,
@@ -64,6 +66,10 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
   final Color shellRaised;
   final Color onShell;
   final Color onShellMuted;
+
+  /// Selection and focus on the shell (rail indicator icon and label, focus
+  /// ring on navy). Glacier in Light and Dark; plain onShell elsewhere.
+  final Color onShellAccent;
 
   /// Work area behind cards.
   final Color ground;
@@ -97,35 +103,39 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
     'dost_asti': Color(0xFF9AA8B8),
   };
 
+  /// Midnight Navy and Glacier (P-28). Glacier is 2.09:1 on white, so light
+  /// surfaces use Glacier Deep, a darker tone of the same hue (7.35:1).
   static const light = PitchyPalette(
     brightness: Brightness.light,
-    shell: Color(0xFF0F2540),
-    shellRaised: Color(0xFF16304F),
+    shell: Color(0xFF031A31),
+    shellRaised: Color(0xFF0B2742),
     onShell: Color(0xFFFFFFFF),
-    onShellMuted: Color(0xFFCAD6E4),
+    onShellMuted: Color(0xFFC3D3E2),
+    onShellAccent: Color(0xFF8BB9D9),
     ground: Color(0xFFF5F7FA),
     surface: Color(0xFFFFFFFF),
     hairline: Color(0xFFD3DAE3),
-    ink: Color(0xFF0F2540),
+    ink: Color(0xFF031A31),
     inkMuted: Color(0xFF45556B),
-    accent: Color(0xFF1F5FCC),
+    accent: Color(0xFF1D5A86),
     onAccent: Color(0xFFFFFFFF),
     lines: _lightLines,
   );
 
   static const dark = PitchyPalette(
     brightness: Brightness.dark,
-    shell: Color(0xFF07111F),
-    shellRaised: Color(0xFF0D1B2E),
+    shell: Color(0xFF020F1E),
+    shellRaised: Color(0xFF0A1F36),
     onShell: Color(0xFFF2F5F9),
-    onShellMuted: Color(0xFFAAB8CA),
-    ground: Color(0xFF0B1626),
-    surface: Color(0xFF122238),
-    hairline: Color(0xFF2B3E58),
+    onShellMuted: Color(0xFFA6B6C8),
+    onShellAccent: Color(0xFF8BB9D9),
+    ground: Color(0xFF041426),
+    surface: Color(0xFF0B223A),
+    hairline: Color(0xFF1E3754),
     ink: Color(0xFFEAF0F7),
-    inkMuted: Color(0xFFAAB8CA),
-    accent: Color(0xFF8CB2FF),
-    onAccent: Color(0xFF07111F),
+    inkMuted: Color(0xFFA6B6C8),
+    accent: Color(0xFF8BB9D9),
+    onAccent: Color(0xFF031A31),
     lines: _darkLines,
   );
 
@@ -135,6 +145,7 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
     shellRaised: Color(0xFF15483A),
     onShell: Color(0xFFFFFFFF),
     onShellMuted: Color(0xFFC6DCD3),
+    onShellAccent: Color(0xFFFFFFFF),
     ground: Color(0xFFF2F6F3),
     surface: Color(0xFFFFFFFF),
     hairline: Color(0xFFCFDCD5),
@@ -153,6 +164,7 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
     shellRaised: Color.alphaBlend(Colors.white.withValues(alpha: 0.08), shell),
     onShell: Colors.white,
     onShellMuted: Color.alphaBlend(Colors.white.withValues(alpha: 0.78), shell),
+    onShellAccent: Colors.white,
     ground: light.ground,
     surface: light.surface,
     hairline: light.hairline,
@@ -166,6 +178,28 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
   @override
   PitchyPalette copyWith() => this;
 
+  /// Colours blend during the short theme switch; brightness and the fixed
+  /// source lines snap at the midpoint (they never blend into another hue).
   @override
-  PitchyPalette lerp(PitchyPalette? other, double t) => t < 0.5 || other == null ? this : other;
+  PitchyPalette lerp(PitchyPalette? other, double t) {
+    if (other == null) return this;
+    Color c(Color a, Color b) => Color.lerp(a, b, t)!;
+    final snap = t < 0.5 ? this : other;
+    return PitchyPalette(
+      brightness: snap.brightness,
+      shell: c(shell, other.shell),
+      shellRaised: c(shellRaised, other.shellRaised),
+      onShell: c(onShell, other.onShell),
+      onShellMuted: c(onShellMuted, other.onShellMuted),
+      onShellAccent: c(onShellAccent, other.onShellAccent),
+      ground: c(ground, other.ground),
+      surface: c(surface, other.surface),
+      hairline: c(hairline, other.hairline),
+      ink: c(ink, other.ink),
+      inkMuted: c(inkMuted, other.inkMuted),
+      accent: c(accent, other.accent),
+      onAccent: c(onAccent, other.onAccent),
+      lines: snap.lines,
+    );
+  }
 }

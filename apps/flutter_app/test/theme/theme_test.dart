@@ -104,6 +104,79 @@ void main() {
     }
   });
 
+  test('redesign roles are readable (P-28, plan v1 §2)', () {
+    for (final p in [PitchyPalette.light, PitchyPalette.dark, PitchyPalette.pitchGreen]) {
+      final name = p == PitchyPalette.light
+          ? 'light'
+          : p == PitchyPalette.dark
+          ? 'dark'
+          : 'pitch green';
+      // Glacier on the shell: rail selection, focus on navy.
+      expect(contrast(p.onShellAccent, p.shell), greaterThanOrEqualTo(4.5), reason: name);
+      expect(contrast(p.onShellAccent, p.shellRaised), greaterThanOrEqualTo(4.5), reason: name);
+      expect(contrast(p.onShellMuted, p.shellRaised), greaterThanOrEqualTo(4.5), reason: name);
+      expect(contrast(p.accent, p.ground), greaterThanOrEqualTo(4.5), reason: '$name accent');
+      // Bottom-nav indicator: selected ink on the 14% accent tint.
+      final indicator = Color.alphaBlend(p.accent.withValues(alpha: 0.14), p.surface);
+      expect(contrast(p.ink, indicator), greaterThanOrEqualTo(7), reason: '$name indicator');
+      // Snackbar (inverse surface) text and action.
+      final t = AppTheme.build(p).colorScheme;
+      expect(contrast(t.onInverseSurface, t.inverseSurface), greaterThanOrEqualTo(7));
+      expect(contrast(t.inversePrimary, t.inverseSurface), greaterThanOrEqualTo(4.5));
+    }
+    // Midnight Navy and Glacier as specified.
+    expect(PitchyPalette.light.shell, const Color(0xFF031A31));
+    expect(PitchyPalette.light.onShellAccent, const Color(0xFF8BB9D9));
+    expect(PitchyPalette.light.accent, const Color(0xFF1D5A86));
+    expect(PitchyPalette.dark.accent, const Color(0xFF8BB9D9));
+  });
+
+  test('accent is never a source line colour and stays apart from them', () {
+    for (final p in [PitchyPalette.light, PitchyPalette.dark]) {
+      expect(p.lines.values, isNot(contains(p.accent)));
+      expect(p.lineFor('unknown_source'), isNot(p.accent));
+    }
+  });
+
+  test('safety calm-info (advisory) is readable and fixed in both variants', () {
+    for (final s in [SafetyColors.fixed, SafetyColors.fixedDark]) {
+      expect(contrast(s.onCalmInfo, s.calmInfo), greaterThanOrEqualTo(7));
+      // The outline is a non-text boundary against the card surface.
+      expect(contrast(s.calmInfoBorder, s.calmInfo), greaterThanOrEqualTo(1.5));
+    }
+  });
+
+  test('theme type roles have explicit line heights (skeletons match text)', () {
+    for (final p in [PitchyPalette.light, PitchyPalette.dark]) {
+      final t = AppTheme.textTheme(p);
+      for (final s in [
+        t.displaySmall,
+        t.headlineMedium,
+        t.headlineSmall,
+        t.titleLarge,
+        t.titleMedium,
+        t.titleSmall,
+        t.bodyLarge,
+        t.bodyMedium,
+        t.bodySmall,
+        t.labelLarge,
+        t.labelMedium,
+        t.labelSmall,
+      ]) {
+        expect(s!.height, isNotNull);
+        expect(s.fontFamily, 'Switzer');
+        expect(s.fontFeatures, contains(const FontFeature.tabularFigures()));
+      }
+      expect(t.bodyMedium!.fontSize! * t.bodyMedium!.height!, closeTo(20, 0.001));
+      expect(t.headlineMedium!.fontSize! * t.headlineMedium!.height!, closeTo(36, 0.001));
+    }
+    // Dark compensates thin light-on-dark text with tracking only.
+    final light = AppTheme.textTheme(PitchyPalette.light);
+    final dark = AppTheme.textTheme(PitchyPalette.dark);
+    expect(dark.bodyMedium!.letterSpacing, greaterThan(light.bodyMedium!.letterSpacing!));
+    expect(dark.bodyMedium!.fontWeight, light.bodyMedium!.fontWeight);
+  });
+
   test('every Custom swatch keeps white text readable', () {
     for (final s in customSwatches) {
       expect(contrast(Colors.white, s.color), greaterThanOrEqualTo(4.5), reason: s.name);

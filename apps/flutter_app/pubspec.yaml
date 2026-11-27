@@ -77,18 +77,33 @@ flutter:
     # Support Pitchy: the Maya / QR Ph code (user, 2026-11-26, P-26).
     - assets/images/maya_qr.jpg
     # Shown on the open-source licences page (lib/core/app_licenses.dart).
-    - assets/fonts/roboto_license.txt
+    - assets/fonts/ibm_plex_mono/OFL.txt
 
-  # Roboto is bundled so Android and Windows render the same type
-  # (Windows would otherwise fall back to Segoe UI). Apache License 2.0.
+  # Every font is bundled; nothing loads fonts at runtime (font privacy rule,
+  # P-28, guarded by test/app/font_privacy_test.dart).
   fonts:
-    - family: Roboto
+    # Switzer (Indian Type Foundry, ITF Free Font License v2.0). NOT in git:
+    # run `dart run tool/fetch_switzer.dart` once before run/build/test. The
+    # files are the kit's static OTFs, unchanged. A missing file fails the
+    # build, so the app can never ship without it.
+    - family: Switzer
       fonts:
-        - asset: assets/fonts/roboto-regular.ttf
-        - asset: assets/fonts/roboto-medium.ttf
+        - asset: assets/fonts/switzer/Switzer-Regular.otf
+        - asset: assets/fonts/switzer/Switzer-Medium.otf
           weight: 500
-        - asset: assets/fonts/roboto-bold.ttf
+        - asset: assets/fonts/switzer/Switzer-Semibold.otf
+          weight: 600
+        - asset: assets/fonts/switzer/Switzer-Bold.otf
           weight: 700
+    # IBM Plex Mono (IBM, SIL Open Font License 1.1), committed unchanged from
+    # IBM/plex tag @ibm/plex-mono@2.5.0. Line Board figures only.
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fonts/ibm_plex_mono/IBMPlexMono-Regular.ttf
+        - asset: assets/fonts/ibm_plex_mono/IBMPlexMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/ibm_plex_mono/IBMPlexMono-SemiBold.ttf
+          weight: 600
 
   # To add assets to your application, add an assets section, like this:
   # assets:

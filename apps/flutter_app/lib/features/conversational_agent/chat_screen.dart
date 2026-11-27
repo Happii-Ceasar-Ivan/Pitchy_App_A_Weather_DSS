@@ -10,6 +10,8 @@ import '../../core/routing/app_router.dart';
 import '../../core/routing/app_shell.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/motion.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/conversation.dart';
 import '../../shared/models/match.dart';
@@ -90,6 +92,11 @@ class _ChatState extends State<_Chat> {
   final _inputFocus = FocusNode();
   int _seen = 0;
 
+  /// Replies that arrived during this session and have not played their cue yet.
+  /// History never enters this set; each reply plays its cue once.
+  final _arrived = <int>{};
+  int _lastReplyId = -1;
+
   /// False until the user presses Start on the entry screen (each time the
   /// tab opens with no conversation yet).
   bool _started = false;
@@ -121,23 +128,31 @@ class _ChatState extends State<_Chat> {
 
   /// Keeps the newest message in view when one arrives.
   void _followNewEntries() {
-    final count = _chat.entries.length + (_chat.sending ? 1 : 0);
-    if (count == _seen) return;
+    final entries = _chat.entries;
+    // A reply replaces the "thinking" row, so the count can stay the same:
+    // a new reply also scrolls, so it (and its cue) is always in view.
+    var newReply = false;
+    if (entries.isNotEmpty && entries.last is BotReply) {
+      final id = entries.last.id;
+      if (id > _lastReplyId) {
+        _lastReplyId = id;
+        _arrived
+          ..clear()
+          ..add(id);
+        newReply = true;
+      }
+    }
+    final count = entries.length + (_chat.sending ? 1 : 0);
+    if (count == _seen && !newReply) return;
     _seen = count;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scroll.hasClients) return;
-      final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      final motion = PitchyMotion.of(context);
       final end = _scroll.position.maxScrollExtent;
-      if (reduce) {
+      if (motion.reduced) {
         _scroll.jumpTo(end);
       } else {
-        unawaited(
-          _scroll.animateTo(
-            end,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut,
-          ),
-        );
+        unawaited(_scroll.animateTo(end, duration: motion.scroll, curve: PitchyMotion.enter));
       }
     });
   }
@@ -175,39 +190,65 @@ class _ChatState extends State<_Chat> {
           builder: (context, pane) {
             final side = _sideFor(pane.maxWidth);
             final compact = _isCompact(context);
+            final empty = entries.isEmpty && !_chat.sending;
+            // Short pane for the text size (a 640 px phone at 2.0x): the notice
+            // scrolls with the content instead of pinning space the chat needs.
+            final shortPane = pane.maxHeight < 360 * MediaQuery.textScalerOf(context).scale(1);
+            final inlineNotice = empty || shortPane;
+            final notice = _AgentNotice(
+              key: const ValueKey('chat-notice'),
+              match: widget.match,
+              side: side,
+              compact: compact,
+            );
             return Column(
               children: [
-                _AgentNotice(
-                  key: const ValueKey('chat-notice'),
-                  match: widget.match,
-                  side: side,
-                  compact: compact,
-                ),
+                if (!inlineNotice) notice,
                 Expanded(
                   child: entries.isEmpty && !_chat.sending
                       ? _Welcome(
                           questions: _chat.isGeneral ? generalStarterQuestions : starterQuestions,
                           onStarter: _useStarter,
                           side: side,
+                          // Before the first question the notice scrolls with the
+                          // content, so a small screen at large text never overflows.
+                          header: notice,
                         )
                       : ListView(
                           controller: _scroll,
-                          padding: EdgeInsets.symmetric(horizontal: side, vertical: 16),
+                          padding: EdgeInsets.only(
+                            top: shortPane ? 0 : PitchySpace.lg,
+                            bottom: PitchySpace.lg,
+                          ),
                           children: [
+                            if (shortPane) notice,
                             for (final e in entries)
-                              switch (e) {
-                                UserQuestion() => _UserBubble(
-                                  key: ValueKey('q${e.id}'),
-                                  question: e,
-                                  canResend: _chat.canSend,
-                                  onResend: () => unawaited(_chat.resend(e)),
-                                ),
-                                BotReply() => _BotBubble(
-                                  key: ValueKey('r${e.id}'),
-                                  reply: e.response,
-                                ),
-                              },
-                            if (_chat.sending) const _Thinking(),
+                              Padding(
+                                key: ValueKey('entry${e.id}'),
+                                padding: EdgeInsets.symmetric(horizontal: side),
+                                child: switch (e) {
+                                  UserQuestion() => _UserBubble(
+                                    key: ValueKey('q${e.id}'),
+                                    question: e,
+                                    canResend: _chat.canSend,
+                                    onResend: () => unawaited(_chat.resend(e)),
+                                  ),
+                                  BotReply() => _ArrivalCue(
+                                    key: ValueKey('arrive${e.id}'),
+                                    // Only the newest reply, once.
+                                    play: e.id == _lastReplyId && _arrived.remove(e.id),
+                                    child: _BotBubble(
+                                      key: ValueKey('r${e.id}'),
+                                      reply: e.response,
+                                    ),
+                                  ),
+                                },
+                              ),
+                            if (_chat.sending)
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: side),
+                                child: const _Thinking(),
+                              ),
                           ],
                         ),
                 ),
@@ -272,7 +313,10 @@ class _AgentNoticeState extends State<_AgentNotice> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 48, minWidth: double.infinity),
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: side, vertical: compact ? 8 : 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: side,
+                vertical: compact ? PitchySpace.sm : PitchySpace.md,
+              ),
               child: _body(context, match, compact),
             ),
           ),
@@ -289,7 +333,7 @@ class _AgentNoticeState extends State<_AgentNotice> {
       children: [
         Icon(Icons.info_outline, color: palette.inkMuted, size: 20),
         // 8 + a 16 px arrow: the phone safety line still fits on one line at 390 px.
-        const SizedBox(width: 8),
+        const SizedBox(width: PitchySpace.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,13 +348,13 @@ class _AgentNoticeState extends State<_AgentNotice> {
               if (_collapsed)
                 const SizedBox.shrink()
               else if (match case final m?) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: PitchySpace.xxs),
                 Text(
                   'About ${m.venue.name}, kickoff ${formatPhtDateTime(m.kickoffAt)}',
                   style: text.bodySmall?.copyWith(color: palette.inkMuted),
                 ),
               ] else ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: PitchySpace.xxs),
                 Text(
                   'No match selected: general guidance from approved documents only, '
                   'not about current conditions.',
@@ -331,10 +375,10 @@ class _AgentNoticeState extends State<_AgentNotice> {
             ],
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: PitchySpace.xs),
         ExcludeSemantics(
           child: Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.only(top: PitchySpace.xxs),
             child: Icon(
               _collapsed ? Icons.expand_more : Icons.expand_less,
               color: palette.inkMuted,
@@ -362,9 +406,15 @@ const generalStarterQuestions = [
 ];
 
 class _Welcome extends StatelessWidget {
-  const _Welcome({required this.questions, required this.onStarter, required this.side});
+  const _Welcome({
+    required this.questions,
+    required this.onStarter,
+    required this.side,
+    required this.header,
+  });
 
   final List<String> questions;
+  final Widget header;
   final ValueChanged<String> onStarter;
   final double side;
 
@@ -372,15 +422,23 @@ class _Welcome extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: side, vertical: 20),
       children: [
-        Text('Try asking', style: text.titleSmall),
-        const SizedBox(height: 8),
-        for (final q in questions)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _StarterButton(question: q, onTap: () => onStarter(q)),
+        header,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: side, vertical: PitchySpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Try asking', style: text.titleSmall),
+              const SizedBox(height: PitchySpace.sm),
+              for (final q in questions)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: PitchySpace.sm),
+                  child: _StarterButton(question: q, onTap: () => onStarter(q)),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }
@@ -410,7 +468,7 @@ class _EntryScreen extends StatelessWidget {
     final m = match;
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: const EdgeInsets.symmetric(horizontal: PitchySpace.xl, vertical: PitchySpace.xxl),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
@@ -421,7 +479,7 @@ class _EntryScreen extends StatelessWidget {
                 style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               Text(
                 m != null
                     ? 'Ask about the weather and the approved safety guidance for your match. '
@@ -431,25 +489,25 @@ class _EntryScreen extends StatelessWidget {
                 style: text.bodyMedium?.copyWith(color: palette.inkMuted),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: PitchySpace.xxl),
               ExcludeSemantics(child: Text('What role are you?', style: text.titleSmall)),
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               _RoleMenu(role: role, onRole: onRole),
-              const SizedBox(height: 6),
+              const SizedBox(height: PitchySpace.sm),
               Text(
                 'Only changes how answers are worded. It isn’t an account.',
                 style: text.bodySmall?.copyWith(color: palette.inkMuted),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: PitchySpace.lg),
               // AI providers' free tiers may keep prompts (ai-providers.md).
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: PitchySpace.xxs),
                     child: Icon(Icons.privacy_tip_outlined, size: 18, color: palette.inkMuted),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: PitchySpace.sm),
                   Expanded(
                     child: Text(
                       'Don’t type names or other personal details: questions go to an outside AI '
@@ -459,16 +517,16 @@ class _EntryScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: PitchySpace.xl),
               if (m != null) ...[
                 Text('Your match', style: text.titleSmall),
-                const SizedBox(height: 8),
+                const SizedBox(height: PitchySpace.sm),
                 _MatchSummary(match: m),
-                const SizedBox(height: 32),
+                const SizedBox(height: PitchySpace.xxl),
                 _StartButton(role: role, onStart: onStart),
               ] else ...[
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(PitchySpace.lg),
                   decoration: BoxDecoration(
                     color: palette.surface,
                     border: Border.all(color: palette.hairline),
@@ -478,7 +536,7 @@ class _EntryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(Icons.info_outline, size: 20, color: palette.inkMuted),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: PitchySpace.md),
                       Expanded(
                         child: Text(
                           'No match set up yet. You can ask general questions about the '
@@ -490,9 +548,9 @@ class _EntryScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: PitchySpace.xl),
                 _StartButton(role: role, onStart: onStart),
-                const SizedBox(height: 12),
+                const SizedBox(height: PitchySpace.md),
                 OutlinedButton.icon(
                   onPressed: () => context.push(Routes.matchSetup),
                   icon: const Icon(Icons.add),
@@ -573,7 +631,12 @@ class _MatchSummary extends StatelessWidget {
     final palette = context.palette;
     final text = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+      padding: const EdgeInsets.fromLTRB(
+        PitchySpace.lg,
+        PitchySpace.sm,
+        PitchySpace.sm,
+        PitchySpace.sm,
+      ),
       decoration: BoxDecoration(
         color: palette.surface,
         border: Border.all(color: palette.hairline),
@@ -582,7 +645,7 @@ class _MatchSummary extends StatelessWidget {
       child: Row(
         children: [
           Icon(Icons.stadium_outlined, size: 22, color: palette.inkMuted),
-          const SizedBox(width: 12),
+          const SizedBox(width: PitchySpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -635,7 +698,10 @@ class _StarterButton extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: PitchySpace.lg,
+              vertical: PitchySpace.sm,
+            ),
             child: Row(
               children: [
                 Icon(
@@ -643,7 +709,7 @@ class _StarterButton extends StatelessWidget {
                   size: 18,
                   color: enabled ? palette.accent : palette.inkMuted,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: PitchySpace.md),
                 Expanded(
                   child: Text(
                     question,
@@ -679,7 +745,7 @@ class _UserBubble extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final errorColor = context.safetyColors.requestErrorInk;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 48),
+      padding: const EdgeInsets.only(bottom: PitchySpace.md, left: PitchySpace.xxxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -688,13 +754,16 @@ class _UserBubble extends StatelessWidget {
               color: palette.accent,
               borderRadius: BorderRadius.circular(AppTheme.radiusCard),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: PitchySpace.lg,
+              vertical: PitchySpace.sm,
+            ),
             child: SelectableText(
               question.text,
               style: text.bodyLarge?.copyWith(color: palette.onAccent),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: PitchySpace.xs),
           switch (question.status) {
             QuestionSending() || QuestionAnswered() => Text(
               'As ${question.role.label} · ${formatPhtTime(question.askedAt)}',
@@ -751,7 +820,7 @@ class _StatusLine extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       Icon(icon, size: 16, color: color),
-      const SizedBox(width: 4),
+      const SizedBox(width: PitchySpace.xs),
       Flexible(
         child: Text(
           text,
@@ -779,19 +848,72 @@ class _ReplyLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 4),
+    padding: const EdgeInsets.only(bottom: PitchySpace.xs),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 2),
+          padding: const EdgeInsets.only(top: PitchySpace.xxs),
           child: Icon(icon, size: 16, color: color ?? context.palette.inkMuted),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: PitchySpace.sm),
         Expanded(child: Text(text, style: style ?? Theme.of(context).textTheme.bodySmall)),
       ],
     ),
   );
+}
+
+/// The cue for a reply that just arrived: opacity 0 to 1 with a small upward
+/// rise, once. Reduced motion: a short opacity fade, no movement. It never
+/// changes the child's layout box and adds no semantics.
+class _ArrivalCue extends StatefulWidget {
+  const _ArrivalCue({super.key, required this.play, required this.child});
+
+  /// Decided when the reply is first built; later rebuilds do not replay it.
+  final bool play;
+  final Widget child;
+
+  @override
+  State<_ArrivalCue> createState() => _ArrivalCueState();
+}
+
+class _ArrivalCueState extends State<_ArrivalCue> with SingleTickerProviderStateMixin {
+  AnimationController? _controller;
+  CurvedAnimation? _curved;
+  double _rise = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.play || _controller != null) return;
+    final motion = PitchyMotion.of(context);
+    _rise = motion.rise;
+    final controller = AnimationController(vsync: this, duration: motion.fade)..forward();
+    _controller = controller;
+    _curved = CurvedAnimation(parent: controller, curve: PitchyMotion.enter);
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = _curved;
+    if (curved == null) return widget.child;
+    return FadeTransition(
+      opacity: curved,
+      child: AnimatedBuilder(
+        animation: curved,
+        builder: (context, child) =>
+            Transform.translate(offset: Offset(0, _rise * (1 - curved.value)), child: child),
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 class _BotBubble extends StatelessWidget {
@@ -806,7 +928,7 @@ class _BotBubble extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final muted = text.bodySmall?.copyWith(color: palette.inkMuted);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16, right: 24),
+      padding: const EdgeInsets.only(bottom: PitchySpace.lg, right: PitchySpace.xl),
       child: Semantics(
         container: true,
         liveRegion: true,
@@ -816,7 +938,7 @@ class _BotBubble extends StatelessWidget {
             Row(
               children: [
                 Icon(Icons.forum_outlined, size: 16, color: palette.inkMuted),
-                const SizedBox(width: 6),
+                const SizedBox(width: PitchySpace.sm),
                 Expanded(
                   child: Text(
                     view.isAnswer ? 'AI-generated · for ${reply.role.label}' : 'No AI answer',
@@ -826,7 +948,7 @@ class _BotBubble extends StatelessWidget {
                 Text(formatPhtTime(reply.respondedAt), style: muted),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             // Untrusted text from the backend: plain text only, never markdown
             // or HTML.
             SelectableText(
@@ -835,7 +957,7 @@ class _BotBubble extends StatelessWidget {
             ),
             // Every general reply (no match) says so, right under the text.
             if (view.generalOnly case final general?) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: PitchySpace.md),
               _ReplyLine(
                 key: const ValueKey('general-only'),
                 icon: Icons.event_busy_outlined,
@@ -845,7 +967,7 @@ class _BotBubble extends StatelessWidget {
               ),
             ],
             if (view.limitations.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: PitchySpace.md),
               for (final l in view.limitations)
                 _ReplyLine(
                   icon: Icons.warning_amber,
@@ -855,33 +977,56 @@ class _BotBubble extends StatelessWidget {
                 ),
             ],
             if (view.references.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: PitchySpace.md),
               Text('Based on', style: text.labelMedium),
-              const SizedBox(height: 4),
+              const SizedBox(height: PitchySpace.xs),
               for (final g in view.references)
                 _ReplyLine(
                   icon: Icons.menu_book_outlined,
-                  text: [
-                    '${g.title} (${g.authority}, ${g.version})',
-                    if (g.sections.isNotEmpty) g.sections.join('; '),
-                  ].join(' · '),
+                  text: g.line,
                   style: text.bodyMedium?.copyWith(color: palette.inkMuted),
                 ),
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: PitchySpace.md),
             Divider(height: 1, color: palette.hairline),
-            const SizedBox(height: 8),
-            _ReplyLine(
-              icon: Icons.info_outline,
-              text: view.notAuthority,
-              color: palette.ink,
-              style: text.bodyMedium,
+            const SizedBox(height: PitchySpace.sm),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _ReplyLine(
+                    icon: Icons.info_outline,
+                    text: view.notAuthority,
+                    color: palette.ink,
+                    style: text.bodyMedium,
+                  ),
+                ),
+                // De-emphasised; the 48 dp target is not allowed to grow the row
+                // beyond the notice's own height by more than the button itself.
+                IconButton(
+                  tooltip: 'Copy reply',
+                  icon: Icon(Icons.copy_outlined, size: 20, color: palette.inkMuted),
+                  constraints: const BoxConstraints.tightFor(
+                    width: AppTheme.minTarget,
+                    height: AppTheme.minTarget,
+                  ),
+                  onPressed: () => _copy(context, view.plainText),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+}
+
+Future<void> _copy(BuildContext context, String text) async {
+  final messenger = ScaffoldMessenger.of(context);
+  await Clipboard.setData(ClipboardData(text: text));
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(const SnackBar(content: Text('Reply copied')));
 }
 
 class _ReplyCard extends StatelessWidget {
@@ -897,7 +1042,12 @@ class _ReplyCard extends StatelessWidget {
       border: Border.all(color: context.palette.hairline),
       borderRadius: BorderRadius.circular(AppTheme.radiusCard),
     ),
-    padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+    padding: const EdgeInsets.fromLTRB(
+      PitchySpace.lg,
+      PitchySpace.sm,
+      PitchySpace.lg,
+      PitchySpace.md,
+    ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
   );
 }
@@ -936,14 +1086,14 @@ class _ThinkingState extends State<_Thinking> {
     final palette = context.palette;
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16, right: 24),
+      padding: const EdgeInsets.only(bottom: PitchySpace.lg, right: PitchySpace.xl),
       child: _ReplyCard(
         children: [
           Text(
             'Pitchy is answering…',
             style: text.labelMedium?.copyWith(color: palette.inkMuted),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           SkeletonPulse(
             label: 'Pitchy is answering',
             child: Column(
@@ -956,7 +1106,7 @@ class _ThinkingState extends State<_Thinking> {
             ),
           ),
           if (_slow) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             Semantics(
               liveRegion: true,
               child: Text(
@@ -1030,7 +1180,7 @@ class _Composer extends StatelessWidget {
                     children: [
                       if (compact) ...[
                         _RolePicker(role: role, onRole: chat.setRole, compact: true),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: PitchySpace.xs),
                       ],
                       Expanded(
                         child: CallbackShortcuts(
@@ -1061,7 +1211,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: PitchySpace.sm),
                       IconButton.filled(
                         tooltip: 'Send question',
                         constraints: const BoxConstraints.tightFor(
@@ -1123,7 +1273,7 @@ class _RolePicker extends StatelessWidget {
           constraints: const BoxConstraints(minWidth: 200),
           child: Container(
             constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
-            padding: const EdgeInsetsDirectional.only(start: 12, end: 2),
+            padding: const EdgeInsetsDirectional.only(start: PitchySpace.md, end: PitchySpace.xxs),
             decoration: BoxDecoration(
               border: Border.all(color: context.palette.hairline),
               borderRadius: BorderRadius.circular(AppTheme.radiusPill),
@@ -1151,7 +1301,7 @@ class _RolePicker extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.badge_outlined, size: 18, color: context.palette.inkMuted),
-                const SizedBox(width: 6),
+                const SizedBox(width: PitchySpace.sm),
                 Text(
                   role == null ? 'Who’s asking?' : 'Asking as ${role!.label}',
                   style: Theme.of(context).textTheme.labelLarge,

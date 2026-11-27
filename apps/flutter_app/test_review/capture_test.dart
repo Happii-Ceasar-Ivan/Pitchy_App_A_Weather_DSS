@@ -18,11 +18,16 @@ import 'package:pitchy/shared/services/mock/fixtures.dart';
 import 'package:pitchy/shared/services/mock/mock_pitchy_api.dart';
 
 Future<void> _loadFonts() async {
-  final roboto = FontLoader('Roboto');
-  for (final f in ['regular', 'medium', 'bold']) {
-    roboto.addFont(rootBundle.load('assets/fonts/roboto-$f.ttf'));
+  final switzer = FontLoader('Switzer');
+  for (final w in ['Regular', 'Medium', 'Semibold', 'Bold']) {
+    switzer.addFont(rootBundle.load('assets/fonts/switzer/Switzer-$w.otf'));
   }
-  await roboto.load();
+  await switzer.load();
+  final plex = FontLoader('IBMPlexMono');
+  for (final w in ['Regular', 'Medium', 'SemiBold']) {
+    plex.addFont(rootBundle.load('assets/fonts/ibm_plex_mono/IBMPlexMono-$w.ttf'));
+  }
+  await plex.load();
   final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? r'D:\dev\flutter';
   final icons = File('$flutterRoot/bin/cache/artifacts/material_fonts/materialicons-regular.otf');
   final loader = FontLoader('MaterialIcons')
@@ -41,7 +46,11 @@ Future<void> _shot(
   Duration latency = Duration.zero,
   bool settle = true,
   Future<void> Function(WidgetTester)? act,
+  double textScale = 1,
+  Map<String, String> prefs = const {},
 }) async {
+  tester.platformDispatcher.textScaleFactorTestValue = textScale;
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
   tester.view.devicePixelRatio = 2;
   tester.view.physicalSize = size * 2;
   addTearDown(tester.view.reset);
@@ -53,6 +62,7 @@ Future<void> _shot(
       preferences: MemoryPreferences({
         PrefKeys.themeMode: mode.name,
         if (withMatch) PrefKeys.activeMatchId: rizalMemorialId,
+        ...prefs,
       }),
       initialLocation: location,
     ),
@@ -83,6 +93,179 @@ void main() {
   setUpAll(_loadFonts);
   const phone = Size(390, 844);
   const desktop = Size(1280, 800);
+
+  // P-28 redesign: Switzer + Plex Mono, Midnight Navy and Glacier. Every
+  // theme, phone / landscape / tablet / desktop, 1.0x and 2.0x text.
+  const small = Size(360, 780);
+  const custom = {PrefKeys.customShell: 'Violet', PrefKeys.customAccent: 'Teal'};
+  for (final (name, size, mode, scale, location, prefs) in [
+    (
+      'p28-phone-board',
+      small,
+      PitchyThemeMode.light,
+      1.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-board-2x',
+      small,
+      PitchyThemeMode.light,
+      2.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-board-dark',
+      small,
+      PitchyThemeMode.dark,
+      1.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-board-green',
+      small,
+      PitchyThemeMode.pitchGreen,
+      1.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    ('p28-phone-board-custom', small, PitchyThemeMode.custom, 1.0, Routes.dashboard, custom),
+    (
+      'p28-landscape-board',
+      const Size(780, 360),
+      PitchyThemeMode.light,
+      1.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-tablet-board',
+      const Size(768, 1024),
+      PitchyThemeMode.light,
+      1.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-desktop-board',
+      desktop,
+      PitchyThemeMode.light,
+      1.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-desktop-board-dark',
+      desktop,
+      PitchyThemeMode.dark,
+      1.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-desktop-board-2x',
+      desktop,
+      PitchyThemeMode.light,
+      2.0,
+      Routes.dashboard,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-safety',
+      small,
+      PitchyThemeMode.light,
+      1.0,
+      Routes.safety,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-safety-dark',
+      small,
+      PitchyThemeMode.dark,
+      1.0,
+      Routes.safety,
+      const <String, String>{},
+    ),
+    ('p28-phone-safety-custom', small, PitchyThemeMode.custom, 1.0, Routes.safety, custom),
+    ('p28-phone-chat', small, PitchyThemeMode.light, 1.0, Routes.chat, const <String, String>{}),
+    (
+      'p28-phone-chat-dark',
+      small,
+      PitchyThemeMode.dark,
+      1.0,
+      Routes.chat,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-settings',
+      small,
+      PitchyThemeMode.light,
+      1.0,
+      Routes.settings,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-credits',
+      small,
+      PitchyThemeMode.light,
+      1.0,
+      Routes.credits,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-match-setup',
+      small,
+      PitchyThemeMode.light,
+      1.0,
+      Routes.matchSetup,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-gallery',
+      small,
+      PitchyThemeMode.light,
+      1.0,
+      Routes.stateGallery,
+      const <String, String>{},
+    ),
+    (
+      'p28-phone-gallery-dark',
+      small,
+      PitchyThemeMode.dark,
+      1.0,
+      Routes.stateGallery,
+      const <String, String>{},
+    ),
+  ]) {
+    testWidgets(
+      name,
+      (t) => _shot(
+        t,
+        name,
+        size: size,
+        mode: mode,
+        textScale: scale,
+        location: location,
+        prefs: prefs,
+        withMatch: true,
+      ),
+    );
+  }
+  for (final mode in [PitchyThemeMode.light, PitchyThemeMode.dark]) {
+    testWidgets(
+      'p28 drawer ${mode.name}',
+      (t) => _shot(
+        t,
+        'p28-phone-drawer-${mode.name}',
+        size: small,
+        mode: mode,
+        withMatch: true,
+        act: (t) => t.tap(find.byTooltip('Quick settings')),
+      ),
+    );
+  }
 
   // F2: update flow and official alerts.
   testWidgets(

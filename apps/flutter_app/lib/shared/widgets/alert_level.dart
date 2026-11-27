@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../models/alerts.dart';
 
 /// The fixed warning colour an official alert gets, read from PAGASA's own
@@ -79,7 +80,7 @@ List<OfficialAlert> bySeverity(List<OfficialAlert> alerts) {
 }
 
 /// The 24 px leading mark of an alert row: a filled tile in the level's fixed
-/// colour with a warning icon, or the plain megaphone when the level is unknown.
+/// colour with the level's icon, or the plain megaphone when the level is unknown.
 class AlertLevelMark extends StatelessWidget {
   const AlertLevelMark({super.key, required this.level});
 
@@ -96,8 +97,14 @@ class AlertLevelMark extends StatelessWidget {
       width: 24,
       height: 24,
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
+      // One icon per level everywhere (Q6, P-18 note): advisory info, warning
+      // amber triangle, danger filled triangle.
       child: Icon(
-        level == AlertLevel.danger ? Icons.warning : Icons.warning_amber_rounded,
+        switch (level) {
+          AlertLevel.advisory => Icons.info_outline,
+          AlertLevel.warning => Icons.warning_amber_rounded,
+          AlertLevel.danger => Icons.warning,
+        },
         size: 16,
         color: fg,
       ),
@@ -119,7 +126,7 @@ class AlertLevelPill extends StatelessWidget {
     final palette = context.palette;
     final (bg, fg) = level == null ? (palette.ground, palette.ink) : _colours(context, level);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: PitchySpace.sm, vertical: PitchySpace.xs),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(AppTheme.radiusPill),

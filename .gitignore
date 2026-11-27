@@ -94,3 +94,8 @@ backend/.tmp/
 
 # RAG source text (copyrighted manuals; loaded from the PC, never pushed)
 backend/services/rag/knowledge_base/*.txt
+
+# Switzer (ITF Free Font License v2.0, §02): the font files may not be put in a
+# public repository. Fetched unchanged at build time by
+# apps/flutter_app/tool/fetch_switzer.dart (P-28).
+/apps/flutter_app/assets/fonts/switzer/

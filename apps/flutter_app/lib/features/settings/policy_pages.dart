@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/spacing.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 
 /// One headed part of a policy page.
@@ -208,34 +209,50 @@ class PolicyScreen extends StatelessWidget {
 
   final PolicyPage page;
 
-  static const _maxWidth = 720.0;
+  /// About 70 characters of ordinary English body text (S11, reading
+  /// measure). Measured in the real font and text size, so the column keeps
+  /// the same line length when the user enlarges text.
+  static const _measureSample =
+      'Pitchy shows weather from several sources so match officials can read.';
+
+  static double measure(BuildContext context) {
+    final painter = TextPainter(
+      text: TextSpan(text: _measureSample, style: Theme.of(context).textTheme.bodyLarge),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
+  }
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final maxWidth = measure(context);
     return Scaffold(
       appBar: PitchyTopBar(title: page.title),
       body: LayoutBuilder(
         builder: (context, c) {
-          final side = ((c.maxWidth - _maxWidth) / 2).clamp(16.0, double.infinity);
+          final side = ((c.maxWidth - maxWidth) / 2).clamp(16.0, double.infinity);
           return ListView(
-            padding: EdgeInsets.fromLTRB(side, 20, side, 32),
+            padding: EdgeInsets.fromLTRB(side, PitchySpace.xl, side, PitchySpace.xxl),
             children: [
               Text(page.intro, style: text.bodyLarge),
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               Text(page.updated, style: text.bodySmall),
               for (final s in page.sections) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: PitchySpace.xl),
                 Semantics(header: true, child: Text(s.heading, style: text.titleMedium)),
-                const SizedBox(height: 8),
+                const SizedBox(height: PitchySpace.sm),
                 for (final p in s.paragraphs)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: PitchySpace.sm),
                     child: Text(p, style: text.bodyLarge),
                   ),
                 for (final b in s.bullets)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: PitchySpace.sm),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

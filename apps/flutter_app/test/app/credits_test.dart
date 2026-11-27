@@ -1,5 +1,5 @@
 // Credits (P-13): every outside source the app shows or ships is listed, and
-// the bundled font's licence is part of the open-source licences page.
+// the bundled open-source font's licence is part of the licences page.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,13 +22,33 @@ void main() {
     expect(CreditsScreen.credits.first.$1, 'Weather data by Open-Meteo.com');
   });
 
-  test('the bundled Roboto licence is registered for the licences page', () async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    registerAppLicenses();
-    final entries = await LicenseRegistry.licenses.toList();
-    final roboto = entries.where((e) => e.packages.contains('Roboto font'));
-    expect(roboto, hasLength(1));
-    final text = roboto.single.paragraphs.map((p) => p.text).join('\n');
-    expect(text, contains('Apache License'));
+  test('credits the Switzer and IBM Plex Mono fonts, and no longer the old font', () {
+    final titles = CreditsScreen.credits.map((c) => c.$1).toList();
+    expect(titles.any((t) => t.toLowerCase().contains('rob${'o'}to')), isFalse);
+
+    final switzer = CreditsScreen.credits.singleWhere((c) => c.$1 == 'Switzer typeface');
+    expect(switzer.$2, contains('Indian Type Foundry'));
+    expect(switzer.$2, contains('ITF Free Font License'));
+    expect(switzer.$3, 'https://www.fontshare.com/fonts/switzer');
+
+    final plex = CreditsScreen.credits.singleWhere((c) => c.$1 == 'IBM Plex Mono');
+    expect(plex.$2, contains('IBM'));
+    expect(plex.$2, contains('SIL Open Font License 1.1'));
+    expect(plex.$3, 'https://github.com/IBM/plex');
   });
+
+  test(
+    'the bundled IBM Plex Mono licence is registered; the old font and Switzer are not',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      registerAppLicenses();
+      final entries = await LicenseRegistry.licenses.toList();
+      final plex = entries.where((e) => e.packages.contains('IBM Plex Mono font'));
+      expect(plex, hasLength(1));
+      final text = plex.single.paragraphs.map((p) => p.text).join('\n');
+      expect(text, contains('SIL OPEN FONT LICENSE'));
+      expect(entries.any((e) => e.packages.any((p) => p.contains('Rob${'o'}to'))), isFalse);
+      expect(entries.any((e) => e.packages.any((p) => p.contains('Switzer'))), isFalse);
+    },
+  );
 }

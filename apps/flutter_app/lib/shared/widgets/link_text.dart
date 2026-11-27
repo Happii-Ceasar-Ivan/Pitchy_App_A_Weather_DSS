@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/theme/spacing.dart';
+
 /// Opens a fixed app URL in the system browser; says so if it can't.
 Future<void> openExternalLink(BuildContext context, Uri url) async {
   final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -48,7 +50,7 @@ class LinkText extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: PitchySpace.xs),
                 Icon(Icons.open_in_new, size: 16, color: color),
               ],
             ),

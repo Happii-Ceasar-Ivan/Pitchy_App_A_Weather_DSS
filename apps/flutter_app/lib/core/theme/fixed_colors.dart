@@ -124,6 +124,9 @@ class SafetyColors extends ThemeExtension<SafetyColors> {
     required this.onWarning,
     required this.danger,
     required this.onDanger,
+    required this.calmInfo,
+    required this.calmInfoBorder,
+    required this.onCalmInfo,
     required this.requestError,
     required this.onRequestError,
     required this.requestErrorInk,
@@ -138,6 +141,9 @@ class SafetyColors extends ThemeExtension<SafetyColors> {
     onWarning: Color(0xFF1A0B00),
     danger: Color(0xFFC62828),
     onDanger: Color(0xFFFFFFFF),
+    calmInfo: Color(0xFFE4EBF0),
+    calmInfoBorder: Color(0xFF8EADC3),
+    onCalmInfo: Color(0xFF031A31),
     requestError: Color(0xFF9F1D1D),
     onRequestError: Color(0xFFFFFFFF),
     requestErrorInk: Color(0xFF9F1D1D),
@@ -153,6 +159,9 @@ class SafetyColors extends ThemeExtension<SafetyColors> {
     onWarning: Color(0xFF1A0B00),
     danger: Color(0xFFC62828),
     onDanger: Color(0xFFFFFFFF),
+    calmInfo: Color(0xFF1A344D),
+    calmInfoBorder: Color(0xFF4B6E8C),
+    onCalmInfo: Color(0xFFEAF0F7),
     requestError: Color(0xFF9F1D1D),
     onRequestError: Color(0xFFFFFFFF),
     requestErrorInk: Color(0xFFFF8A80),
@@ -165,6 +174,14 @@ class SafetyColors extends ThemeExtension<SafetyColors> {
   final Color onWarning;
   final Color danger;
   final Color onDanger;
+
+  /// The safety "advisory" level (P-19: a calm info style, not amber, e.g.
+  /// "below the cooling-break level"). Fixed like the rest of the ramp, so no
+  /// theme or Custom pick can change how a hazard level looks (P-13, Q6).
+  /// Official alerts' advisory stays [advisory] yellow (P-18).
+  final Color calmInfo;
+  final Color calmInfoBorder;
+  final Color onCalmInfo;
 
   /// A failed request (not a hazard): the filled banner colour.
   final Color requestError;

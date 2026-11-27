@@ -8,6 +8,7 @@ import '../../core/config/project_links.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/pitchy_palette.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/services/mock/fixtures.dart' show MockScenario;
 import '../../shared/services/mock/mock_pitchy_api.dart';
 import '../../shared/widgets/link_text.dart';
@@ -34,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
       body: ListenableBuilder(
         listenable: controller,
         builder: (context, _) => ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: PitchySpace.sm),
           children: [
             const _SectionHeader('Appearance'),
             RadioGroup<PitchyThemeMode>(
@@ -59,7 +60,12 @@ class SettingsScreen extends StatelessWidget {
                 onSelected: (s) => controller.setCustom(accent: s),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                padding: const EdgeInsets.fromLTRB(
+                  PitchySpace.lg,
+                  PitchySpace.xs,
+                  PitchySpace.lg,
+                  PitchySpace.sm,
+                ),
                 child: Text(
                   'Warning and safety colours never change, so they stay readable in every theme.',
                   style: Theme.of(context).textTheme.bodySmall,
@@ -166,7 +172,12 @@ class _MockScenarioPicker extends StatefulWidget {
 class _MockScenarioPickerState extends State<_MockScenarioPicker> {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+    padding: const EdgeInsets.fromLTRB(
+      PitchySpace.lg,
+      PitchySpace.sm,
+      PitchySpace.lg,
+      PitchySpace.sm,
+    ),
     child: DropdownMenu<MockScenario>(
       label: const Text('Mock backend scenario'),
       initialSelection: widget.api.scenario,
@@ -185,7 +196,12 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+    padding: const EdgeInsets.fromLTRB(
+      PitchySpace.lg,
+      PitchySpace.lg,
+      PitchySpace.lg,
+      PitchySpace.xs,
+    ),
     child: Semantics(
       header: true,
       child: Text(
@@ -205,15 +221,20 @@ class _SwatchPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    padding: const EdgeInsets.fromLTRB(
+      PitchySpace.lg,
+      PitchySpace.sm,
+      PitchySpace.lg,
+      PitchySpace.xs,
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 8),
+        const SizedBox(height: PitchySpace.sm),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: PitchySpace.sm,
+          runSpacing: PitchySpace.sm,
           children: [
             for (final s in customSwatches)
               Semantics(

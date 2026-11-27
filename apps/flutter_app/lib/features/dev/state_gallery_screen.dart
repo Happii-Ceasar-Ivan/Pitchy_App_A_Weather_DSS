@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/errors/api_failure.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
 import '../../shared/services/mock/fixtures.dart';
@@ -66,7 +67,7 @@ class _StateGalleryScreenState extends State<StateGalleryScreen> {
         ),
         children: [
           Text('SYNTHETIC mock data for review. Not real conditions.', style: text.bodySmall),
-          const SizedBox(height: 12),
+          const SizedBox(height: PitchySpace.md),
           DropdownMenu<MockScenario>(
             label: const Text('Mock backend scenario'),
             initialSelection: _scenario,
@@ -79,23 +80,23 @@ class _StateGalleryScreenState extends State<StateGalleryScreen> {
               for (final s in MockScenario.values) DropdownMenuEntry(value: s, label: s.name),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PitchySpace.lg),
           Text('State pills', style: text.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: PitchySpace.sm,
+            runSpacing: PitchySpace.sm,
             children: [for (final s in WeatherDataState.values) DataStateBadge(state: s)],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PitchySpace.lg),
           Text('Banners', style: text.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           NoticeBanner.updating(context),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           NoticeBanner.savedCopy(context, savedAt: _now.subtract(const Duration(minutes: 40))),
-          const SizedBox(height: 16),
+          const SizedBox(height: PitchySpace.lg),
           Text('Board (scenario: ${_scenario.name})', style: text.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           FutureBuilder(
             future: _load,
             builder: (context, snap) {
@@ -118,7 +119,7 @@ class _StateGalleryScreenState extends State<StateGalleryScreen> {
                 children: [
                   if (status.activeJobIds.isNotEmpty) ...[
                     NoticeBanner.updating(context),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: PitchySpace.sm),
                   ],
                   SourceRail(
                     sources: status.sources,
@@ -127,13 +128,13 @@ class _StateGalleryScreenState extends State<StateGalleryScreen> {
                     kickoff: match.kickoffAt,
                     now: _now,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: PitchySpace.md),
                   WeatherCardGrid(weather: weather, kickoff: match.kickoffAt),
                 ],
               );
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PitchySpace.lg),
           Text('Empty', style: text.titleMedium),
           const SizedBox(
             height: 220,

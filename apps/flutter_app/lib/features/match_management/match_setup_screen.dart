@@ -7,6 +7,7 @@ import '../../core/errors/failure_messages.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/match.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
@@ -143,7 +144,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                               subtitle: Text(v.name.split(',').skip(1).join(',').trim()),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: PitchySpace.sm),
                         ],
                       ],
                     ),
@@ -169,7 +170,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                         onTap: _pickDate,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: PitchySpace.md),
                     Expanded(
                       child: _PickerField(
                         label: 'Time',
@@ -198,7 +199,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                       showSelectedIcon: false,
                       onSelectionChanged: (s) => m.updateDraft(draft.copyWith(ageGroup: s.single)),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: PitchySpace.xs),
                     Text(
                       'Chooses which heat levels the safety assessment uses. '
                       'To change it later, set up the match again.',
@@ -213,7 +214,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Wrap(
-                      spacing: 8,
+                      spacing: PitchySpace.sm,
                       children: [
                         for (final s in PitchSurface.values)
                           ChoiceChip(
@@ -225,7 +226,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: PitchySpace.xs),
                     Text(
                       'Saved with the match for reference. It doesn’t change any reading.',
                       style: text.bodySmall,
@@ -235,9 +236,9 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
               ),
               if (_submitError != null) ...[
                 _InlineFailure(failure: _submitError!, onRetry: _submit),
-                const SizedBox(height: 12),
+                const SizedBox(height: PitchySpace.md),
               ],
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               RetryAtBuilder(
                 retryAt: rateLimitRetryAt(_submitError),
                 builder: (context, waiting) => FilledButton.icon(
@@ -257,7 +258,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               Text(
                 'Your choices are kept if you leave this screen.',
                 style: text.bodySmall?.copyWith(color: palette.inkMuted),
@@ -282,21 +283,21 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: PitchySpace.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Semantics(header: true, child: Text(title, style: text.titleMedium)),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           child,
           if (error != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: PitchySpace.sm),
             Semantics(
               liveRegion: true,
               child: Row(
                 children: [
                   Icon(Icons.error_outline, size: 18, color: context.safetyColors.requestErrorInk),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: PitchySpace.sm),
                   Expanded(
                     child: Text(
                       error!,
@@ -378,11 +379,11 @@ class _InlineFailure extends StatelessWidget {
     final canRetry = limited ? !waiting : m.canRetry;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(PitchySpace.lg),
         child: Row(
           children: [
             Icon(Icons.error_outline, color: context.safetyColors.requestErrorInk),
-            const SizedBox(width: 12),
+            const SizedBox(width: PitchySpace.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,11 +412,11 @@ class _VenueSkeleton extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 72),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: PitchySpace.lg, vertical: PitchySpace.md),
           child: Row(
             children: [
               const SkeletonBox(width: 20, height: 20, radius: 10),
-              const SizedBox(width: 32),
+              const SizedBox(width: PitchySpace.xxl),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,7 +434,14 @@ class _VenueSkeleton extends StatelessWidget {
     );
     return SkeletonPulse(
       label: 'Loading venues',
-      child: Column(children: [row(), const SizedBox(height: 8), row(), const SizedBox(height: 8)]),
+      child: Column(
+        children: [
+          row(),
+          const SizedBox(height: PitchySpace.sm),
+          row(),
+          const SizedBox(height: PitchySpace.sm),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 
 /// Shown above every screen when the app runs on mock data
 /// (`PITCHY_USE_MOCKS`, the default for development builds). Mock weather is
@@ -42,12 +43,12 @@ class DemoDataStrip extends StatelessWidget {
           child: Container(
             width: double.infinity,
             color: palette.accent,
-            padding: EdgeInsets.fromLTRB(16, top + 4, 16, 4),
+            padding: EdgeInsets.fromLTRB(PitchySpace.lg, top + 4, PitchySpace.lg, PitchySpace.xs),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.science_outlined, size: 16, color: palette.onAccent),
-                const SizedBox(width: 6),
+                const SizedBox(width: PitchySpace.sm),
                 Flexible(
                   child: Text(text, style: style, textAlign: TextAlign.center),
                 ),

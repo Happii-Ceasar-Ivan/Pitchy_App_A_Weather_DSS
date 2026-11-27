@@ -9,6 +9,7 @@ import 'core/routing/app_router.dart';
 import 'core/storage/preferences.dart';
 import 'core/storage/saved_copies.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/motion.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/conversational_agent/chat_session.dart';
 import 'features/match_management/match_controller.dart';
@@ -129,6 +130,14 @@ class _PitchyAppState extends State<PitchyApp> {
         title: 'Pitchy',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.build(_theme.palette),
+        // A short colour fade when the theme changes; none under reduced motion.
+        themeAnimationStyle: AnimationStyle(
+          duration:
+              WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations
+              ? Duration.zero
+              : PitchyMotion.quick,
+          curve: PitchyMotion.colour,
+        ),
         routerConfig: _router,
         // Mock builds say so on every screen; release builds never show it.
         builder: widget.config.useMocks

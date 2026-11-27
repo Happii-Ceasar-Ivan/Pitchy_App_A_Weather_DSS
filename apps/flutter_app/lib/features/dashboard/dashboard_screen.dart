@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -5,6 +7,7 @@ import '../../core/app_scope.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
 import '../../shared/widgets/alerts_panel.dart';
@@ -174,6 +177,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
     matchKickoff: widget.match.kickoffAt,
     now: AppScope.of(context).match.now,
     onRetry: _controller.retryTrend,
+    onNeedHours: (hours) => unawaited(_controller.extendTrend(hours)),
   );
 
   void _changeMatch() {
@@ -187,7 +191,17 @@ class _MatchDashboardState extends State<_MatchDashboard> {
     builder: (context, _) {
       final alerts = AlertsPanel(alerts: _controller.alerts, onRetry: _controller.retryAlerts);
       return _Frame(
-        strip: KickoffStrip(match: widget.match, onChange: _changeMatch),
+        strip: KickoffStrip(
+          match: widget.match,
+          onChange: _changeMatch,
+          // Only the backend's loaded states count; none while loading or failed
+          // (and not from a saved copy, which is not current).
+          sources: switch (_controller.data) {
+            Loaded(:final value) => value.status.sources,
+            _ => null,
+          },
+          sourcesPending: _controller.data is Loading,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -212,9 +226,9 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                       lastTriedAt: _controller.lastTriedAt,
                       onRetry: _controller.refreshing ? null : _controller.load,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: PitchySpace.md),
                     AlertsPanel(alerts: _controller.alerts),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: PitchySpace.md),
                     SavedCopyScope(
                       savedAt: savedAt,
                       child: _Board(
@@ -224,6 +238,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                           coverage: value.status.coverage,
                           kickoff: widget.match.kickoffAt,
                           now: AppScope.of(context).match.now,
+                          attributions: value.weather.attributions,
                           action: const _UpdateOffWhileSaved(),
                         ),
                         trend: _trend(context),
@@ -237,7 +252,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                   Failed(:final failure) => [
                     // The board's Try again reloads the alerts too: one button.
                     AlertsPanel(alerts: _controller.alerts),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: PitchySpace.md),
                     SizedBox(
                       height: 360,
                       child: ErrorState(failure: failure, onRetry: _controller.load),
@@ -245,7 +260,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                   ],
                   Loaded(:final value) => [
                     alerts,
-                    const SizedBox(height: 12),
+                    const SizedBox(height: PitchySpace.md),
                     _Board(
                       rail: SourceRail(
                         sources: value.status.sources,
@@ -253,6 +268,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
                         coverage: value.status.coverage,
                         kickoff: widget.match.kickoffAt,
                         now: AppScope.of(context).match.now,
+                        attributions: value.weather.attributions,
                         action: updateAction(
                           context,
                           ingest: _ingest,
@@ -353,7 +369,9 @@ class _UpdateOffWhileSaved extends StatelessWidget {
       label: spoken,
       excludeSemantics: true,
       child: FilledButton.icon(
-        style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14)),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: PitchySpace.lg),
+        ),
         onPressed: null,
         icon: const Icon(Icons.sync, size: 18),
         label: const Text('Update'),
@@ -363,7 +381,11 @@ class _UpdateOffWhileSaved extends StatelessWidget {
 }
 
 /// The board's loading shape: alerts, then rail and cards.
-const _boardSkeleton = <Widget>[AlertsPanelSkeleton(), SizedBox(height: 12), _BoardSkeleton()];
+const _boardSkeleton = <Widget>[
+  AlertsPanelSkeleton(),
+  SizedBox(height: PitchySpace.md),
+  _BoardSkeleton(),
+];
 
 /// Scrollable board, centred with a readable measure on wide windows.
 class _BoardList extends StatelessWidget {
@@ -401,7 +423,13 @@ class _Board extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [rail, const SizedBox(height: 12), trend, const SizedBox(height: 12), cards],
+    children: [
+      rail,
+      const SizedBox(height: PitchySpace.md),
+      trend,
+      const SizedBox(height: PitchySpace.md),
+      cards,
+    ],
   );
 }
 

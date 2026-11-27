@@ -6,7 +6,7 @@ import '../../core/state/loadable.dart';
 import '../../core/storage/saved_copies.dart';
 import '../../shared/models/alerts.dart';
 import '../../shared/models/weather.dart';
-import 'trend/trend_series.dart' show trendHours, trendHoursBefore;
+import 'trend/trend_series.dart' show trendHours, trendHoursBefore, trendMaxHours;
 
 /// What the dashboard shows for one match: weather status (per-source states)
 /// and consolidated weather (values). Both come straight from the backend.
@@ -128,11 +128,40 @@ class DashboardController extends ChangeNotifier {
     return loadTrend();
   }
 
+  /// Hours after kickoff the trend asks for: [trendHours] until the user picks
+  /// a longer range (S7), then that range's hours for the rest of the session.
+  int _trendHours = trendHours;
+  bool _extending = false;
+
+  /// Fetches a longer trend window for a range the loaded reply doesn't cover
+  /// (S7). The chart on screen stays while it loads; if the request fails, the
+  /// loaded window stays as it was (it is still correct for its hours) and
+  /// the longer range shows its missing hours as gaps.
+  Future<void> extendTrend(int hours) async {
+    final want = hours.clamp(1, trendMaxHours);
+    if (want <= _trendHours || _extending || _trend is! Loaded) return;
+    _extending = true;
+    try {
+      final reply = await api.getWeather(
+        matchContextId,
+        hours: want,
+        hoursBefore: trendHoursBefore,
+      );
+      _trendHours = want;
+      _trend = Loaded(reply);
+      _notify();
+    } on ApiFailure {
+      // Keep the loaded window; nothing stale is shown as current.
+    } finally {
+      _extending = false;
+    }
+  }
+
   /// Loads the trend window only. Read-only and cache-only on the backend.
   Future<void> loadTrend() async {
     try {
       _trend = Loaded(
-        await api.getWeather(matchContextId, hours: trendHours, hoursBefore: trendHoursBefore),
+        await api.getWeather(matchContextId, hours: _trendHours, hoursBefore: trendHoursBefore),
       );
     } on ApiFailure catch (e) {
       // Never the previous live trend after a failure: only the labelled

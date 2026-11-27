@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/theme/app_theme.dart';
 import 'trend_series.dart';
 
 /// Colours and text the chart paints with. All from the palette; the line
@@ -42,7 +45,7 @@ class TrendLayout {
         .fold<double>(0, (a, b) => a > b ? a : b);
     final labelHeight = _measure('0').height;
     left = widest + 8;
-    top = labelHeight * 2 + 6; // two rows of marker labels
+    top = labelHeight * 2 + 6 + (series.hasDirections ? arrowRow : 0); // marker rows, arrows
     final bottom = stripHeight + 4 + labelHeight + 4;
     plot = Rect.fromLTRB(left, top, size.width - 4, size.height - bottom);
   }
@@ -53,15 +56,33 @@ class TrendLayout {
 
   static const stripHeight = 6.0;
 
+  /// The row of wind arrows between the marker labels and the plot.
+  static const arrowRow = 18.0;
+
+  /// Hour labels (and wind arrows) every [labelEvery] hours, so the widest
+  /// label never touches its neighbour: 1, 2, 3, 4, 6, 12 or 24.
+  int get labelEvery {
+    final widest = painter('12 PM', mono: true).width + 8;
+    final hourWidth = plot.width / series.hours;
+    if (hourWidth <= 0) return 24;
+    final need = (widest / hourWidth).ceil();
+    for (final step in const [1, 2, 3, 4, 6, 12]) {
+      if (step >= need) return step;
+    }
+    return 24;
+  }
+
   late final double left;
   late final double top;
   late final Rect plot;
 
-  TextPainter painter(String text, {Color? color}) => TextPainter(
-    text: TextSpan(
-      text: text,
-      style: style.label.copyWith(color: color),
-    ),
+  TextPainter painter(String text, {Color? color, bool mono = false}) => TextPainter(
+    text: mono
+        ? PitchyFigures.figureSpans(text, style.label.copyWith(color: color))
+        : TextSpan(
+            text: text,
+            style: style.label.copyWith(color: color),
+          ),
     textDirection: TextDirection.ltr,
     textScaler: style.textScaler,
   )..layout();
@@ -101,9 +122,9 @@ class TrendLayout {
   }
 
   /// Minimum height for the chart at the current text size.
-  static double heightFor(TextStyle label, TextScaler scaler) {
+  static double heightFor(TextStyle label, TextScaler scaler, {bool arrows = false}) {
     final line = scaler.scale(label.fontSize ?? 11) * (label.height ?? 1.3);
-    return 150 + line * 3 + stripHeight + 14;
+    return 150 + line * 3 + stripHeight + 14 + (arrows ? arrowRow : 0);
   }
 }
 
@@ -207,15 +228,38 @@ class TrendPainter extends CustomPainter {
 
     // Hour labels under the strip; every second one when they'd crowd.
     final labelTop = stripTop + TrendLayout.stripHeight + 4;
-    final widest = l.painter('12 PM').width + 8;
-    final hourWidth = series.points.isEmpty ? plot.width : plot.width / series.points.length;
-    final every = hourWidth <= 0 ? 1 : (widest / hourWidth).ceil().clamp(1, 6);
+    final every = l.labelEvery;
     for (var i = 0; i < series.points.length; i += every) {
       final p = series.points[i];
-      final tp = l.painter(TrendSeries.hourLabel(p.from));
+      final tp = l.painter(TrendSeries.hourLabel(p.from), mono: true);
       final x = _safeClamp(l.xOf(p.middle) - tp.width / 2, 0, size.width - tp.width);
       tp.paint(canvas, Offset(x, labelTop));
+      if (p.hasDirection) _arrow(canvas, l, p, i == selected);
     }
+  }
+
+  /// A wind arrow above the plot, pointing the way the wind blows (downwind,
+  /// as on weather maps); the readout says where it comes FROM.
+  void _arrow(Canvas canvas, TrendLayout l, TrendPoint p, bool selected) {
+    const half = 6.0;
+    final c = Offset(l.xOf(p.middle), l.plot.top - TrendLayout.arrowRow / 2);
+    final color = p.directionCurrent ? style.line : style.muted;
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = selected ? 2.5 : 1.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas
+      ..save()
+      ..translate(c.dx, c.dy)
+      ..rotate((p.direction! + 180) * math.pi / 180);
+    // Up is north before rotating: shaft plus head.
+    canvas
+      ..drawLine(const Offset(0, half), const Offset(0, -half), paint)
+      ..drawLine(const Offset(0, -half), const Offset(-3.5, -half + 4.5), paint)
+      ..drawLine(const Offset(0, -half), const Offset(3.5, -half + 4.5), paint)
+      ..restore();
   }
 
   void _line(Canvas canvas, TrendLayout l) {
@@ -274,11 +318,20 @@ class TrendPainter extends CustomPainter {
       if (!p.hasValue) continue;
       final left = l.xOf(p.from), right = l.xOf(p.until);
       final inset = _safeClamp((right - left) * 0.18, 0, 10);
-      // A zero amount still shows a thin bar, so "0 mm" differs from a gap.
-      final top = _safeClamp(l.yOf(p.value!), l.plot.top, base - 2);
+      // A zero amount is a zero-height bar: just its outline on the baseline,
+      // which still differs from a gap (nothing drawn).
+      final top = _safeClamp(l.yOf(p.value!), l.plot.top, base);
       final r = Rect.fromLTRB(left + inset, top, right - inset, base);
       if (p.current) {
-        canvas.drawRect(r, Paint()..color = style.line);
+        canvas
+          ..drawRect(r, Paint()..color = style.line.withValues(alpha: 0.28))
+          ..drawRect(
+            r,
+            Paint()
+              ..color = style.line
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5,
+          );
       } else {
         canvas.drawRect(r, Paint()..color = style.surface);
         _dashedRect(canvas, r.deflate(1), style.muted);

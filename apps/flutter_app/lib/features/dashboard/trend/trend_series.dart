@@ -13,7 +13,10 @@ enum TrendRange {
   sixBefore(-6, 0, '6 h before kickoff'),
   twoBefore(-2, 0, '2 h before kickoff'),
   kickoffPlus3(0, 3, 'Kickoff to +3 h'),
-  kickoffPlus5(0, 5, 'Kickoff to +5 h (match and after)');
+  kickoffPlus5(0, 5, 'Kickoff to +5 h (match and after)'),
+  kickoffPlus6(0, 6, 'Kickoff to +6 h'),
+  kickoffPlus12(0, 12, 'Kickoff to +12 h'),
+  kickoffPlus24(0, 24, 'Kickoff to +24 h');
 
   const TrendRange(this.fromHours, this.toHours, this.label);
 
@@ -25,11 +28,31 @@ enum TrendRange {
 
   /// Needs the backend's `hours_before` (P-27).
   bool get beforeKickoff => fromHours < 0;
+
+  /// The backend's `hours` (1 to 24 after kickoff) this range needs: the
+  /// default request already holds up to [trendHours]; longer ranges need
+  /// more, never beyond the backend's [trendMaxHours].
+  int get requestHours => toHours < trendHours ? trendHours : toHours.clamp(1, trendMaxHours);
+
+  /// Longer than the default request: offered always, fetched when chosen.
+  bool get isLong => toHours > trendHours;
+
+  /// Whether [w] already holds every hour this range shows, so choosing it
+  /// needs no new request.
+  bool coveredBy(ConsolidatedWeather w, DateTime matchKickoff) {
+    if (toHours <= trendHours) return true;
+    final end = _floorHour(trendKickoff(w, matchKickoff)).add(Duration(hours: toHours));
+    return !w.window.end.isBefore(end);
+  }
 }
 
-/// One request serves every range: 6 h before kickoff to 5 h after.
+/// The default request serves the first four ranges: 6 h before kickoff to 5 h
+/// after. The longer ranges ask for more hours when chosen.
 const trendHoursBefore = 6;
 const trendHours = 5;
+
+/// The backend's maximum for `hours` (openapi.v1.json).
+const trendMaxHours = 24;
 
 /// Lines for continuous values; bars for an amount per hour (rain).
 enum TrendKind { line, bars }
@@ -61,12 +84,21 @@ List<TrendRange> availableRanges(ConsolidatedWeather w, DateTime matchKickoff) {
   final kickoff = _floorHour(trendKickoff(w, matchKickoff));
   return [
     for (final r in TrendRange.values)
-      if (!r.beforeKickoff ||
-          (w.kickoffAt != null &&
-              !w.window.start.isAfter(kickoff.add(Duration(hours: r.fromHours)))))
+      if (!r.isLong &&
+          (!r.beforeKickoff ||
+              (w.kickoffAt != null &&
+                  !w.window.start.isAfter(kickoff.add(Duration(hours: r.fromHours))))))
         r,
   ];
 }
+
+/// Every range the Range menu offers: those [availableRanges] says the reply
+/// can fill, then the long ones (they fetch more hours when chosen).
+List<TrendRange> offeredRanges(ConsolidatedWeather w, DateTime matchKickoff) => [
+  ...availableRanges(w, matchKickoff),
+  for (final r in TrendRange.values)
+    if (r.isLong) r,
+];
 
 /// One hour on the chart.
 class TrendPoint {
@@ -80,6 +112,8 @@ class TrendPoint {
     required this.fallbackLabel,
     required this.range,
     required this.past,
+    this.direction,
+    this.directionState,
   });
 
   final DateTime from;
@@ -98,6 +132,14 @@ class TrendPoint {
   /// The hour ended before the backend's `checked_at`: still a forecast, not a
   /// measurement.
   final bool past;
+
+  /// Wind speed only: the backend's wind direction for the same hour, in
+  /// degrees the wind blows FROM (meteorological). Null when it has none.
+  final double? direction;
+  final WeatherDataState? directionState;
+
+  bool get hasDirection => direction != null;
+  bool get directionCurrent => directionState == WeatherDataState.current;
 
   bool get hasValue => value != null;
   bool get current => state == WeatherDataState.current;
@@ -205,6 +247,17 @@ class TrendSeries {
     final start = base.add(Duration(hours: range.fromHours));
     final end = base.add(Duration(hours: range.toHours));
     final names = {for (final s in w.sources) s.sourceId: s.sourceName};
+    // Wind direction rides along with wind speed, hour by hour; an hour
+    // without one stays without (never taken from a neighbour).
+    final dirs = <DateTime, ConsolidatedSlot>{};
+    if (quantity.quantity == 'wind_speed') {
+      for (final q in w.quantities) {
+        if (q.quantity != 'wind_direction') continue;
+        for (final s in q.slots) {
+          if (s.value != null) dirs[s.validFrom] = s;
+        }
+      }
+    }
     final points = [
       for (final s in quantity.slots)
         if (!s.validFrom.isBefore(start) && !s.validUntil.isAfter(end))
@@ -218,6 +271,10 @@ class TrendSeries {
             fallbackLabel: s.fallbackLabel,
             range: s.range,
             past: !s.validUntil.isAfter(w.checkedAt),
+            direction: s.value == null ? null : dirs[s.validFrom]?.value,
+            directionState: s.value == null || dirs[s.validFrom] == null
+                ? null
+                : slotState(dirs[s.validFrom]!, w.sources),
           ),
     ];
     final kind = quantity.quantity == 'rain' ? TrendKind.bars : TrendKind.line;
@@ -264,6 +321,31 @@ class TrendSeries {
   ];
 
   bool get isEmpty => withValues.isEmpty;
+
+  /// Hours the range spans (the plot's width), whether or not all are loaded.
+  int get hours => end.difference(start).inHours.clamp(1, 1000);
+
+  /// True when any hour has a wind direction to draw.
+  bool get hasDirections => points.any((p) => p.hasDirection);
+
+  /// "from NE (45°)": the meteorological way, where the wind comes FROM.
+  String? directionText(TrendPoint p) {
+    final d = p.direction;
+    if (d == null) return null;
+    final name = compass(d);
+    final deg = ((d % 360) + 360) % 360;
+    final stale = p.directionCurrent ? '' : ' (direction not current)';
+    return 'from $name (${deg.round() % 360}°)$stale';
+  }
+
+  static const _compass = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+
+  /// The eight-point compass name for [degrees].
+  static String compass(double degrees) {
+    final d = ((degrees % 360) + 360) % 360;
+    return _compass[((d + 22.5) ~/ 45) % 8];
+  }
+
   int get gapCount => points.where((p) => !p.hasValue).length;
 
   /// Links between neighbouring hours with values. A gap breaks the line.
@@ -325,6 +407,7 @@ class TrendSeries {
   /// painting; the table has every hour).
   String summary({required DateTime now}) {
     final head = '$label, ${range.label}';
+    final dirNote = hasDirections ? ' Wind direction is where the wind comes from.' : '';
     final shown = withValues;
     if (shown.isEmpty) return '$head: no source has a value for this range.';
     TrendPoint pick(bool Function(double, double) better) =>
@@ -345,7 +428,7 @@ class TrendSeries {
       if (gaps > 0) '$gaps ${gaps == 1 ? 'hour has' : 'hours have'} no value.',
       if (stale > 0) '$stale ${stale == 1 ? 'hour is' : 'hours are'} stale.',
       if (pastCount > 0) 'Hours already past are forecasts, not measurements.',
-      'Source: ${sourceNames.join(', ')}.',
+      'Source: ${sourceNames.join(', ')}.$dirNote',
     ].join(' ');
   }
 }

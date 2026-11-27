@@ -3,6 +3,8 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/errors/api_failure.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/motion.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/match.dart';
@@ -41,7 +43,7 @@ String inputLabel(String id) => _inputNames.containsKey(id) ? '${_inputNames[id]
 const safetyCardGap = 12.0;
 
 /// Inner padding of every card on the screen.
-const safetyCardInset = 14.0;
+const safetyCardInset = 16.0;
 
 /// A labelled block inside a card: a small header, then its content. The label
 /// is a screen-reader header.
@@ -84,15 +86,15 @@ class LimitationLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 4),
+    padding: const EdgeInsets.only(bottom: PitchySpace.xs),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 2),
+          padding: const EdgeInsets.only(top: PitchySpace.xxs),
           child: Icon(Icons.error_outline, size: 18, color: context.palette.ink),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: PitchySpace.sm),
         Expanded(
           child: Text(
             message,
@@ -141,12 +143,12 @@ class SafetyHeaderCard extends StatelessWidget {
                   child: Text('Assessed ${phtStamp(a.assessedAt, now)}', style: text.titleSmall),
                 ),
                 if (refreshing) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: PitchySpace.sm),
                   Text(
                     'Refreshing',
                     style: text.bodySmall?.copyWith(color: context.palette.inkMuted),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: PitchySpace.sm),
                   SizedBox.square(
                     dimension: 14,
                     child: CircularProgressIndicator(
@@ -158,18 +160,18 @@ class SafetyHeaderCard extends StatelessWidget {
                 ],
               ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: PitchySpace.xxs),
             Text('Inputs checked ${phtStamp(a.checkedAt, now)}', style: muted),
-            const SizedBox(height: 2),
+            const SizedBox(height: PitchySpace.xxs),
             Row(
               children: [
                 Icon(Icons.groups, size: 18, color: context.palette.ink),
-                const SizedBox(width: 6),
+                const SizedBox(width: PitchySpace.sm),
                 Expanded(child: Text('Heat levels: $heatSet', style: text.titleSmall)),
               ],
             ),
             if (limitations.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: PitchySpace.md),
               for (final l in limitations) LimitationLine(l.message),
             ],
           ],
@@ -207,7 +209,7 @@ class RulesBanner extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(Icons.rule, size: 20, color: s.foreground),
-            const SizedBox(width: 12),
+            const SizedBox(width: PitchySpace.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,7 +219,7 @@ class RulesBanner extends StatelessWidget {
                     style: text.titleSmall?.copyWith(color: s.foreground),
                   ),
                   if (message != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: PitchySpace.xs),
                     Text(message!, style: text.bodyMedium?.copyWith(color: s.foreground)),
                   ],
                 ],
@@ -249,14 +251,14 @@ class OfficialNoticesCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Semantics(header: true, child: Text('Official notices', style: text.titleMedium)),
-            const SizedBox(height: 2),
+            const SizedBox(height: PitchySpace.xxs),
             Text('Official information, shown as issued.', style: muted),
             for (var k = 0; k < notices.length; k++) ...[
               if (k > 0) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: PitchySpace.md),
                 Divider(height: AppTheme.hairline, color: context.palette.hairline),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: PitchySpace.md),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -264,7 +266,7 @@ class OfficialNoticesCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 1),
                     child: Icon(Icons.campaign_outlined, size: 20, color: context.palette.ink),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: PitchySpace.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,12 +317,12 @@ class SafetyFooter extends StatelessWidget {
             'Rules: $ruleVersion',
             style: text.bodySmall?.copyWith(color: context.palette.inkMuted),
           ),
-        const SizedBox(height: 6),
+        const SizedBox(height: PitchySpace.sm),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(Icons.gavel, size: 18, color: context.palette.ink),
-            const SizedBox(width: 8),
+            const SizedBox(width: PitchySpace.sm),
             Expanded(
               child: Text(
                 'Pitchy supports the decision. Match officials make it.',
@@ -348,14 +350,14 @@ class SafetyTitleRow extends StatelessWidget {
     child: Row(
       children: [
         Icon(icon, size: 22, color: context.palette.ink),
-        const SizedBox(width: 8),
+        const SizedBox(width: PitchySpace.sm),
         Expanded(
           child: Semantics(
             header: true,
             child: Text(title, style: Theme.of(context).textTheme.titleMedium),
           ),
         ),
-        if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+        if (trailing != null) ...[const SizedBox(width: PitchySpace.sm), trailing!],
       ],
     ),
   );
@@ -388,7 +390,7 @@ class IndicatorStatusPill extends StatelessWidget {
     final s = state == null ? null : context.stateColors.of(state);
     final fg = s?.foreground ?? palette.ink;
     final pill = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: PitchySpace.sm, vertical: PitchySpace.xs),
       decoration: BoxDecoration(
         color: s?.background,
         borderRadius: BorderRadius.circular(AppTheme.radiusPill),
@@ -398,7 +400,7 @@ class IndicatorStatusPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: fg),
-          const SizedBox(width: 4),
+          const SizedBox(width: PitchySpace.xs),
           Flexible(
             child: Text(
               word.toUpperCase(),
@@ -433,7 +435,7 @@ class DraftRulesMarker extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(Icons.rule, size: 16, color: s.foreground),
-        const SizedBox(width: 4),
+        const SizedBox(width: PitchySpace.xs),
         Text(
           'Draft rules',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(color: s.foreground),
@@ -464,8 +466,8 @@ class LevelRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = level;
     return Wrap(
-      spacing: 10,
-      runSpacing: 6,
+      spacing: PitchySpace.sm,
+      runSpacing: PitchySpace.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         l == null
@@ -532,10 +534,9 @@ class SafetyExpander extends StatelessWidget {
         ),
       ),
       AnimatedSize(
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
+        duration: PitchyMotion.of(context).expand,
+        reverseDuration: PitchyMotion.of(context).collapse,
+        curve: PitchyMotion.enter,
         alignment: Alignment.topCenter,
         child: expanded ? child : const SizedBox(width: double.infinity),
       ),
@@ -588,10 +589,10 @@ class HazardDetails extends StatelessWidget {
               children: [
                 for (final p in i.points)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.only(bottom: PitchySpace.xs),
                     child: Wrap(
-                      spacing: 8,
-                      runSpacing: 2,
+                      spacing: PitchySpace.sm,
+                      runSpacing: PitchySpace.xxs,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(phtStamp(p.at, now), style: text.bodyMedium),
@@ -601,7 +602,7 @@ class HazardDetails extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.check_circle_outline, size: 16, color: used.foreground),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: PitchySpace.xs),
                               Text(
                                 'Used for the level',
                                 style: text.labelMedium?.copyWith(color: used.foreground),
@@ -633,7 +634,7 @@ class HazardDetails extends StatelessWidget {
               children: [
                 for (final inp in i.inputs)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: PitchySpace.sm),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -658,7 +659,7 @@ class HazardDetails extends StatelessWidget {
               children: [
                 for (final n in i.notices)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: PitchySpace.sm),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -678,7 +679,7 @@ class HazardDetails extends StatelessWidget {
               children: [for (final r in sources) _SourceLine(r)],
             ),
           ),
-        const SizedBox(height: 8),
+        const SizedBox(height: PitchySpace.sm),
       ],
     );
   }
@@ -722,7 +723,7 @@ class _SourceLine extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final muted = text.bodyMedium?.copyWith(color: context.palette.inkMuted);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: PitchySpace.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -750,7 +751,7 @@ class NotCurrentLine extends StatelessWidget {
       container: true,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: safetyCardInset, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: safetyCardInset, vertical: PitchySpace.sm),
         decoration: BoxDecoration(
           color: s.background,
           borderRadius: BorderRadius.circular(AppTheme.radiusCard),
@@ -759,7 +760,7 @@ class NotCurrentLine extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(Icons.history, size: 20, color: s.foreground),
-            const SizedBox(width: 10),
+            const SizedBox(width: PitchySpace.sm),
             Expanded(
               child: Text(
                 'Not current. Assessed ${phtStamp(assessedAt, now)}.',
@@ -801,7 +802,7 @@ class AssessmentFailureBanner extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(Icons.error_outline, size: 20, color: colours.onRequestError),
-            const SizedBox(width: 12),
+            const SizedBox(width: PitchySpace.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -810,7 +811,7 @@ class AssessmentFailureBanner extends StatelessWidget {
                     'Couldn’t refresh the assessment: ${m.title}',
                     style: text.titleSmall?.copyWith(color: colours.onRequestError),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: PitchySpace.xxs),
                   Text(m.detail, style: text.bodyMedium?.copyWith(color: colours.onRequestError)),
                   if (m.canRetry)
                     ConstrainedBox(

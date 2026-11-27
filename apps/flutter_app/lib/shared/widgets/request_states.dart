@@ -4,6 +4,7 @@ import '../../core/errors/api_failure.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'retry_at.dart';
@@ -23,7 +24,7 @@ class LoadingState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox.square(dimension: 32, child: CircularProgressIndicator(strokeWidth: 3)),
-          const SizedBox(height: 16),
+          const SizedBox(height: PitchySpace.lg),
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
@@ -54,20 +55,20 @@ class _MessageState extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(PitchySpace.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 40, color: iconColor),
-              const SizedBox(height: 16),
+              const SizedBox(height: PitchySpace.lg),
               Text(title, style: text.titleMedium, textAlign: TextAlign.center),
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               Text(
                 detail,
                 style: text.bodyMedium?.copyWith(color: context.palette.inkMuted),
                 textAlign: TextAlign.center,
               ),
-              if (action != null) ...[const SizedBox(height: 20), action!],
+              if (action != null) ...[const SizedBox(height: PitchySpace.xl), action!],
             ],
           ),
         ),
@@ -270,7 +271,7 @@ class NoticeBanner extends StatelessWidget {
       child: Container(
         width: double.infinity,
         color: background,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: PitchySpace.lg, vertical: PitchySpace.sm),
         child: LayoutBuilder(
           builder: (context, c) {
             final stacked =
@@ -280,7 +281,7 @@ class NoticeBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(padding: const EdgeInsets.only(top: 1), child: lead),
-                const SizedBox(width: 12),
+                const SizedBox(width: PitchySpace.md),
                 Expanded(child: words),
                 if (!stacked) ?action,
               ],
