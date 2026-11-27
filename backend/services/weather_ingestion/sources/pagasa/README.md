@@ -41,7 +41,8 @@ A new run always starts with a new visit, so rotating tokens and new model runs 
 
 ## Limits and etiquette
 
-- Point forecasts: at most once every 4 hours per venue (FR-WTH-008), enforced by the ingestion runner from `source_fetches`.
+- Point forecasts: at most once per `PITCHY_PAGASA_MIN_INTERVAL_MINUTES` per venue (default 240 = 4 hours, FR-WTH-008; P-27 A3), enforced by the ingestion runner from `source_fetches`.
+- Run check (P-27 A2): the homepage's `nwp-runs` is compared with the run of the newest stored fetch. A model whose listed run is not newer is not downloaded; the runner stores a `source_fetches` row with `status = 'unchanged'` (the listed run, no values, no payload). That costs 1 request instead of 3 and still counts for the gap. Freshness and coverage read only `succeeded` rows.
 - If PAGASA adds a login, a CAPTCHA, blocking, or terms that forbid this: stop and show Unavailable. **Do not work around it.**
 
 ## Failure codes

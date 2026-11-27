@@ -102,6 +102,14 @@ class ForecastRepository(Protocol):
         error_code: str,
         error_summary: str,
     ) -> UUID: ...
+    def record_unchanged_fetch(
+        self,
+        source_id: str,
+        location_id: UUID,
+        ingestion_job_id: UUID | None,
+        source_issued_at: datetime,
+    ) -> UUID: ...
+    def latest_issued_at(self, source_id: str, location_id: UUID) -> datetime | None: ...
     def values_covering(
         self, location_id: UUID, at: datetime, parameters: Sequence[str] | None = None
     ) -> list[ForecastValueRecord]: ...
@@ -361,6 +369,33 @@ class PgForecastRepository(_Repo):
                 (source_id, location_id, ingestion_job_id, error_code, error_summary),
             ).fetchone()[0]
 
+    def record_unchanged_fetch(
+        self,
+        source_id: str,
+        location_id: UUID,
+        ingestion_job_id: UUID | None,
+        source_issued_at: datetime,
+    ) -> UUID:
+        """Store a run check that found no newer run (P-27 A2): no values, no payload."""
+        with self._connect() as conn:
+            return conn.execute(
+                "insert into public.source_fetches (source_id, location_id, ingestion_job_id,"
+                " completed_at, status, source_issued_at)"
+                " values (%s, %s, %s, now(), 'unchanged', %s) returning id",
+                (source_id, location_id, ingestion_job_id, source_issued_at),
+            ).fetchone()[0]
+
+    def latest_issued_at(self, source_id: str, location_id: UUID) -> datetime | None:
+        """The model run of the newest successful fetch (what a run check compares against)."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "select source_issued_at from public.source_fetches"
+                " where source_id = %s and location_id = %s and status = 'succeeded'"
+                " order by requested_at desc limit 1",
+                (source_id, location_id),
+            ).fetchone()
+            return row[0] if row else None
+
     def values_covering(
         self, location_id: UUID, at: datetime, parameters: Sequence[str] | None = None
     ) -> list[ForecastValueRecord]:
@@ -400,14 +435,15 @@ class PgForecastRepository(_Repo):
         self, source_ids: Sequence[str], location_id: UUID, blocking_codes: Sequence[str]
     ) -> FetchAttempt | None:
         """The newest call to any of these sources for a location that starts a minimum gap
-        (FR-WTH-008 as refined by P-27): a success, or a failure whose code is in
-        ``blocking_codes`` (the source refused us). Ordinary failures are not returned."""
+        (FR-WTH-008 as refined by P-27): a success, a run check that found no newer run
+        (``unchanged``, A2), or a failure whose code is in ``blocking_codes`` (the source refused
+        us). Ordinary failures are not returned."""
         with self._connect() as conn:
             cur = conn.cursor(row_factory=class_row(FetchAttempt))
             return cur.execute(
                 "select id, status, requested_at, error_code, error_summary"
                 " from public.source_fetches where source_id = any(%s) and location_id = %s"
-                " and (status = 'succeeded' or error_code = any(%s))"
+                " and (status in ('succeeded', 'unchanged') or error_code = any(%s))"
                 " order by requested_at desc limit 1",
                 (list(source_ids), location_id, list(blocking_codes)),
             ).fetchone()

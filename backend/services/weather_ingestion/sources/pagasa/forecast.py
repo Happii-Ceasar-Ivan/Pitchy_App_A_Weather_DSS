@@ -11,6 +11,7 @@ so each value is valid until the next step.
 
 import json
 import threading
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta, timezone
 
@@ -21,6 +22,7 @@ from services.weather_ingestion.sources.base import (
     SourceError,
     SourceFetch,
     SourceResponseChangedError,
+    SourceUnchanged,
     Venue,
     require,
 )
@@ -140,10 +142,27 @@ class PagasaForecastAdapter:
         except SourceError as error:
             return FetchFailure(source_id(model), venue, error)
 
-    def fetch(self, venue: Venue) -> list[FetchOutcome]:
+    def fetch(
+        self, venue: Venue, known_runs: Mapping[str, datetime | None] | None = None
+    ) -> list[FetchOutcome]:
+        """Both models for one venue. ``known_runs`` (source id -> run of the newest stored
+        fetch) enables the run check (P-27 A2): a model whose listed run is not newer than the
+        stored one is not downloaded; it comes back as ``SourceUnchanged``."""
         session = self.session()  # SourceError here means no model can be fetched
-        with ThreadPoolExecutor(max_workers=len(MODELS)) as pool:
-            return list(pool.map(lambda m: self._fetch_model(session, venue, m), MODELS))
+        known = known_runs or {}
+        outcomes: dict[str, FetchOutcome] = {}
+        to_fetch = []
+        for model in MODELS:
+            listed, stored = session.runs.get(model), known.get(source_id(model))
+            if listed is not None and stored is not None and listed <= stored:
+                outcomes[model] = SourceUnchanged(source_id(model), venue, listed)
+            else:
+                to_fetch.append(model)
+        if to_fetch:
+            with ThreadPoolExecutor(max_workers=len(to_fetch)) as pool:
+                fetched = pool.map(lambda m: self._fetch_model(session, venue, m), to_fetch)
+                outcomes.update(zip(to_fetch, fetched, strict=True))
+        return [outcomes[m] for m in MODELS]
 
     def close(self) -> None:
         """Ends the run: cookies and token are discarded with the client."""

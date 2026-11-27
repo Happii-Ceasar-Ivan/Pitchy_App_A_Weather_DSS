@@ -10,6 +10,7 @@ from services.weather_ingestion.sources.base import (
     FetchFailure,
     SourceFetch,
     SourceUnavailableError,
+    SourceUnchanged,
 )
 from shared.db.records import NewForecastValue
 from shared.db.repositories import (
@@ -185,3 +186,74 @@ def test_disabled_sources_are_not_called(env) -> None:
     adapter = FakeAdapter(("dost_asti",))
     report = run(env, [AdapterGroup("dost_asti", ("dost_asti",), lambda: adapter)], set())
     assert {r.status for r in report.results} == {"disabled"} and adapter.calls == 0
+
+
+# --- P-27 A2: run check -------------------------------------------------------------------------
+
+RUN = T0 - timedelta(hours=6)
+
+
+class RunCheckAdapter:
+    """Lists ``RUN`` for every model: downloads unless the stored run is the same."""
+
+    def __init__(self, source_ids):
+        self.source_ids, self.downloads, self.known_seen = source_ids, 0, []
+
+    def fetch(self, venue, known_runs=None):
+        self.known_seen.append(dict(known_runs or {}))
+        outcomes = []
+        for sid in self.source_ids:
+            if (known_runs or {}).get(sid) == RUN:
+                outcomes.append(SourceUnchanged(sid, venue, RUN))
+            else:
+                self.downloads += 1
+                outcomes.append(SourceFetch(sid, venue, [value()], '{"raw": 1}',
+                                            source_issued_at=RUN))  # fmt: skip
+        return outcomes
+
+
+def _checked(adapter):
+    return AdapterGroup("pagasa", adapter.source_ids, lambda: adapter,
+                        min_interval=timedelta(hours=4), run_check=True)  # fmt: skip
+
+
+def test_run_check_skips_the_download_and_records_unchanged(env, conn) -> None:
+    ids = ("pagasa_atmo", "pagasa_ecmwf")
+    adapter = RunCheckAdapter(ids)
+    first = run(env, [_checked(adapter)], set(ids))
+    assert {r.status for r in first.results} == {"stored"} and adapter.downloads == 4
+    assert adapter.known_seen[0] == {"pagasa_atmo": None, "pagasa_ecmwf": None}
+
+    later = run(env, [_checked(adapter)], set(ids), now=_at(timedelta(hours=4, minutes=1)))
+    assert {r.status for r in later.results} == {"unchanged"}
+    assert adapter.downloads == 4  # nothing downloaded again
+    assert adapter.known_seen[-1] == {"pagasa_atmo": RUN, "pagasa_ecmwf": RUN}
+    rows = conn.execute(
+        "select f.source_issued_at, f.raw_payload, f.error_code,"
+        " (select count(*) from public.forecast_values v where v.fetch_id = f.id)"
+        " from public.source_fetches f where f.status = 'unchanged'"
+    ).fetchall()
+    assert rows == [(RUN, None, None, 0)] * 4  # 2 venues x 2 models
+    newest_jobs = conn.execute(
+        "select state from public.ingestion_jobs order by requested_at desc limit 2"
+    ).fetchall()
+    assert newest_jobs == [("succeeded",), ("succeeded",)]
+
+
+def test_an_unchanged_check_starts_the_gap_like_a_success(env, conn) -> None:
+    ids = ("pagasa_atmo",)
+    adapter = RunCheckAdapter(ids)
+    run(env, [_checked(adapter)], set(ids))
+    conn.execute("update public.source_fetches set requested_at = requested_at - interval '5h'")
+    run(env, [_checked(adapter)], set(ids))  # 5 h later: run check, unchanged
+    again = run(env, [_checked(adapter)], set(ids), now=_at(timedelta(hours=1)))
+    assert {r.status for r in again.results} == {"skipped_recent"}
+    assert all("min_interval" in r.message for r in again.results)
+    assert len(adapter.known_seen) == 4  # 2 venues x 2 runs; the third run never asked
+
+
+def test_groups_without_run_check_get_no_known_runs(env) -> None:
+    adapter = FakeAdapter(("open_meteo",))  # fetch(venue) only: would fail on known_runs
+    report = run(env, [AdapterGroup("open_meteo", ("open_meteo",), lambda: adapter)],
+                 {"open_meteo"})  # fmt: skip
+    assert {r.status for r in report.results} == {"stored"}

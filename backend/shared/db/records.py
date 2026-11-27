@@ -127,7 +127,7 @@ class FetchAttempt:
     """The latest call to a source for a location, successful or not."""
 
     id: UUID
-    status: str  # 'succeeded' | 'failed'
+    status: str  # 'succeeded' | 'failed' | 'unchanged' (P-27 A2)
     requested_at: datetime
     error_code: str | None
     error_summary: str | None

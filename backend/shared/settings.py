@@ -93,6 +93,12 @@ class Settings(BaseSettings):
     retry_after_failure_minutes: float = Field(
         default=15, gt=0, validation_alias="PITCHY_RETRY_AFTER_FAILURE_MINUTES"
     )  # manual Ingest waits this long after a failed attempt (DEC-04 option C)
+    # FR-WTH-008: PAGASA point forecasts at most once per this many minutes per venue, counted
+    # from the last success, run check or refusal (P-27 A1/A2/A3). 240 = the decided 4 hours;
+    # a shorter gap needs a team decision. Never below 60 (no gain: ATMO runs every 6 h).
+    pagasa_min_interval_minutes: float = Field(
+        default=240, ge=60, le=240, validation_alias="PITCHY_PAGASA_MIN_INTERVAL_MINUTES"
+    )
 
     # Retention (DEC-11, team decision 2026-11-22). Run by the ingest job after each run.
     retention_forecast_days: float = Field(

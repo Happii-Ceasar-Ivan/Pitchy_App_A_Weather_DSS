@@ -37,8 +37,8 @@ class Provenance(ContractModel):
 class WaitReason(StrEnum):
     """Why a source that needs data cannot be requested yet (P-27)."""
 
-    MIN_INTERVAL = "min_interval"  # PAGASA: 4 h after the last successful request (FR-WTH-008)
-    SOURCE_REFUSED = "source_refused"  # PAGASA answered 401/403/429: 4 h, never worked around
+    MIN_INTERVAL = "min_interval"  # PAGASA: minimum gap after the last request (FR-WTH-008)
+    SOURCE_REFUSED = "source_refused"  # PAGASA answered 401/403/429: full gap, never worked around
     FAILURE_COOLDOWN = "failure_cooldown"  # 15 min after an ordinary failure (DEC-04)
 
 
@@ -107,8 +107,9 @@ class WeatherStatus(ContractModel):
     )
     next_ingestion_at: AwareDatetime | None = Field(
         default=None,
-        description="Set when a source needing data must wait: PAGASA's 4-hour gap (FR-WTH-008)"
-        " or the cooldown after a failed attempt (DEC-04). Ingest before then cannot refresh it.",
+        description="Set when a source needing data must wait: PAGASA's minimum gap"
+        " (FR-WTH-008, 4 h by default) or the cooldown after a failed attempt (DEC-04)."
+        " Ingest before then cannot refresh it.",
     )
     alerts: AlertsStatus
 

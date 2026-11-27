@@ -236,3 +236,37 @@ def test_match_age_group_defaults_to_senior_and_is_checked(conn: psycopg.Connect
             " values (now(), %s, 'veterans')",
             (location,),
         )
+
+
+def _fetch_row(conn: psycopg.Connection, location_id, status: str, **cols):
+    names = ["source_id", "location_id", "status", *cols]
+    values = ["pagasa_atmo", location_id, status, *cols.values()]
+    conn.execute(
+        psycopg.sql.SQL("insert into public.source_fetches ({}) values ({})").format(
+            psycopg.sql.SQL(", ").join(map(psycopg.sql.Identifier, names)),
+            psycopg.sql.SQL(", ").join(psycopg.sql.Placeholder() * len(names)),
+        ),
+        values,
+    )
+
+
+def test_unchanged_fetch_needs_its_run_and_nothing_else(conn: psycopg.Connection) -> None:
+    """P-27 A2: 'unchanged' rows name the listed run and carry no error or payload."""
+    location_id = _location(conn)
+    run = datetime(2026, 11, 28, 0, tzinfo=UTC)
+    _fetch_row(conn, location_id, "unchanged", source_issued_at=run)
+    bad = [
+        {},  # no run
+        {"source_issued_at": run, "error_code": "HTTP_500"},
+        {"source_issued_at": run, "error_summary": "x"},
+        {"source_issued_at": run, "raw_payload": "{}"},
+        {"source_issued_at": run, "raw_content_type": "application/json"},
+        {"source_issued_at": run, "raw_payload_sha256": "0" * 64},
+    ]
+    for cols in bad:
+        with pytest.raises(errors.CheckViolation):
+            _fetch_row(conn, location_id, "unchanged", **cols)
+    with pytest.raises(errors.CheckViolation):
+        _fetch_row(conn, location_id, "skipped", source_issued_at=run)
+    _fetch_row(conn, location_id, "failed", error_code="HTTP_500")  # old shapes still valid
+    _fetch_row(conn, location_id, "succeeded", source_issued_at=run, raw_payload="{}")

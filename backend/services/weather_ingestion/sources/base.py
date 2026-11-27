@@ -68,7 +68,17 @@ class FetchFailure:
     error: SourceError
 
 
-FetchOutcome = SourceFetch | FetchFailure
+@dataclass(frozen=True)
+class SourceUnchanged:
+    """The source lists no newer model run than the one already stored, so nothing was
+    downloaded (P-27 A2). ``source_issued_at`` is the run the source listed."""
+
+    source_id: str
+    venue: Venue
+    source_issued_at: datetime
+
+
+FetchOutcome = SourceFetch | FetchFailure | SourceUnchanged
 
 
 class SourceAdapter(Protocol):
@@ -76,7 +86,8 @@ class SourceAdapter(Protocol):
 
     def fetch(self, venue: Venue) -> list[FetchOutcome]:
         """Fetch one venue: one outcome per produced source id. May raise ``SourceError`` when
-        nothing could be fetched at all (e.g. the source is unreachable)."""
+        nothing could be fetched at all (e.g. the source is unreachable). Adapters of a group
+        with ``run_check`` also take ``known_runs`` (source id -> stored run, P-27 A2)."""
         ...
 
 

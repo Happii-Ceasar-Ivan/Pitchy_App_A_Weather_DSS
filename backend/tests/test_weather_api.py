@@ -635,3 +635,31 @@ def test_trend_window_rounds_a_half_hour_kickoff_down(client, connect) -> None:
     assert datetime.fromisoformat(body["window"]["start"]) == KICKOFF - 2 * HOUR
     assert datetime.fromisoformat(body["window"]["end"]) == KICKOFF + 2 * HOUR  # 10:30 + 1 h
     assert datetime.fromisoformat(body["kickoff_at"]) == KICKOFF + timedelta(minutes=30)
+
+
+def test_unchanged_run_check_keeps_stale_data_stale_and_starts_the_gap(
+    client, connect, conn
+) -> None:
+    """P-27 A2: a run check that found no newer run changes no state: the old run stays
+    stale (honest), no failure note, the cached values stay, and the next check waits."""
+    store(connect, "open_meteo", KICKOFF - HOUR, 6)
+    old_run = datetime.now(UTC) - 13 * HOUR  # ATMO stale (12 h)
+    store(connect, "pagasa_atmo", KICKOFF - HOUR, 6, issued=old_run)
+    age_fetches(conn, "pagasa_atmo", 5 * HOUR)  # last download 5 h ago: gap over
+    location = PgLocationRepository(connect).get_by_scope_key("rizal_memorial")
+    PgForecastRepository(connect).record_unchanged_fetch("pagasa_atmo", location.id, None, old_run)
+    match_id = new_match(client)
+
+    body = status(client, match_id)
+    atmo = _sources_by_id(body)["pagasa_atmo"]
+    assert atmo["state"] == "stale"
+    codes = [lim["code"] for lim in atmo["limitations"]]
+    assert "LAST_ATTEMPT_FAILED" not in codes and "SOURCE_ERROR" not in codes
+    assert atmo["wait_reason"] == "min_interval"
+    assert datetime.fromisoformat(atmo["next_request_at"]) > datetime.now(UTC) + 3 * HOUR
+
+    weather = client.get(f"{API}/match-contexts/{match_id}/weather").json()
+    used = {s["source_id"]: s for s in weather["sources"]}["pagasa_atmo"]
+    assert used["state"] == "stale"  # the older successful fetch, still labelled stale
+    issued = datetime.fromisoformat(used["provenance"]["source_issued_at"])
+    assert issued == old_run.replace(microsecond=issued.microsecond)

@@ -31,6 +31,8 @@ def _fetch(connect, conn, source, scope, age: timedelta, status="succeeded", job
     repo = PgForecastRepository(connect)
     if status == "succeeded":
         fid = repo.record_fetch(source, loc.id, job, _values())
+    elif status == "unchanged":
+        fid = repo.record_unchanged_fetch(source, loc.id, job, T)
     else:
         fid = repo.record_failed_fetch(source, loc.id, job, "HTTP_503", "down")
     conn.execute(
@@ -151,3 +153,14 @@ def test_only_the_backend_role_may_run_the_purge(conn, app_db_url) -> None:
     with psycopg.connect(app_db_url, autocommit=True) as app:
         with pytest.raises(errors.InsufficientPrivilege):
             app.execute("delete from public.forecast_values")
+
+
+def test_old_unchanged_checks_rotate_and_the_last_data_stays(connect, conn) -> None:
+    """P-27 A2: run checks have no values; old ones go, the newest successful fetch stays."""
+    data = _fetch(connect, conn, "pagasa_atmo", "rizal_memorial", 20 * DAY)
+    old_check = _fetch(connect, conn, "pagasa_atmo", "rizal_memorial", 16 * DAY, "unchanged")
+    newest_check = _fetch(connect, conn, "pagasa_atmo", "rizal_memorial", 15 * DAY, "unchanged")
+    _purge(connect)
+    assert _exists(conn, "source_fetches", data)  # newest successful fetch: values kept
+    assert not _exists(conn, "source_fetches", old_check)
+    assert _exists(conn, "source_fetches", newest_check)  # newest attempt of any status

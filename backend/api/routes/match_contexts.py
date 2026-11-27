@@ -314,8 +314,8 @@ def request_ingestion(
     A group already being ingested (by anyone, or the schedule) is returned with
     ``reused_existing_job: true`` instead of starting again. Poll each job with
     GET /ingestions/{id}, or poll weather-status. 429 with ``retry_at`` when the only sources
-    needing data must wait: PAGASA's 4-hour gap (FR-WTH-008) or the cooldown after a failed
-    attempt (DEC-04). A separate per-IP limit (B6) also answers 429.
+    needing data must wait: PAGASA's minimum gap (FR-WTH-008, 4 h by default) or the cooldown
+    after a failed attempt (DEC-04). A separate per-IP limit (B6) also answers 429.
     """
     match, location = load_match(connect, match_context_id)
     result, _ = current_status(connect, groups, settings, match, location)
@@ -339,10 +339,11 @@ def request_ingestion(
         raise ApiError(
             429,
             ErrorCode.RATE_LIMITED,
-            "The sources needing data were requested too recently (PAGASA: 4 hours,"
-            " FR-WTH-008; after a failure: a short cooldown). Try again after retry_at.",
+            f"The sources needing data were requested too recently (PAGASA:"
+            f" {gap_text(settings)}, FR-WTH-008; after a failure: a short cooldown)."
+            " Try again after retry_at.",
             [
-                ErrorDetail(field=f"sources.{source_id}", issue=_wait_issue(g))
+                ErrorDetail(field=f"sources.{source_id}", issue=_wait_issue(g, settings))
                 for source_id, g in _waits_by_source(result).items()
             ],
             retry_at=wait.retry_at,
@@ -380,13 +381,21 @@ def request_ingestion(
     )
 
 
-_WAIT_TEXT = {
-    "min_interval": "requested less than 4 hours ago (FR-WTH-008)",
-    "source_refused": "the source refused the last request; waiting 4 hours",
-    "failure_cooldown": "the last request failed; short cooldown",
-}
+def gap_text(settings: Settings) -> str:
+    """PAGASA's configured minimum gap in words, e.g. "4 hours" or "90 minutes" (P-27 A3)."""
+    minutes = settings.pagasa_min_interval_minutes
+    if minutes % 60 == 0:
+        hours = int(minutes // 60)
+        return f"{hours} hour" if hours == 1 else f"{hours} hours"
+    return f"{minutes:g} minutes"
 
 
-def _wait_issue(group: GroupState) -> str:
+def _wait_issue(group: GroupState, settings: Settings) -> str:
     until = group.wait.until.astimezone(UTC).isoformat(timespec="minutes")
-    return f"Next request at {until}: {_WAIT_TEXT[group.wait.reason]}."
+    gap = gap_text(settings)
+    text = {
+        "min_interval": f"requested less than {gap} ago (FR-WTH-008)",
+        "source_refused": f"the source refused the last request; waiting {gap}",
+        "failure_cooldown": "the last request failed; short cooldown",
+    }[group.wait.reason]
+    return f"Next request at {until}: {text}."

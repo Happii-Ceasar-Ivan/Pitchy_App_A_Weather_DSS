@@ -19,6 +19,7 @@ from services.weather_ingestion.sources.base import (
     FetchFailure,
     SourceError,
     SourceFetch,
+    SourceUnchanged,
     Venue,
 )
 from shared.db.records import LockResult
@@ -40,6 +41,9 @@ class AdapterGroup:
     # After an ordinary failure, wait this long before calling again, checked under the lock too
     # (P-27 A1). None: only the status check applies (DEC-04 cooldown).
     failure_cooldown: timedelta | None = None
+    # Compare the source's listed model run with the stored one first and skip the download when
+    # it is not newer (P-27 A2). The adapter's fetch then takes ``known_runs``.
+    run_check: bool = False
 
 
 # The source answered in a way that means "stop asking" (P-27 A1, DEC-02): such a failure starts
@@ -68,7 +72,8 @@ def group_wait(
     if group.min_interval is not None:
         last = forecasts.last_gap_attempt(active, location_id, BLOCKING_ERROR_CODES)
         if last is not None and now - last.requested_at < group.min_interval:
-            reason = "min_interval" if last.status == "succeeded" else "source_refused"
+            refused = last.status == "failed"  # only blocking failures are returned
+            reason = "source_refused" if refused else "min_interval"
             waits.append(GroupWait(last.requested_at + group.min_interval, reason))
     if group.failure_cooldown is not None:
         for source_id in active:
@@ -88,7 +93,7 @@ def group_wait(
 class SourceResult:
     source_id: str
     venue: str
-    status: str  # stored | failed | skipped_recent | in_progress | disabled
+    status: str  # stored | unchanged | failed | skipped_recent | in_progress | disabled
     values_stored: int = 0
     error_code: str | None = None
     message: str | None = None
@@ -177,9 +182,13 @@ def execute_group(
         return skipped
 
     results = []
-    stored_any, first_error = False, None
+    answered, first_error = False, None  # answered: stored values or confirmed "no newer run"
     try:
-        outcomes = adapter.get().fetch(venue)
+        if group.run_check:
+            known = {s: forecasts.latest_issued_at(s, venue.location_id) for s in active}
+            outcomes = adapter.get().fetch(venue, known_runs=known)
+        else:
+            outcomes = adapter.get().fetch(venue)
     except SourceError as error:
         outcomes = [FetchFailure(s, venue, error) for s in active]
     except Exception:  # a bug, not a source problem: record safely and carry on
@@ -201,11 +210,21 @@ def execute_group(
                 raw_payload=outcome.raw_payload,
                 raw_payload_sha256=outcome.raw_payload_sha256,
             )
-            stored_any = True
+            answered = True
             results.append(
                 SourceResult(outcome.source_id, venue.scope_key, "stored",
                              values_stored=len(outcome.values), job_id=str(job_id),
                              message=" ".join(outcome.notes) or None)
+            )  # fmt: skip
+        elif isinstance(outcome, SourceUnchanged):
+            forecasts.record_unchanged_fetch(
+                outcome.source_id, venue.location_id, job_id, outcome.source_issued_at
+            )
+            answered = True
+            run = outcome.source_issued_at.isoformat(timespec="minutes")
+            results.append(
+                SourceResult(outcome.source_id, venue.scope_key, "unchanged", job_id=str(job_id),
+                             message=f"No newer run than {run}; cached values kept.")
             )  # fmt: skip
         else:
             error = outcome.error
@@ -221,9 +240,9 @@ def execute_group(
 
     finished = jobs.finish(
         job_id,
-        succeeded=stored_any,
-        failure_code=None if stored_any else (first_error.code if first_error else "NO_DATA"),
-        failure_message=None if stored_any else (
+        succeeded=answered,
+        failure_code=None if answered else (first_error.code if first_error else "NO_DATA"),
+        failure_message=None if answered else (
             first_error.message if first_error else "The source returned nothing to store."
         ),
     )  # fmt: skip
