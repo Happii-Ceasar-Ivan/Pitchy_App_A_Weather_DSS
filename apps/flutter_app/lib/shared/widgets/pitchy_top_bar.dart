@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/routing/app_router.dart';
 import '../../core/routing/app_shell.dart';
+import '../../core/theme/spacing.dart';
 import 'pitchy_logo.dart';
 
 /// Top app bar for every screen (P-13, P-17): on top-level screens the settings
@@ -43,7 +44,7 @@ class PitchyTopBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         children: [
           const PitchyLogo(size: 32),
-          const SizedBox(width: 12),
+          const SizedBox(width: PitchySpace.md),
           Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
         ],
       ),

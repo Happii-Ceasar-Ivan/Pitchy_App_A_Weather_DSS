@@ -8,6 +8,7 @@
 //   flutter test integration_test/qa_flow_test.dart -d windows
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -96,6 +97,7 @@ Future<MockPitchyApi> _launch(
 /// The keys this test writes on the device, cleared before and after.
 const _keys = [
   PrefKeys.activeMatchId,
+  PrefKeys.chatRole,
   PrefKeys.matchDraft,
   PrefKeys.themeMode,
   PrefKeys.lastLightMode,
@@ -238,5 +240,66 @@ void main() {
     await t.pumpAndSettle();
     expect(find.textContaining('not live'), findsNothing);
     await _shot(t, 'c3-safety-back-online');
+  });
+
+  testWidgets('D: redesign follow-ups: sources count, credit, 24 h trend, suggestions, copy', (
+    t,
+  ) async {
+    final prefs = MemoryPreferences({
+      PrefKeys.activeMatchId: rizalMemorialId,
+      PrefKeys.chatRole: 'coach',
+    });
+    final api = await _launch(
+      t,
+      prefs: prefs,
+      store: SavedCopyStore(prefs, clock: () => _now),
+      scenario: MockScenario.someStale,
+    );
+    // S2 and S3 on the board.
+    expect(find.textContaining('sources current'), findsOneWidget);
+    expect(find.textContaining('Open-Meteo.com'), findsWidgets);
+    await _shot(t, 'd1-board');
+
+    // S7: the longest range asks the backend for 24 hours once.
+    final range = find.byWidgetPredicate(
+      (w) => w is DropdownMenu && w.label is Text && (w.label! as Text).data == 'Range',
+    );
+    await t.scrollUntilVisible(range, 200, scrollable: find.byType(Scrollable).first);
+    await t.ensureVisible(range);
+    await t.pumpAndSettle();
+    await t.tap(range);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Kickoff to +24 h').hitTestable().last);
+    await t.pumpAndSettle();
+    // The mock answers after its device latency: let the request land.
+    await t.pump(const Duration(seconds: 1));
+    await t.pumpAndSettle();
+    expect(api.weatherQueries, contains((hours: 24, hoursBefore: 6)));
+    await _shot(t, 'd2-trend-24h');
+
+    // S8 and S5 in Ask Pitchy.
+    await t.tap(_tab('Ask Pitchy'));
+    await t.pumpAndSettle();
+    await t.ensureVisible(find.text('Start chatting'));
+    await t.tap(find.text('Start chatting'));
+    await t.pumpAndSettle();
+    // S8 is the existing "Try asking" list (no second set of chips).
+    expect(find.text('Try asking'), findsOneWidget);
+    expect(find.byType(ActionChip), findsNothing);
+    await _shot(t, 'd3-chat-suggestions');
+    const question = 'How current is the weather data?';
+    await t.enterText(find.byType(TextField), question);
+    await t.pump();
+    await t.tap(find.byTooltip('Send question'));
+    await t.pump(const Duration(seconds: 1));
+    await t.pumpAndSettle();
+    expect(find.byTooltip('Copy reply'), findsOneWidget);
+    await t.tap(find.byTooltip('Copy reply'));
+    // The real clipboard answers asynchronously; then the snackbar slides in.
+    await t.pump(const Duration(milliseconds: 600));
+    expect(find.text('Reply copied'), findsOneWidget);
+    final copied = await Clipboard.getData(Clipboard.kTextPlain);
+    expect(copied?.text, isNotEmpty);
+    await _shot(t, 'd4-chat-reply-copied');
   });
 }

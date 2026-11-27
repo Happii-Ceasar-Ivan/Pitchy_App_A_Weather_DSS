@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/app_scope.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/widgets/pitchy_logo.dart';
 import 'update_dialog.dart';
 
@@ -40,11 +41,16 @@ class QuickSettingsDrawer extends StatelessWidget {
             children: [
               Container(
                 color: palette.shell,
-                padding: const EdgeInsets.fromLTRB(16, 8, 4, 12),
+                padding: const EdgeInsets.fromLTRB(
+                  PitchySpace.lg,
+                  PitchySpace.sm,
+                  PitchySpace.xs,
+                  PitchySpace.md,
+                ),
                 child: Row(
                   children: [
                     const PitchyLogo(size: 32),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: PitchySpace.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,7 +71,7 @@ class QuickSettingsDrawer extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: PitchySpace.md),
               SwitchListTile(
                 value: theme.isDark,
                 onChanged: theme.setDark,
@@ -81,7 +87,7 @@ class QuickSettingsDrawer extends StatelessWidget {
                 title: const Text('Dark mode'),
                 subtitle: Text('${theme.mode.label} theme'),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: PitchySpace.xs),
               ListTile(
                 leading: const Icon(Icons.system_update_alt),
                 title: const Text('Check for updates'),
@@ -103,7 +109,7 @@ class QuickSettingsDrawer extends StatelessWidget {
               const Spacer(),
               Divider(color: palette.hairline),
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(PitchySpace.md),
                 child: FilledButton.icon(
                   onPressed: () => _open(context, Routes.settings),
                   icon: const Icon(Icons.settings),

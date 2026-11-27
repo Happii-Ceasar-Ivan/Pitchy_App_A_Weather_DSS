@@ -4,6 +4,7 @@ import '../../core/errors/api_failure.dart';
 import '../../core/errors/failure_messages.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/lightning.dart';
 import '../../shared/models/weather.dart';
@@ -35,11 +36,14 @@ class ProcedureSteps extends StatelessWidget {
       children: [
         for (var n = 0; n < steps.length; n++)
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: PitchySpace.xs),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(width: 24, child: Text('${n + 1}.', style: style)),
+                SizedBox(
+                  width: PitchySpace.xl,
+                  child: Text('${n + 1}.', style: style),
+                ),
                 Expanded(child: Text(steps[n], style: style)),
               ],
             ),
@@ -113,14 +117,14 @@ class _Failure extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.only(top: PitchySpace.xxs),
               child: Icon(
                 Icons.error_outline,
                 size: 18,
                 color: context.safetyColors.requestErrorInk,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: PitchySpace.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,8 +208,8 @@ class _Loaded extends StatelessWidget {
             label: summary,
             excludeSemantics: true,
             child: Wrap(
-              spacing: 10,
-              runSpacing: 4,
+              spacing: PitchySpace.sm,
+              runSpacing: PitchySpace.xs,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 DataStateBadge(state: state),
@@ -214,19 +218,19 @@ class _Loaded extends StatelessWidget {
             ),
           ),
           if (!v.inLiveWindow) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             Text(
               'Live checks run from ${phtStamp(v.liveWindow.start, now)} '
               'to ${phtStamp(v.liveWindow.end, now)}',
               style: muted,
             ),
           ] else if (v.flashCount != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             if (notCurrent) ...[
               Row(
                 children: [
                   Icon(Icons.history, size: 18, color: stateStyle.foreground),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: PitchySpace.sm),
                   Expanded(
                     child: Text(
                       'Not current. Last reading:',
@@ -238,7 +242,7 @@ class _Loaded extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: PitchySpace.xs),
             ],
             if (v.flashCount == 0)
               Text(
@@ -262,7 +266,7 @@ class _Loaded extends StatelessWidget {
             ],
           ],
           if (differs) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: PitchySpace.md),
             if (assessmentLevel != null && assessedAt != null)
               _LevelRow(
                 label: 'Assessment (${phtStamp(assessedAt!, now)}):',
@@ -280,18 +284,18 @@ class _Loaded extends StatelessWidget {
             ),
           ],
           if (guidance != null && guidance.shownBecause.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             Text(
               'Shown because: ${guidance.shownBecause.map(shownBecauseWords).join(', ')}',
               style: text.labelLarge,
             ),
           ],
-          if (steps.isNotEmpty) ...[const SizedBox(height: 8), ProcedureSteps(steps)],
+          if (steps.isNotEmpty) ...[const SizedBox(height: PitchySpace.sm), ProcedureSteps(steps)],
           if (guidance != null) ...[
             if (guidance.appliesNote.isNotEmpty) Text(guidance.appliesNote, style: muted),
             if (guidance.source.isNotEmpty) Text('Source: ${guidance.source}', style: muted),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           Text(v.note, style: ink),
           LinkText(v.attribution.url, label: v.attribution.text),
         ],
@@ -327,12 +331,12 @@ class _LevelRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 6),
+    padding: const EdgeInsets.only(bottom: PitchySpace.xs),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 4),
+        const SizedBox(height: PitchySpace.xs),
         SafetyLevelPill(levelId: levelId, severity: severity, label: levelLabel),
       ],
     ),
@@ -363,15 +367,15 @@ class LightningLiveSkeleton extends StatelessWidget {
                 child: SkeletonBox(width: 120, height: 24, radius: 12),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             SkeletonLine(style: text.bodyMedium, widthFactor: 1),
             SkeletonLine(style: text.bodyMedium, widthFactor: 0.6),
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             // The description wraps to three lines at phone width in Switzer
             // (re-measured for the P-28 font change).
             for (var n = 0; n < 3; n++)
               SkeletonLine(style: text.bodyMedium, widthFactor: n == 2 ? 0.5 : 1),
-            const SizedBox(height: 48),
+            const SizedBox(height: PitchySpace.xxxl),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import '../../core/errors/failure_messages.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/motion.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/alerts.dart';
 import '../models/weather.dart';
@@ -91,7 +92,7 @@ class _Frame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final body = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      padding: const EdgeInsets.fromLTRB(PitchySpace.lg, 0, PitchySpace.lg, PitchySpace.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -141,7 +142,7 @@ class _Header extends StatelessWidget {
             ),
           ),
           if (state != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: PitchySpace.sm),
             DataStateBadge(state: state!, dense: true),
           ],
         ],
@@ -193,18 +194,21 @@ class _Row extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: PitchySpace.xs),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(padding: const EdgeInsets.only(top: 4), child: mark),
-                const SizedBox(width: 12),
+                Padding(
+                  padding: const EdgeInsets.only(top: PitchySpace.xs),
+                  child: mark,
+                ),
+                const SizedBox(width: PitchySpace.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title, style: text.titleSmall),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: PitchySpace.xxs),
                       Text(detail, style: text.bodySmall),
                     ],
                   ),
@@ -225,7 +229,7 @@ class _Row extends StatelessWidget {
       child: Row(
         children: [
           mark,
-          const SizedBox(width: 12),
+          const SizedBox(width: PitchySpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,7 +240,7 @@ class _Row extends StatelessWidget {
                   maxLines: titleMaxLines,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: PitchySpace.xxs),
                 Text(
                   detail,
                   style: text.bodySmall,
@@ -300,7 +304,7 @@ class _AlertRow extends StatelessWidget {
                 context,
               ).textTheme.labelMedium?.copyWith(color: context.palette.accent),
             ),
-            const SizedBox(width: 2),
+            const SizedBox(width: PitchySpace.xxs),
             Icon(
               expanded ? Icons.expand_less : Icons.expand_more,
               size: 20,
@@ -393,7 +397,7 @@ class _AlertDetails extends StatelessWidget {
     // At large text sizes the 88 px label column crowds; stack label over value.
     final stacked = MediaQuery.textScalerOf(context).scale(14) > 14 * 1.3;
     Widget field(String k, String v) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: PitchySpace.xs),
       child: stacked
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,37 +417,37 @@ class _AlertDetails extends StatelessWidget {
 
     final cyclones = alerts.activeTropicalCyclones;
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: PitchySpace.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final a in bySeverity(alerts.alerts)) ...[
             const Divider(),
-            const SizedBox(height: 10),
+            const SizedBox(height: PitchySpace.md),
             Align(
               alignment: Alignment.centerLeft,
               child: AlertLevelPill(alert: a),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: PitchySpace.sm),
             Text(a.headline, style: text.titleSmall),
-            const SizedBox(height: 6),
+            const SizedBox(height: PitchySpace.sm),
             // Untrusted source text: plain Text only, never parsed.
             Text(a.message, style: text.bodyMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             field('Issued by', a.issuer),
             if (a.issuedAt != null) field('Issued', formatPhtDateTime(a.issuedAt!)),
             if (a.validUntil != null) field('Valid until', formatPhtDateTime(a.validUntil!)),
             if (a.matchedAreas.isNotEmpty)
               field('Areas', a.matchedAreas.map((x) => x.name).join(', ')),
-            const SizedBox(height: 6),
+            const SizedBox(height: PitchySpace.sm),
           ],
           if (cyclones != null && cyclones > 0) ...[
             const Divider(),
-            const SizedBox(height: 8),
+            const SizedBox(height: PitchySpace.sm),
             field('Cyclones', '$cyclones active tropical cyclone${cyclones == 1 ? '' : 's'}'),
           ],
           const Divider(),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           Text(
             alerts.label ?? 'Official information, shown as issued. Not a Pitchy classification.',
             style: text.bodySmall?.copyWith(color: palette.inkMuted),
@@ -465,7 +469,7 @@ class AlertsPanelSkeleton extends StatelessWidget {
       label: 'Loading official alerts',
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: const EdgeInsets.fromLTRB(PitchySpace.lg, 0, PitchySpace.lg, PitchySpace.sm),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -474,7 +478,7 @@ class AlertsPanelSkeleton extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(child: SkeletonLine(style: text.labelLarge, widthFactor: 0.5)),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: PitchySpace.sm),
                     SkeletonBox(width: 64, height: DataStateBadge.denseHeight(context), radius: 99),
                   ],
                 ),
@@ -484,13 +488,13 @@ class AlertsPanelSkeleton extends StatelessWidget {
                 child: Row(
                   children: [
                     const SkeletonBox(width: 24, height: 24, radius: 12),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: PitchySpace.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SkeletonLine(style: text.titleSmall, widthFactor: 0.7),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: PitchySpace.xxs),
                           SkeletonLine(style: text.bodySmall, widthFactor: 0.5),
                         ],
                       ),

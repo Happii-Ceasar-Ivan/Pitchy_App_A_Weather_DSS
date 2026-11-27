@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/models/assessment.dart';
 import '../../shared/models/lightning.dart';
 import '../../shared/models/weather.dart';
@@ -207,15 +208,16 @@ class SafetySkeleton extends StatelessWidget {
           decidedLines: 2,
           hasValue: true,
           // Line counts match the heatBelow fixture at phone width in Switzer
-          // (re-measured for the P-28 font change: limitations 13 -> 12).
-          limitationLines: 12,
+          // (re-measured for the P-28 font change: limitations 13 -> 12;
+          // and for the 16 px card inset of the 4/8 rhythm: 12 -> 13).
+          limitationLines: 13,
           limitationGaps: 2,
         ),
         SizedBox(height: safetyCardGap),
         HazardCardSkeleton(
           actionLines: 0,
           decidedLines: 2,
-          limitationLines: 7,
+          limitationLines: 8,
           limitationGaps: 2,
           live: true,
         ),
@@ -242,14 +244,14 @@ class SafetyHeaderSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SkeletonLine(style: text.titleSmall, widthFactor: 0.55),
-            const SizedBox(height: 2),
+            const SizedBox(height: PitchySpace.xxs),
             SkeletonLine(style: text.bodyMedium, widthFactor: 0.5),
-            const SizedBox(height: 2),
+            const SizedBox(height: PitchySpace.xxs),
             SkeletonLine(style: text.bodyMedium, widthFactor: 0.4),
-            const SizedBox(height: 10),
+            const SizedBox(height: PitchySpace.md),
             for (var n = 0; n < 3; n++)
               SkeletonLine(style: text.bodyMedium, widthFactor: n == 2 ? 0.6 : 1),
-            const SizedBox(height: 4),
+            const SizedBox(height: PitchySpace.xs),
           ],
         ),
       ),
@@ -350,7 +352,7 @@ class HazardCardSkeleton extends StatelessWidget {
               child: const Row(
                 children: [
                   SkeletonBox(width: 22, height: 22, radius: 11),
-                  SizedBox(width: 8),
+                  SizedBox(width: PitchySpace.sm),
                   SkeletonBox(width: 90, height: 16),
                   Spacer(),
                   SkeletonBox(width: 96, height: 24, radius: 12),
@@ -408,9 +410,9 @@ class NoticesSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SkeletonLine(style: text.titleMedium, width: 130),
-            const SizedBox(height: 2),
+            const SizedBox(height: PitchySpace.xxs),
             SkeletonLine(style: text.bodyMedium, widthFactor: 0.7),
-            const SizedBox(height: 12),
+            const SizedBox(height: PitchySpace.md),
             SkeletonLine(style: text.bodyLarge, widthFactor: 0.9),
             SkeletonLine(style: text.bodyMedium, widthFactor: 0.4),
           ],

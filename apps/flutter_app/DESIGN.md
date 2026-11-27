@@ -184,11 +184,11 @@ spacing:
   xxs: "2px"
   xs: "4px"
   sm: "8px"
-  grid-gap: "10px"
-  row: "12px"
-  card-inset: "14px"
-  gutter: "16px"
-  message: "24px"
+  md: "12px"
+  lg: "16px"
+  xl: "24px"
+  xxl: "32px"
+  xxxl: "48px"
   touch-target: "48px"
 components:
   top-bar:
@@ -320,7 +320,7 @@ components:
 Name: Pitchy
 Colors: primary: shell-navy #031A31 (Midnight Navy); secondary: line-open-meteo #13786A; neutral: on-shell #FFFFFF; accent: accent-glacier-deep #1D5A86 (on the shell: Glacier #8BB9D9); fixed: state-current-fg #0B5C43; custom-swatch: swatch-navy #0F2540 (+77 more in the sidecar)
 Fonts: Switzer (display, headline, headline-small, title, title-medium, title-small, body, body-large, body-small, label, label-medium, label-small); IBMPlexMono (figure-mono, Line Board figures only)
-Spacing: xxs 2px, xs 4px, sm 8px, grid-gap 10px, row 12px, card-inset 14px, gutter 16px, message 24px, touch-target 48px
+Spacing: 4/8 rhythm, PitchySpace in lib/core/theme/spacing.dart: xxs 2px (micro gaps only), xs 4px, sm 8px, md 12px, lg 16px, xl 24px, xxl 32px, xxxl 48px, touch-target 48px
 Radius: scrollbar 4px, sm 8px, card 12px, lg 16px, pill 999px
 North Star: "The Line Board"
 Rules:

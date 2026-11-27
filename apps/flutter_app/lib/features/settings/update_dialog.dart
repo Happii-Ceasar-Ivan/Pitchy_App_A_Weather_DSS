@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_scope.dart';
+import '../../core/theme/spacing.dart';
 import '../../shared/widgets/link_text.dart';
 import 'update_check.dart';
 import 'update_installer.dart';
@@ -375,13 +376,13 @@ class _UpdateDialogState extends State<UpdateDialog> {
                       dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2.5),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: PitchySpace.lg),
                   ],
                   Expanded(child: Text(message)),
                 ],
               ),
               if (phase case _Downloading(:final received, :final total)) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: PitchySpace.lg),
                 LinearProgressIndicator(
                   value: total > 0 ? (received / total).clamp(0.0, 1.0) : null,
                   semanticsLabel: 'Download progress',
@@ -389,7 +390,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 ),
               ],
               if (note != null) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: PitchySpace.md),
                 Text(note, style: text.bodySmall),
               ],
             ],

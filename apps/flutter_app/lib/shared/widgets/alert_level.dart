@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../models/alerts.dart';
 
 /// The fixed warning colour an official alert gets, read from PAGASA's own
@@ -125,7 +126,7 @@ class AlertLevelPill extends StatelessWidget {
     final palette = context.palette;
     final (bg, fg) = level == null ? (palette.ground, palette.ink) : _colours(context, level);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: PitchySpace.sm, vertical: PitchySpace.xs),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(AppTheme.radiusPill),

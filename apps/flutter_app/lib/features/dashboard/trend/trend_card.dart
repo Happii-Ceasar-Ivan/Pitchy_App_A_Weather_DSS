@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/app_scope.dart';
 import '../../../core/state/loadable.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/spacing.dart';
 import '../../../core/utils/pht_time.dart';
 import '../../../shared/models/weather.dart';
 import '../../../shared/widgets/data_state_badge.dart';
@@ -25,7 +26,12 @@ class TrendBlock extends StatelessWidget {
     required this.matchKickoff,
     required this.now,
     this.onRetry,
+    this.onNeedHours,
   });
+
+  /// Called with the `hours` to request when a longer range is chosen than
+  /// the loaded reply holds. The owner fetches and passes the new reply.
+  final ValueChanged<int>? onNeedHours;
 
   final Loadable<ConsolidatedWeather> trend;
   final DateTime matchKickoff;
@@ -35,14 +41,24 @@ class TrendBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (trend) {
     Loading() => const TrendCardSkeleton(),
-    Loaded(:final value) => TrendCard(weather: value, matchKickoff: matchKickoff, now: now),
+    Loaded(:final value) => TrendCard(
+      weather: value,
+      matchKickoff: matchKickoff,
+      now: now,
+      onNeedHours: onNeedHours,
+    ),
     Failed(saved: SavedCopy(:final value, :final savedAt)) => SavedCopyScope(
       savedAt: savedAt,
-      child: TrendCard(weather: value, matchKickoff: matchKickoff, now: now),
+      child: TrendCard(
+        weather: value,
+        matchKickoff: matchKickoff,
+        now: now,
+        onNeedHours: onNeedHours,
+      ),
     ),
     Failed(:final failure) => Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(PitchySpace.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -95,8 +111,10 @@ class TrendCard extends StatefulWidget {
     required this.weather,
     required this.matchKickoff,
     required this.now,
+    this.onNeedHours,
   });
 
+  final ValueChanged<int>? onNeedHours;
   final ConsolidatedWeather weather;
   final DateTime matchKickoff;
 
@@ -162,10 +180,14 @@ class _TrendCardState extends State<TrendCard> {
     _scope?.preferences.setString(TrendCard.quantityPref, q);
   }
 
-  void _setRange(TrendRange r) => setState(() {
-    _range = r;
-    _selected = null;
-  });
+  void _setRange(TrendRange r) {
+    setState(() {
+      _range = r;
+      _selected = null;
+    });
+    // Ask only when the loaded reply doesn't already cover the range.
+    if (!r.coveredBy(widget.weather, widget.matchKickoff)) widget.onNeedHours?.call(r.requestHours);
+  }
 
   void _move(TrendSeries s, int by) {
     if (s.points.isEmpty) return;
@@ -177,7 +199,7 @@ class _TrendCardState extends State<TrendCard> {
   Widget build(BuildContext context) {
     final w = widget.weather;
     final options = chartableQuantities(w);
-    final ranges = availableRanges(w, widget.matchKickoff);
+    final ranges = offeredRanges(w, widget.matchKickoff);
     final range = ranges.contains(_range) ? _range : TrendRange.fallback;
     final quantity = _pick(options);
     final series = quantity == null
@@ -191,7 +213,7 @@ class _TrendCardState extends State<TrendCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(PitchySpace.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -201,7 +223,7 @@ class _TrendCardState extends State<TrendCard> {
                 dense: true,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: PitchySpace.md),
             _Menus(
               quantity: _LabelledMenu<String>(
                 label: 'Value',
@@ -220,12 +242,12 @@ class _TrendCardState extends State<TrendCard> {
                 onSelected: _setRange,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: PitchySpace.md),
             if (series == null)
               const _Empty(text: 'No value has an hourly forecast for this match yet.')
             else ...[
               _Readout(series: series, index: selected, now: widget.now),
-              const SizedBox(height: 6),
+              const SizedBox(height: PitchySpace.sm),
               _Chart(
                 series: series,
                 selected: selected,
@@ -234,7 +256,7 @@ class _TrendCardState extends State<TrendCard> {
                 onSelect: (i) => setState(() => _selected = i),
                 onMove: (by) => _move(series, by),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               _Footer(series: series, index: selected, weather: w, now: widget.now),
               Align(
                 alignment: Alignment.centerLeft,
@@ -265,12 +287,16 @@ class _Menus extends StatelessWidget {
     builder: (context, c) => c.maxWidth < 480 || AppTheme.isLargeText(context)
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [quantity, const SizedBox(height: 10), range],
+            children: [
+              quantity,
+              const SizedBox(height: PitchySpace.md),
+              range,
+            ],
           )
         : Row(
             children: [
               Expanded(child: quantity),
-              const SizedBox(width: 10),
+              const SizedBox(width: PitchySpace.sm),
               Expanded(child: range),
             ],
           ),
@@ -364,6 +390,7 @@ class _Readout extends StatelessWidget {
             TrendSeries.hourRange(p, now: now),
             series.valueText(p),
             if (p.hasValue) _stateText(context, p),
+            ?series.directionText(p),
             if (p.sourceName != null) shortSourceName(p.sourceName!),
             if (p.past && p.hasValue) 'forecast for a past hour',
           ];
@@ -446,13 +473,14 @@ class _Chart extends StatelessWidget {
       textScaler: scaler,
       sourceColor: palette.lineFor,
     );
-    final height = TrendLayout.heightFor(style.label, scaler);
+    final height = TrendLayout.heightFor(style.label, scaler, arrows: series.hasDirections);
     final i = selected;
     String spoken(int at) {
       final p = series.points[at];
       return [
         TrendSeries.hourRange(p, now: now),
         series.valueText(p),
+        ?series.directionText(p),
         if (p.sourceName != null) p.sourceName!,
         if (p.hasValue) _stateText(context, p),
         if (p.past && p.hasValue) 'forecast for a past hour',
@@ -546,12 +574,12 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(12),
+    padding: const EdgeInsets.all(PitchySpace.md),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         const DataStateBadge(state: WeatherDataState.missing, dense: true),
-        const SizedBox(width: 8),
+        const SizedBox(width: PitchySpace.sm),
         Flexible(child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
       ],
     ),
@@ -625,14 +653,14 @@ class _Footer extends StatelessWidget {
       children: [
         Text(first, style: small),
         Text(fetched ?? ' ', style: small),
-        const SizedBox(height: 6),
+        const SizedBox(height: PitchySpace.sm),
         // The strip's key: each colour with its source's name.
         Semantics(
           label: 'Strip colours: ${used.values.join(', ')}',
           excludeSemantics: true,
           child: Wrap(
-            spacing: 12,
-            runSpacing: 2,
+            spacing: PitchySpace.md,
+            runSpacing: PitchySpace.xxs,
             children: [
               for (final MapEntry(:key, :value) in used.entries)
                 Row(
@@ -643,14 +671,14 @@ class _Footer extends StatelessWidget {
                       height: swatch * 0.6,
                       color: palette.lineFor(key),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: PitchySpace.sm),
                     Text(value, style: small),
                   ],
                 ),
             ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: PitchySpace.xs),
         Text(trendLegend, style: small),
         if (credit != null) LinkText(credit.url, label: credit.text),
       ],
@@ -687,6 +715,7 @@ class _Table extends StatelessWidget {
             label: [
               TrendSeries.hourRange(p, now: now),
               series.valueText(p),
+              ?series.directionText(p),
               if (p.sourceName != null) p.sourceName!,
               if (p.hasValue) _stateText(context, p),
               if (p.past && p.hasValue) 'forecast for a past hour',
@@ -695,10 +724,10 @@ class _Table extends StatelessWidget {
             ].join(', '),
             excludeSemantics: true,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: PitchySpace.sm),
               child: Wrap(
-                spacing: 12,
-                runSpacing: 2,
+                spacing: PitchySpace.md,
+                runSpacing: PitchySpace.xxs,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   SizedBox(
@@ -713,6 +742,7 @@ class _Table extends StatelessWidget {
                   ),
                   if (p.sourceName != null)
                     Text(shortSourceName(p.sourceName!), style: text.bodySmall),
+                  if (series.directionText(p) case final dir?) Text(dir, style: text.bodySmall),
                   if (p.hasValue) DataStateBadge(state: p.state, dense: true),
                   if (p.past && p.hasValue) Text('past hour', style: text.bodySmall),
                   if (p.fallbackLabel != null) Text(p.fallbackLabel!, style: text.bodySmall),
@@ -744,7 +774,7 @@ class TrendCardSkeleton extends StatelessWidget {
       label: 'Loading hourly trend',
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(PitchySpace.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -755,9 +785,9 @@ class TrendCardSkeleton extends StatelessWidget {
                   child: SkeletonLine(style: text.titleSmall, widthFactor: 0.35),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: PitchySpace.md),
               _Menus(quantity: menu(), range: menu()),
-              const SizedBox(height: 10),
+              const SizedBox(height: PitchySpace.md),
               SizedBox(
                 height: _Readout.height(context),
                 child: Align(
@@ -765,14 +795,14 @@ class TrendCardSkeleton extends StatelessWidget {
                   child: SkeletonLine(style: text.bodyMedium, widthFactor: 0.7),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: PitchySpace.sm),
               SkeletonBox(height: TrendLayout.heightFor(label, scaler), radius: 8),
-              const SizedBox(height: 8),
+              const SizedBox(height: PitchySpace.sm),
               SkeletonLine(style: text.bodySmall, widthFactor: 0.8),
               SkeletonLine(style: text.bodySmall, widthFactor: 0.4),
-              const SizedBox(height: 6),
+              const SizedBox(height: PitchySpace.sm),
               SkeletonLine(style: text.bodySmall, widthFactor: 0.3),
-              const SizedBox(height: 4),
+              const SizedBox(height: PitchySpace.xs),
               // The key is fixed text: laid out invisibly so it takes the same lines.
               Text(trendLegend, style: text.bodySmall?.copyWith(color: Colors.transparent)),
               const SizedBox(height: AppTheme.minTarget), // credit

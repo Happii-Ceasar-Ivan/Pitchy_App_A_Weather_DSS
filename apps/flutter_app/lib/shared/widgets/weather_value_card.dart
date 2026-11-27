@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/motion.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'dashed_border.dart';
@@ -95,7 +96,7 @@ class WeatherValueCard extends StatelessWidget {
       child: InkWell(
         onTap: onToggle,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(PitchySpace.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -116,7 +117,7 @@ class WeatherValueCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: PitchySpace.xs),
               ExcludeSemantics(
                 child: Text(
                   shortSourceName(quantity.label),
@@ -125,7 +126,7 @@ class WeatherValueCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: PitchySpace.sm),
               Semantics(
                 label: semantic,
                 excludeSemantics: true,
@@ -141,7 +142,13 @@ class WeatherValueCard extends StatelessWidget {
                             style: (value == null ? text.titleLarge : text.headlineMedium)
                                 ?.copyWith(color: notCurrent ? palette.inkMuted : palette.ink),
                           ),
-                          if (value != null) TextSpan(text: ' $unit', style: text.titleMedium),
+                          // The unit sits apart from the value: smaller and muted, on the
+                          // same baseline, so values scan faster.
+                          if (value != null)
+                            TextSpan(
+                              text: ' $unit',
+                              style: text.titleSmall?.copyWith(color: palette.inkMuted),
+                            ),
                         ],
                       ),
                       maxLines: 1,
@@ -150,7 +157,7 @@ class WeatherValueCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: PitchySpace.xs),
               SizedBox(
                 height: SkeletonLine.lineHeight(context, text.bodySmall),
                 child: slot == null
@@ -159,7 +166,7 @@ class WeatherValueCard extends StatelessWidget {
                         children: [
                           if (used != null) ...[
                             _LineDot(color: palette.lineFor(used.sourceId)),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: PitchySpace.sm),
                           ],
                           // Scales down a little on a narrow phone rather than
                           // cutting "PHT" (large text uses one card per row).
@@ -176,7 +183,7 @@ class WeatherValueCard extends StatelessWidget {
               // Footer: the state pill (when not Current) and the expand arrow.
               // Always present, so cards keep one height and a state change
               // never moves the layout.
-              const SizedBox(height: 6),
+              const SizedBox(height: PitchySpace.sm),
               SizedBox(
                 height: WeatherValueCard.footerHeight(context),
                 child: Row(
@@ -284,22 +291,22 @@ class _Details extends StatelessWidget {
       children: [
         if (dot != null) ...[
           Padding(
-            padding: const EdgeInsets.only(top: 5),
+            padding: const EdgeInsets.only(top: PitchySpace.xs),
             child: _LineDot(color: dot),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: PitchySpace.sm),
         ],
         Expanded(child: Text(v, style: text.bodyMedium)),
       ],
     );
 
     return Padding(
-      padding: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: PitchySpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Divider(color: palette.hairline),
-          const SizedBox(height: 8),
+          const SizedBox(height: PitchySpace.sm),
           // Side by side when there's room; label above value in narrow cards.
           LayoutBuilder(
             builder: (context, c) {
@@ -309,7 +316,7 @@ class _Details extends StatelessWidget {
                 children: [
                   for (final (k, v, dot) in rows)
                     Padding(
-                      padding: EdgeInsets.symmetric(vertical: stacked ? 4 : 3),
+                      padding: const EdgeInsets.symmetric(vertical: PitchySpace.xs),
                       child: stacked
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,7 +383,7 @@ class _WeatherCardGridState extends State<WeatherCardGrid> {
   String? _expanded;
   bool _showAll = false;
 
-  static const _gap = 10.0;
+  static const _gap = 8.0;
 
   Widget _card(ConsolidatedQuantity q) => WeatherValueCard(
     quantity: q,
@@ -434,7 +441,7 @@ class _WeatherCardGridState extends State<WeatherCardGrid> {
             ],
             if (all.length > widget.maxVisible)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: PitchySpace.xs),
                 child: TextButton.icon(
                   onPressed: () => setState(() => _showAll = !_showAll),
                   icon: Icon(_showAll ? Icons.expand_less : Icons.expand_more),
@@ -461,7 +468,7 @@ class WeatherCardGridSkeleton extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     Widget card() => Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(PitchySpace.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -474,13 +481,13 @@ class WeatherCardGridSkeleton extends StatelessWidget {
                 radius: 4,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: PitchySpace.xs),
             SkeletonLine(style: text.labelLarge, widthFactor: 0.7),
-            const SizedBox(height: 6),
+            const SizedBox(height: PitchySpace.sm),
             SkeletonLine(style: text.headlineMedium, widthFactor: 0.45),
-            const SizedBox(height: 4),
+            const SizedBox(height: PitchySpace.xs),
             SkeletonLine(style: text.bodySmall, widthFactor: 0.6),
-            const SizedBox(height: 6),
+            const SizedBox(height: PitchySpace.sm),
             SizedBox(height: WeatherValueCard.footerHeight(context)),
           ],
         ),
@@ -491,7 +498,7 @@ class WeatherCardGridSkeleton extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, c) {
           final cols = WeatherCardGrid.columns(context, c.maxWidth);
-          const gap = 10.0;
+          const gap = 8.0;
           final rows = (cards / cols).ceil();
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -511,7 +518,7 @@ class WeatherCardGridSkeleton extends StatelessWidget {
                 ),
               ],
               const Padding(
-                padding: EdgeInsets.only(top: 4),
+                padding: EdgeInsets.only(top: PitchySpace.xs),
                 child: SizedBox(height: AppTheme.minTarget),
               ),
             ],

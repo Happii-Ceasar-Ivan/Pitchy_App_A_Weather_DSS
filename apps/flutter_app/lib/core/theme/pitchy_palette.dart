@@ -29,7 +29,8 @@ class CustomSwatch {
 /// Each colour passes 4.5:1 against white. No reds, oranges or yellows, so a
 /// themed colour can never be mistaken for a safety colour.
 const customSwatches = <CustomSwatch>[
-  CustomSwatch('Navy', Color(0xFF0F2540)),
+  // Midnight Navy, the default theme's shell (P-16 update, P-28, 2026-11-27).
+  CustomSwatch('Navy', Color(0xFF031A31)),
   CustomSwatch('Pitch green', Color(0xFF0E3B2E)),
   CustomSwatch('Teal', Color(0xFF0E5E55)),
   CustomSwatch('Royal blue', Color(0xFF1C4FB0)),

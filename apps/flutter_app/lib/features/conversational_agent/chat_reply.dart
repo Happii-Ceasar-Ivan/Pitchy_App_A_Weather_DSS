@@ -45,6 +45,12 @@ class ReferenceGroup {
   final String authority;
   final String version;
   final List<String> sections;
+
+  /// One line: title, authority and version, then the cited sections.
+  String get line => [
+    '$title ($authority, $version)',
+    if (sections.isNotEmpty) sections.join('; '),
+  ].join(' · ');
 }
 
 List<ReferenceGroup> groupReferences(List<GuidanceReference> refs) {
@@ -162,4 +168,11 @@ class ChatReplyView {
   /// The other limitations (assessment ones, keyword-only retrieval, ...).
   final List<Limitation> limitations;
   final List<ReferenceGroup> references;
+
+  /// The reply as plain text for the clipboard: the text, then the sources
+  /// when the reply shows them.
+  String get plainText => [
+    text,
+    if (references.isNotEmpty) ...['', 'Based on', for (final g in references) g.line],
+  ].join('\n');
 }

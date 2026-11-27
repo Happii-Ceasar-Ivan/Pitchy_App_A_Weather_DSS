@@ -1,18 +1,40 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/match.dart';
+import '../models/weather.dart';
 import 'skeletons.dart';
 import 'source_rail.dart' show monoTimeRuns;
 
 /// The strip under the top bar naming the match: venue and kickoff in PHT, with
 /// a way to change the match. Shell-coloured, so it reads as part of the board.
 class KickoffStrip extends StatelessWidget {
-  const KickoffStrip({super.key, required this.match, this.onChange});
+  const KickoffStrip({
+    super.key,
+    required this.match,
+    this.onChange,
+    this.sources,
+    this.sourcesPending = false,
+  });
 
   final MatchContext match;
   final VoidCallback? onChange;
+
+  /// The backend's per-source states for this match, once loaded. Null: no
+  /// summary (failed or saved copy). Only Current counts as current.
+  final List<SourceStatus>? sources;
+
+  /// Weather still loading: the summary's line is kept free, so nothing jumps.
+  final bool sourcesPending;
+
+  /// "2 of 3 sources current", or null when there are no loaded sources.
+  static String? summary(List<SourceStatus>? sources) {
+    if (sources == null || sources.isEmpty) return null;
+    final n = sources.where((s) => s.state == WeatherDataState.current).length;
+    return '$n of ${sources.length} sources current';
+  }
 
   /// Content width from which venue and kickoff sit side by side.
   static const wideWidth = 560.0;
@@ -23,11 +45,18 @@ class KickoffStrip extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Semantics(
       container: true,
-      label: 'Match at ${match.venue.name}, kickoff ${formatPhtDateTime(match.kickoffAt)}',
+      label:
+          'Match at ${match.venue.name}, kickoff ${formatPhtDateTime(match.kickoffAt)}'
+          '${summary(sources) == null ? '' : '. ${summary(sources)}'}',
       child: Container(
         width: double.infinity,
         color: p.shellRaised,
-        padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+        padding: const EdgeInsets.fromLTRB(
+          PitchySpace.lg,
+          PitchySpace.sm,
+          PitchySpace.sm,
+          PitchySpace.sm,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -55,17 +84,33 @@ class KickoffStrip extends StatelessWidget {
                       maxLines: large ? null : 2,
                       overflow: large ? null : TextOverflow.ellipsis,
                     );
-                    return c.maxWidth >= wideWidth && !large
+                    final text0 = summary(sources);
+                    final count = text0 != null
+                        ? Text(
+                            text0,
+                            key: const ValueKey('sources-current'),
+                            style: text.bodySmall?.copyWith(color: p.onShellMuted),
+                          )
+                        : sourcesPending
+                        ? SizedBox(height: SkeletonLine.lineHeight(context, text.bodySmall))
+                        : null;
+                    final head = c.maxWidth >= wideWidth && !large
                         ? Row(
                             children: [
                               Expanded(child: venue),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: PitchySpace.lg),
                               kickoff,
                             ],
                           )
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [venue, kickoff],
+                          );
+                    return count == null
+                        ? head
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [head, count],
                           );
                   },
                 ),
@@ -115,14 +160,23 @@ class KickoffStripSkeleton extends StatelessWidget {
       child: Container(
         width: double.infinity,
         color: p.shellRaised,
-        padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+        padding: const EdgeInsets.fromLTRB(
+          PitchySpace.lg,
+          PitchySpace.sm,
+          PitchySpace.sm,
+          PitchySpace.sm,
+        ),
         child: ConstrainedBox(
           // TextButton's minimum height keeps the real strip at least this tall.
           constraints: const BoxConstraints(minHeight: AppTheme.minTarget),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [line(text.bodyMedium, 200), line(text.titleMedium, 240)],
+            children: [
+              line(text.bodyMedium, 200),
+              line(text.titleMedium, 240),
+              line(text.bodySmall, 150),
+            ],
           ),
         ),
       ),

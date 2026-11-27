@@ -77,6 +77,25 @@ void main() {
     });
   }
 
+  for (final scale in [1.0, 2.0]) {
+    testWidgets('S11: on a wide window lines stop at about 70 characters (${scale}x)', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pumpPitchyApp(tester, location: Routes.privacy, size: const Size(2400, 900));
+      final intro = find.text(PolicyPages.privacy.intro);
+      final width = tester.getSize(intro).width;
+      final measure = PolicyScreen.measure(tester.element(intro));
+      expect(width, lessThanOrEqualTo(measure + 0.5));
+      // 70 characters of body text: roughly 30-38 em at 16 px.
+      expect(measure / (16 * scale), inInclusiveRange(28, 40));
+      // Centred, so the column doesn't hug the left edge.
+      final rect = tester.getRect(intro);
+      expect(rect.left, greaterThan(200));
+    });
+  }
+
   test('every section has a heading and some text', () {
     for (final page in [PolicyPages.privacy, PolicyPages.disclaimer]) {
       for (final s in page.sections) {

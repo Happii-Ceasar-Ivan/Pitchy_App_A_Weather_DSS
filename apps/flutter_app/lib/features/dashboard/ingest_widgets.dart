@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/errors/failure_messages.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/ingestion.dart';
 import '../../shared/models/weather.dart';
@@ -26,7 +27,9 @@ Widget? updateAction(
         ? null
         : 'You can update again at ${formatPhtTime(ingest.waitUntil!)}',
     child: FilledButton.icon(
-      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14)),
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: PitchySpace.lg),
+      ),
       onPressed: ingest.canRequest ? ingest.request : null,
       icon: sending
           ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
@@ -54,7 +57,7 @@ class _Progress extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: PitchySpace.sm),
         decoration: BoxDecoration(
           color: s.background,
           borderRadius: BorderRadius.circular(AppTheme.radiusPill),
@@ -70,7 +73,7 @@ class _Progress extends StatelessWidget {
                 backgroundColor: s.foreground.withValues(alpha: 0.2),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: PitchySpace.sm),
             Text(
               // The count is in the screen-reader label; the visible text stays
               // short so the header keeps its "checked ... PHT" time.
@@ -191,7 +194,7 @@ class IngestNotice extends StatelessWidget {
       container: true,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
+        padding: const EdgeInsets.fromLTRB(PitchySpace.md, PitchySpace.sm, 0, PitchySpace.sm),
         decoration: BoxDecoration(
           color: palette.ground,
           border: Border.all(color: palette.hairline, width: AppTheme.hairline),
@@ -204,20 +207,20 @@ class IngestNotice extends StatelessWidget {
               padding: const EdgeInsets.only(top: 1),
               child: Icon(icon, size: 20, color: iconColor),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: PitchySpace.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: text.titleSmall),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: PitchySpace.xxs),
                   Text(detail, style: text.bodySmall),
                   if (checkAgain)
                     Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: PitchySpace.xs),
                       child: TextButton(
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: PitchySpace.sm),
                           minimumSize: const Size(48, AppTheme.minTarget),
                           tapTargetSize: MaterialTapTargetSize.padded,
                         ),
@@ -235,7 +238,7 @@ class IngestNotice extends StatelessWidget {
                 icon: Icon(Icons.close, size: 18, color: palette.inkMuted),
               )
             else
-              const SizedBox(width: 12),
+              const SizedBox(width: PitchySpace.md),
           ],
         ),
       ),

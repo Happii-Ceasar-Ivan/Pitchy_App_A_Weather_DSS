@@ -154,7 +154,10 @@ void main() {
       'phone-light-table',
       act: (t) async {
         await t.ensureVisible(find.text('Show as table'));
-        await t.tap(find.text('Show as table'));
+        // ensureVisible can park the button under the bottom bar: scroll on.
+        await t.drag(find.byType(Scrollable).first, const Offset(0, -200));
+        await _settle(t);
+        await t.tap(find.text('Show as table').hitTestable());
         await _settle(t);
         await t.ensureVisible(find.text('Hide table'));
       },

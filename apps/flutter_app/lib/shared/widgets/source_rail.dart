@@ -1,9 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'data_state_badge.dart';
+import 'link_text.dart';
 import 'skeletons.dart';
 import 'wait_text.dart';
 import 'weather_value_card.dart' show shortSourceName;
@@ -30,6 +32,7 @@ class SourceRail extends StatefulWidget {
     this.action,
     this.notice,
     this.initiallyExpanded = false,
+    this.attributions,
   });
 
   final List<SourceStatus> sources;
@@ -48,6 +51,10 @@ class SourceRail extends StatefulWidget {
 
   /// Starts with the full lines open (used by tests and reviews).
   final bool initiallyExpanded;
+
+  /// The backend's attributions for this weather. The Open-Meteo credit shows
+  /// under the card when it is among them (or, if null, among the sources).
+  final List<Attribution>? attributions;
 
   @override
   State<SourceRail> createState() => _SourceRailState();
@@ -73,9 +80,14 @@ class _SourceRailState extends State<SourceRail> {
         icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
       ),
     );
-    return Card(
+    final card = Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          PitchySpace.lg,
+          PitchySpace.xxs,
+          PitchySpace.lg,
+          PitchySpace.sm,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -86,7 +98,7 @@ class _SourceRailState extends State<SourceRail> {
               // Large text: the title gets the full width (never broken
               // mid-word), the button and toggle go on their own row.
               Padding(
-                padding: const EdgeInsets.only(top: 10, bottom: 4),
+                padding: const EdgeInsets.only(top: PitchySpace.md, bottom: PitchySpace.xs),
                 child: _RailTitle(checkedAt: checkedAt),
               ),
               if (action != null || sources.isNotEmpty)
@@ -106,15 +118,19 @@ class _SourceRailState extends State<SourceRail> {
                 child: Row(
                   children: [
                     Expanded(child: _RailTitle(checkedAt: checkedAt)),
-                    if (action != null) ...[const SizedBox(width: 8), action],
+                    if (action != null) ...[const SizedBox(width: PitchySpace.sm), action],
                     if (sources.isNotEmpty) toggle,
                   ],
                 ),
               ),
-            if (notice != null) ...[const SizedBox(height: 4), notice, const SizedBox(height: 4)],
+            if (notice != null) ...[
+              const SizedBox(height: PitchySpace.xs),
+              notice,
+              const SizedBox(height: PitchySpace.xs),
+            ],
             if (sources.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: PitchySpace.md),
                 child: Text('No weather sources reported.', style: text.bodyMedium),
               )
             else if (!_expanded)
@@ -133,6 +149,67 @@ class _SourceRailState extends State<SourceRail> {
                   kickoff: kickoff,
                   now: now,
                 ),
+          ],
+        ),
+      ),
+    );
+    final credit =
+        widget.attributions?.any((a) => a.sourceId == openMeteoId) ??
+        sources.any((s) => s.sourceId == openMeteoId);
+    if (!credit) return card;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [card, const OpenMeteoCredit()],
+    );
+  }
+}
+
+/// The source id the backend uses for Open-Meteo.
+const openMeteoId = 'open_meteo';
+
+/// One quiet line under the source rail: the Open-Meteo credit and its link
+/// (the full credits stay on the Credits page). Always one 48 px row tall, so
+/// [SourceRailSkeleton] can reserve the same space.
+class OpenMeteoCredit extends StatelessWidget {
+  const OpenMeteoCredit({super.key});
+
+  static const url = 'https://open-meteo.com/';
+  static const _height = AppTheme.minTarget;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final text = Theme.of(context).textTheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _height),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: PitchySpace.lg),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text('Weather data by ', style: text.bodySmall?.copyWith(color: p.inkMuted)),
+            Semantics(
+              link: true,
+              label: 'Open-Meteo.com, opens in the browser',
+              excludeSemantics: true,
+              child: InkWell(
+                onTap: () => openExternalLink(context, Uri.parse(url)),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: _height),
+                  child: Align(
+                    widthFactor: 1,
+                    child: Text(
+                      'Open-Meteo.com',
+                      style: text.bodySmall?.copyWith(
+                        color: p.accent,
+                        decoration: TextDecoration.underline,
+                        decorationColor: p.accent,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -208,7 +285,7 @@ class SourceSummaryRow extends StatelessWidget {
       // Large text or a narrow phone: one line per source (name, then its
       // pill), so "PAGASA ATMO" is never cut.
       return Padding(
-        padding: const EdgeInsets.only(top: 2, bottom: 6),
+        padding: const EdgeInsets.only(top: PitchySpace.xxs, bottom: PitchySpace.xs),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -218,11 +295,11 @@ class SourceSummaryRow extends StatelessWidget {
                 label: '${s.sourceName}: ${spokenStateWord(context, s.state)}',
                 excludeSemantics: true,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: PitchySpace.xs),
                   child: Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 4,
+                    spacing: PitchySpace.sm,
+                    runSpacing: PitchySpace.xs,
                     children: [
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -232,7 +309,7 @@ class SourceSummaryRow extends StatelessWidget {
                             filled: filled(s),
                             surface: palette.surface,
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: PitchySpace.sm),
                           Flexible(
                             child: Text(shortSourceName(s.sourceName), style: text.labelMedium),
                           ),
@@ -248,7 +325,7 @@ class SourceSummaryRow extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.only(top: 2, bottom: 6),
+      padding: const EdgeInsets.only(top: PitchySpace.xxs, bottom: PitchySpace.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -269,7 +346,7 @@ class SourceSummaryRow extends StatelessWidget {
                           filled: filled(sources[i]),
                           surface: palette.surface,
                         ),
-                        const SizedBox(width: 5),
+                        const SizedBox(width: PitchySpace.xs),
                         Expanded(
                           child: Text(
                             shortSourceName(sources[i].sourceName),
@@ -281,7 +358,7 @@ class SourceSummaryRow extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: PitchySpace.xs),
                     DataStateBadge(state: sources[i].state, dense: true),
                   ],
                 ),
@@ -337,6 +414,16 @@ class _SourceLine extends StatelessWidget {
     return sameDay ? formatPhtTime(t) : formatPhtDateTime(t);
   }
 
+  /// Under 24 h: the clock time and the age. Older: the age, then the exact
+  /// PHT day and time, so "2 d ago" can always be checked against a date.
+  String _fetchedLine(DateTime t) {
+    final age = formatAge(t, now: now);
+    if (now.toUtc().difference(t.toUtc()) < const Duration(hours: 24)) {
+      return 'Fetched ${_fetched(t)} · $age';
+    }
+    return 'Fetched $age (${formatPhtDateTime(t)})';
+  }
+
   String _detail() {
     final p = source.provenance;
     final base = switch (source.state) {
@@ -345,9 +432,7 @@ class _SourceLine extends StatelessWidget {
             ? 'Current'
             : 'Current until ${formatPhtTime(source.currentUntil!)}',
       WeatherDataState.stale =>
-        p?.retrievedAt == null
-            ? 'Not current'
-            : 'Fetched ${_fetched(p!.retrievedAt!)} · ${formatAge(p.retrievedAt!, now: now)}',
+        p?.retrievedAt == null ? 'Not current' : _fetchedLine(p!.retrievedAt!),
       WeatherDataState.updating => 'Updating now',
       WeatherDataState.missing => 'No forecast stored for this match yet',
       WeatherDataState.unavailable =>
@@ -389,10 +474,10 @@ class _SourceLine extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: PitchySpace.sm),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: PitchySpace.sm),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -406,11 +491,11 @@ class _SourceLine extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: PitchySpace.sm),
                         DataStateBadge(state: source.state, dense: true),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: PitchySpace.xxs),
                     // One line, so every row keeps the skeleton's shape; the
                     // full text is in the tooltip and the screen-reader label.
                     Tooltip(
@@ -425,12 +510,12 @@ class _SourceLine extends StatelessWidget {
                     // from the backend's fields; only while it must wait.
                     if (wait != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: PitchySpace.xxs),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(top: 1, right: 4),
+                              padding: const EdgeInsets.only(top: 1, right: PitchySpace.xs),
                               child: Icon(
                                 Icons.schedule,
                                 size: MediaQuery.textScalerOf(context).scale(14),
@@ -441,7 +526,7 @@ class _SourceLine extends StatelessWidget {
                           ],
                         ),
                       ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: PitchySpace.sm),
                     ValidityBar(
                       window: coverage,
                       validFrom: p?.forecastValidFrom,
@@ -579,7 +664,7 @@ class ValidityBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: PitchySpace.xxs),
           // Kickoff label sits under its tick; the window ends are shown only
           // where they can't collide with it.
           Stack(
@@ -695,95 +780,113 @@ class SourceRailSkeleton extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return SkeletonPulse(
       label: 'Loading weather sources',
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header: same shapes as the rail (stacked only at large text).
-              if (AppTheme.isLargeText(context)) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 10, bottom: 4),
-                  child: SkeletonLine(style: text.labelLarge, widthFactor: 0.9),
-                ),
-                const SizedBox(height: AppTheme.minTarget),
-              ] else
-                SizedBox(
-                  height: AppTheme.minTarget,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: SkeletonLine(style: text.labelLarge, width: 190),
-                  ),
-                ),
-              // Summary: one line per source or one column per source, by the
-              // same width rule as [SourceSummaryRow].
-              LayoutBuilder(
-                builder: (context, c) => stackedSources(context, c.maxWidth)
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 2, bottom: 6),
-                        child: Column(
-                          children: [
-                            for (var i = 0; i < lines; i++)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(
-                                  children: [
-                                    const SkeletonBox(width: 10, height: 10, radius: 5),
-                                    const SizedBox(width: 6),
-                                    SkeletonLine(style: text.labelMedium, width: 110),
-                                    const SizedBox(width: 8),
-                                    SkeletonBox(
-                                      width: 120,
-                                      height: DataStateBadge.denseHeight(context),
-                                      radius: AppTheme.radiusPill,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.only(top: 2, bottom: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (var i = 0; i < lines; i++) ...[
-                              if (i > 0) const SizedBox(width: SourceSummaryRow._gap),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                PitchySpace.lg,
+                PitchySpace.xxs,
+                PitchySpace.lg,
+                PitchySpace.sm,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: same shapes as the rail (stacked only at large text).
+                  if (AppTheme.isLargeText(context)) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: PitchySpace.md, bottom: PitchySpace.xs),
+                      child: SkeletonLine(style: text.labelLarge, widthFactor: 0.9),
+                    ),
+                    const SizedBox(height: AppTheme.minTarget),
+                  ] else
+                    SizedBox(
+                      height: AppTheme.minTarget,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: SkeletonLine(style: text.labelLarge, width: 190),
+                      ),
+                    ),
+                  // Summary: one line per source or one column per source, by the
+                  // same width rule as [SourceSummaryRow].
+                  LayoutBuilder(
+                    builder: (context, c) => stackedSources(context, c.maxWidth)
+                        ? Padding(
+                            padding: const EdgeInsets.only(
+                              top: PitchySpace.xxs,
+                              bottom: PitchySpace.xs,
+                            ),
+                            child: Column(
+                              children: [
+                                for (var i = 0; i < lines; i++)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: PitchySpace.xs),
+                                    child: Row(
                                       children: [
                                         const SkeletonBox(width: 10, height: 10, radius: 5),
-                                        const SizedBox(width: 5),
-                                        Expanded(
-                                          child: SkeletonLine(
-                                            style: text.labelMedium,
-                                            widthFactor: 0.8,
-                                          ),
+                                        const SizedBox(width: PitchySpace.sm),
+                                        SkeletonLine(style: text.labelMedium, width: 110),
+                                        const SizedBox(width: PitchySpace.sm),
+                                        SkeletonBox(
+                                          width: 120,
+                                          height: DataStateBadge.denseHeight(context),
+                                          radius: AppTheme.radiusPill,
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    SkeletonBox(
-                                      width: 76,
-                                      height: DataStateBadge.denseHeight(context),
-                                      radius: AppTheme.radiusPill,
+                                  ),
+                              ],
+                            ),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.only(
+                              top: PitchySpace.xxs,
+                              bottom: PitchySpace.xs,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (var i = 0; i < lines; i++) ...[
+                                  if (i > 0) const SizedBox(width: SourceSummaryRow._gap),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const SkeletonBox(width: 10, height: 10, radius: 5),
+                                            const SizedBox(width: PitchySpace.xs),
+                                            Expanded(
+                                              child: SkeletonLine(
+                                                style: text.labelMedium,
+                                                widthFactor: 0.8,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: PitchySpace.xs),
+                                        SkeletonBox(
+                                          width: 76,
+                                          height: DataStateBadge.denseHeight(context),
+                                          radius: AppTheme.radiusPill,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          // The Open-Meteo credit line's room, so it lands without a jump.
+          const SizedBox(height: OpenMeteoCredit._height),
+        ],
       ),
     );
   }

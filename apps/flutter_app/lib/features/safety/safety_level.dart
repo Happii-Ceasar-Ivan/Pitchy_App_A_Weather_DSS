@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/spacing.dart';
 
 /// How strongly a backend level is shown (team decision P-19, updated
 /// 2026-11-25, option A). The backend decides the level and sends its
@@ -92,7 +93,7 @@ class SafetyLevelPill extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         constraints: const BoxConstraints(minHeight: minHeight),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: PitchySpace.md, vertical: PitchySpace.sm),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(AppTheme.radiusCard),
@@ -106,7 +107,7 @@ class SafetyLevelPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(shownIcon, size: 20, color: fg),
-            const SizedBox(width: 8),
+            const SizedBox(width: PitchySpace.sm),
             Flexible(
               child: Text(
                 label,

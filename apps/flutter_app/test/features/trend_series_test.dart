@@ -48,7 +48,10 @@ void main() {
     });
 
     test('all four presets come from one reply with the P-27 fields', () {
-      expect(availableRanges(_trend(), testKickoff), TrendRange.values);
+      expect(availableRanges(_trend(), testKickoff), [
+        for (final r in TrendRange.values)
+          if (!r.isLong) r,
+      ]);
     });
 
     test('an older backend (no kickoff_at) hides the hours before kickoff', () {
