@@ -334,16 +334,16 @@ Rules:
 - The Font Privacy Rule. All fonts are bundled; nothing loads a font at runtime (P-28).
 - The Flat Board Rule. No shadows on the board; one navy-tinted shadow for overlays only.
 - The One Hairline Rule. Every rule, border and divider is 1px in the hairline colour.
-- The Rare Motion Rule. Animate only overlays, expand and collapse, a new chat reply, the Updating spinner and press feedback; never tabs, values, or safety and state elements.
-- The Reduced Motion Rule. Opacity only, 150ms or less; exits faster than entrances.
-- The Plain Curve Rule. No ease-in, bounce, stagger or scale.
+- The Rare Motion Rule. Animate only overlays, expand and collapse, a new chat reply, the Updating spinner, press feedback, step changes, validation messages, the trend chart's Value switch (the drawing only; readout and range text change at once) and the trend hour marker; never tabs, theme switches, values, or safety and state elements.
+- The Reduced Motion Rule. Opacity only, 150ms or less; size changes are instant; exits faster than entrances.
+- The Plain Curve Rule. No ease-in, bounce or stagger. Scale only as the 0.97 press on standalone buttons; one critically damped spring only for the trend hour marker (P-29).
 Don't:
 - Don't theme, tint or let users customise the state colours or the safety ramp.
 - Don't use palette.accent or any themed colour for a hazard level.
 - Don't use yellow, orange or red as a source line colour, a swatch or decoration.
 - Don't show any state by colour alone.
 - Don't add shadows or elevation to cards, bars, chips or the rail; only overlays get the one navy-tinted shadow.
-- Don't animate tabs, values, safety or state elements, and don't use ease-in, bounce, stagger or scale.
+- Don't animate tabs, theme switches, values, safety or state elements; don't use ease-in, bounce or stagger; don't scale anything but a pressed standalone button (never cards, rows, data chips, nav items or hazard elements).
 - Don't show stale, missing or unavailable data in a way that could read as Current, and don't hide it.
 - Don't set figures without tabular spacing.
 - Don't load any font at runtime or add a font-fetching package.

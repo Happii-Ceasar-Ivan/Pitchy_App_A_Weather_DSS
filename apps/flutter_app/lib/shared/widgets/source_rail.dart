@@ -6,6 +6,7 @@ import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'data_state_badge.dart';
 import 'link_text.dart';
+import 'press_scale.dart';
 import 'skeletons.dart';
 import 'wait_text.dart';
 import 'weather_value_card.dart' show shortSourceName;
@@ -74,10 +75,12 @@ class _SourceRailState extends State<SourceRail> {
       expanded: _expanded,
       label: _expanded ? 'Hide source details' : 'Show source details',
       excludeSemantics: true,
-      child: IconButton(
-        onPressed: _toggle,
-        tooltip: _expanded ? 'Hide source details' : 'Show source details',
-        icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+      child: PitchyPressScale(
+        child: IconButton(
+          onPressed: _toggle,
+          tooltip: _expanded ? 'Hide source details' : 'Show source details',
+          icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+        ),
       ),
     );
     final card = Card(

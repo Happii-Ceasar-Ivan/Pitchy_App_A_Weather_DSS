@@ -8,6 +8,7 @@ import '../../core/routing/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/pitchy_logo.dart';
+import '../../shared/widgets/press_scale.dart';
 import 'update_dialog.dart';
 
 /// Quick Settings (P-17): a modal drawer from the left with the Light/Dark
@@ -63,10 +64,12 @@ class QuickSettingsDrawer extends StatelessWidget {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: palette.onShell),
-                      tooltip: 'Close',
-                      onPressed: () => Navigator.of(context).pop(),
+                    PitchyPressScale(
+                      child: IconButton(
+                        icon: Icon(Icons.close, color: palette.onShell),
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
                     ),
                   ],
                 ),
@@ -110,10 +113,12 @@ class QuickSettingsDrawer extends StatelessWidget {
               Divider(color: palette.hairline),
               Padding(
                 padding: const EdgeInsets.all(PitchySpace.md),
-                child: FilledButton.icon(
-                  onPressed: () => _open(context, Routes.settings),
-                  icon: const Icon(Icons.settings),
-                  label: const Text('Open full settings'),
+                child: PitchyPressScale(
+                  child: FilledButton.icon(
+                    onPressed: () => _open(context, Routes.settings),
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Open full settings'),
+                  ),
                 ),
               ),
             ],

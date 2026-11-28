@@ -2,12 +2,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/spacing.dart';
+import 'pitchy_snack_bar.dart';
 
 /// Opens a fixed app URL in the system browser; says so if it can't.
 Future<void> openExternalLink(BuildContext context, Uri url) async {
   final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
   if (!ok && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    showPitchySnackBar(
+      context,
       SnackBar(content: Text('Couldn’t open the link. It is $url')),
     );
   }

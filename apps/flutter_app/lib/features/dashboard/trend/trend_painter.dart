@@ -133,11 +133,36 @@ class TrendLayout {
 double _safeClamp(double v, double lo, double hi) => hi < lo ? lo : v.clamp(lo, hi);
 
 class TrendPainter extends CustomPainter {
-  TrendPainter({required this.series, required this.style, required this.selected});
+  TrendPainter({
+    required this.series,
+    required this.style,
+    required this.selected,
+    this.marker,
+  }) : super(repaint: marker);
 
   final TrendSeries series;
   final TrendChartStyle style;
   final int? selected;
+
+  /// Where the selected-hour line sits, as a position between hours (0 is the
+  /// first hour's middle, 1.5 halfway from the second to the third). Moves
+  /// only the line: the value, ring and readout follow [selected] at once.
+  /// Null: the line sits on [selected].
+  final Animation<double>? marker;
+
+  /// The x of the selected-hour line, or null when there is none.
+  double? markerX(TrendLayout l) {
+    final pts = series.points;
+    if (pts.isEmpty) return null;
+    final sel = selected;
+    if (sel == null || sel >= pts.length) return null;
+    final pos = marker?.value;
+    if (pos == null) return l.xOf(pts[sel].middle);
+    final at = pos.clamp(0.0, pts.length - 1.0);
+    final lo = at.floor(), hi = at.ceil();
+    final a = l.xOf(pts[lo].middle), b = l.xOf(pts[hi].middle);
+    return a + (b - a) * (at - lo);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -186,9 +211,8 @@ class TrendPainter extends CustomPainter {
 
     // Selected hour: a thin solid line through it (not a shaded column, so
     // it can't be confused with the past-hours band).
-    final sel = selected;
-    if (sel != null && sel < series.points.length) {
-      final x = l.xOf(series.points[sel].middle);
+    final x = markerX(l);
+    if (x != null) {
       canvas.drawLine(
         Offset(x, plot.top),
         Offset(x, plot.bottom),
@@ -379,5 +403,8 @@ class TrendPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(TrendPainter old) =>
-      old.series != series || old.selected != selected || old.style != style;
+      old.series != series ||
+      old.selected != selected ||
+      old.style != style ||
+      old.marker != marker;
 }

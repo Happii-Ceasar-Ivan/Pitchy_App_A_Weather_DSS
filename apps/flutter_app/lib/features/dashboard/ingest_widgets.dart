@@ -6,6 +6,7 @@ import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/ingestion.dart';
 import '../../shared/models/weather.dart';
+import '../../shared/widgets/press_scale.dart';
 import '../../shared/widgets/wait_text.dart';
 import '../../shared/widgets/weather_value_card.dart' show shortSourceName;
 import 'ingestion_controller.dart';
@@ -26,15 +27,18 @@ Widget? updateAction(
     hint: ingest.waitUntil == null
         ? null
         : 'You can update again at ${formatPhtTime(ingest.waitUntil!)}',
-    child: FilledButton.icon(
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: PitchySpace.lg),
+    child: PitchyPressScale(
+      enabled: ingest.canRequest,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: PitchySpace.lg),
+        ),
+        onPressed: ingest.canRequest ? ingest.request : null,
+        icon: sending
+            ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.sync, size: 18),
+        label: Text(sending ? 'Sending' : 'Update'),
       ),
-      onPressed: ingest.canRequest ? ingest.request : null,
-      icon: sending
-          ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-          : const Icon(Icons.sync, size: 18),
-      label: Text(sending ? 'Sending' : 'Update'),
     ),
   );
 }
@@ -218,6 +222,7 @@ class IngestNotice extends StatelessWidget {
                   if (checkAgain)
                     Padding(
                       padding: const EdgeInsets.only(top: PitchySpace.xs),
+                      // Inside a data-state banner: ripple only, no press scale (P-29).
                       child: TextButton(
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: PitchySpace.sm),
@@ -232,6 +237,7 @@ class IngestNotice extends StatelessWidget {
               ),
             ),
             if (onDismiss != null)
+              // Inside a data-state banner: ripple only, no press scale (P-29).
               IconButton(
                 tooltip: 'Dismiss',
                 onPressed: onDismiss,

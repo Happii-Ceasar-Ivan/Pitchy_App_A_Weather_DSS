@@ -15,7 +15,10 @@ import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/conversation.dart';
 import '../../shared/models/match.dart';
+import '../../shared/widgets/pitchy_crossfade.dart';
+import '../../shared/widgets/pitchy_snack_bar.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import '../../shared/widgets/press_scale.dart';
 import '../../shared/widgets/request_states.dart';
 import '../../shared/widgets/retry_at.dart';
 import '../../shared/widgets/skeletons.dart';
@@ -91,6 +94,7 @@ class _ChatState extends State<_Chat> {
   final _scroll = ScrollController();
   final _inputFocus = FocusNode();
   int _seen = 0;
+  final _composerKey = GlobalKey();
 
   /// Replies that arrived during this session and have not played their cue yet.
   /// History never enters this set; each reply plays its cue once.
@@ -157,6 +161,9 @@ class _ChatState extends State<_Chat> {
     });
   }
 
+  /// Height of the composer now, so a floating snackbar can sit above it.
+  double get composerHeight => _composerKey.currentContext?.size?.height ?? 0;
+
   void _send() {
     final text = _input.text;
     if (!_chat.canSend || !ChatController.isValidQuestion(text)) return;
@@ -174,100 +181,115 @@ class _ChatState extends State<_Chat> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: const PitchyTopBar(title: 'Ask Pitchy'),
+    // The role (in the controller) and the typed text (in [_input]) live above
+    // the switcher, so they survive the welcome -> chat change.
     body: ListenableBuilder(
       listenable: _chat,
       builder: (context, _) {
         final entries = _chat.entries;
-        if (!_started && entries.isEmpty && !_chat.sending) {
-          return _EntryScreen(
-            role: _chat.role,
-            onRole: _chat.setRole,
-            match: widget.match,
-            onStart: () => setState(() => _started = true),
-          );
-        }
-        return LayoutBuilder(
-          builder: (context, pane) {
-            final side = _sideFor(pane.maxWidth);
-            final compact = _isCompact(context);
-            final empty = entries.isEmpty && !_chat.sending;
-            // Short pane for the text size (a 640 px phone at 2.0x): the notice
-            // scrolls with the content instead of pinning space the chat needs.
-            final shortPane = pane.maxHeight < 360 * MediaQuery.textScalerOf(context).scale(1);
-            final inlineNotice = empty || shortPane;
-            final notice = _AgentNotice(
-              key: const ValueKey('chat-notice'),
-              match: widget.match,
-              side: side,
-              compact: compact,
-            );
-            return Column(
-              children: [
-                if (!inlineNotice) notice,
-                Expanded(
-                  child: entries.isEmpty && !_chat.sending
-                      ? _Welcome(
-                          questions: _chat.isGeneral ? generalStarterQuestions : starterQuestions,
-                          onStarter: _useStarter,
-                          side: side,
-                          // Before the first question the notice scrolls with the
-                          // content, so a small screen at large text never overflows.
-                          header: notice,
-                        )
-                      : ListView(
-                          controller: _scroll,
-                          padding: EdgeInsets.only(
-                            top: shortPane ? 0 : PitchySpace.lg,
-                            bottom: PitchySpace.lg,
-                          ),
-                          children: [
-                            if (shortPane) notice,
-                            for (final e in entries)
-                              Padding(
-                                key: ValueKey('entry${e.id}'),
-                                padding: EdgeInsets.symmetric(horizontal: side),
-                                child: switch (e) {
-                                  UserQuestion() => _UserBubble(
-                                    key: ValueKey('q${e.id}'),
-                                    question: e,
-                                    canResend: _chat.canSend,
-                                    onResend: () => unawaited(_chat.resend(e)),
-                                  ),
-                                  BotReply() => _ArrivalCue(
-                                    key: ValueKey('arrive${e.id}'),
-                                    // Only the newest reply, once.
-                                    play: e.id == _lastReplyId && _arrived.remove(e.id),
-                                    child: _BotBubble(
-                                      key: ValueKey('r${e.id}'),
-                                      reply: e.response,
-                                    ),
-                                  ),
-                                },
-                              ),
-                            if (_chat.sending)
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: side),
-                                child: const _Thinking(),
-                              ),
-                          ],
-                        ),
+        final entry = !_started && entries.isEmpty && !_chat.sending;
+        return PitchyCrossfade(
+          child: entry
+              ? _EntryScreen(
+                  key: const ValueKey('chat-entry'),
+                  role: _chat.role,
+                  onRole: _chat.setRole,
+                  match: widget.match,
+                  onStart: () => setState(() => _started = true),
+                )
+              : KeyedSubtree(
+                  key: const ValueKey('chat-pane'),
+                  child: _buildChat(context, entries),
                 ),
-                _Composer(
-                  key: const ValueKey('chat-composer'),
-                  chat: _chat,
-                  input: _input,
-                  focus: _inputFocus,
-                  onSend: _send,
-                  side: side,
-                  compact: compact,
-                ),
-              ],
-            );
-          },
         );
       },
     ),
   );
+
+  Widget _buildChat(BuildContext context, List<ChatEntry> entries) {
+    return LayoutBuilder(
+      builder: (context, pane) {
+        final side = _sideFor(pane.maxWidth);
+        final compact = _isCompact(context);
+        final empty = entries.isEmpty && !_chat.sending;
+        // Short pane for the text size (a 640 px phone at 2.0x): the notice
+        // scrolls with the content instead of pinning space the chat needs.
+        final shortPane = pane.maxHeight < 360 * MediaQuery.textScalerOf(context).scale(1);
+        final inlineNotice = empty || shortPane;
+        final notice = _AgentNotice(
+          key: const ValueKey('chat-notice'),
+          match: widget.match,
+          side: side,
+          compact: compact,
+        );
+        return Column(
+          children: [
+            if (!inlineNotice) notice,
+            Expanded(
+              child: entries.isEmpty && !_chat.sending
+                  ? _Welcome(
+                      questions: _chat.isGeneral ? generalStarterQuestions : starterQuestions,
+                      onStarter: _useStarter,
+                      side: side,
+                      // Before the first question the notice scrolls with the
+                      // content, so a small screen at large text never overflows.
+                      header: notice,
+                    )
+                  : ListView(
+                      controller: _scroll,
+                      padding: EdgeInsets.only(
+                        top: shortPane ? 0 : PitchySpace.lg,
+                        bottom: PitchySpace.lg,
+                      ),
+                      children: [
+                        if (shortPane) notice,
+                        for (final e in entries)
+                          Padding(
+                            key: ValueKey('entry${e.id}'),
+                            padding: EdgeInsets.symmetric(horizontal: side),
+                            child: switch (e) {
+                              UserQuestion() => _UserBubble(
+                                key: ValueKey('q${e.id}'),
+                                question: e,
+                                canResend: _chat.canSend,
+                                onResend: () => unawaited(_chat.resend(e)),
+                              ),
+                              BotReply() => _ArrivalCue(
+                                key: ValueKey('arrive${e.id}'),
+                                // Only the newest reply, once.
+                                play: e.id == _lastReplyId && _arrived.remove(e.id),
+                                child: _BotBubble(
+                                  key: ValueKey('r${e.id}'),
+                                  reply: e.response,
+                                ),
+                              ),
+                            },
+                          ),
+                        if (_chat.sending)
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: side),
+                            child: const _Thinking(),
+                          ),
+                      ],
+                    ),
+            ),
+            KeyedSubtree(
+              key: _composerKey,
+              child: _Composer(
+                key: const ValueKey('chat-composer'),
+                chat: _chat,
+                input: _input,
+                focus: _inputFocus,
+                onSend: _send,
+                side: side,
+                compact: compact,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 /// Always visible above the conversation: what Ask Pitchy is, and what it isn't.
@@ -450,6 +472,7 @@ class _Welcome extends StatelessWidget {
 /// general chat and Set up a match stays on offer for current conditions.
 class _EntryScreen extends StatelessWidget {
   const _EntryScreen({
+    super.key,
     required this.role,
     required this.onRole,
     required this.match,
@@ -551,10 +574,12 @@ class _EntryScreen extends StatelessWidget {
                 const SizedBox(height: PitchySpace.xl),
                 _StartButton(role: role, onStart: onStart),
                 const SizedBox(height: PitchySpace.md),
-                OutlinedButton.icon(
-                  onPressed: () => context.push(Routes.matchSetup),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Set up a match'),
+                PitchyPressScale(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(Routes.matchSetup),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Set up a match'),
+                  ),
                 ),
               ],
             ],
@@ -614,10 +639,13 @@ class _StartButton extends StatelessWidget {
   final VoidCallback onStart;
 
   @override
-  Widget build(BuildContext context) => FilledButton.icon(
-    onPressed: role == null ? null : onStart,
-    icon: const Icon(Icons.forum_outlined),
-    label: Text(role == null ? 'Choose your role to start' : 'Start chatting'),
+  Widget build(BuildContext context) => PitchyPressScale(
+    enabled: role != null,
+    child: FilledButton.icon(
+      onPressed: role == null ? null : onStart,
+      icon: const Icon(Icons.forum_outlined),
+      label: Text(role == null ? 'Choose your role to start' : 'Start chatting'),
+    ),
   );
 }
 
@@ -658,13 +686,15 @@ class _MatchSummary extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(
-            onPressed: () {
-              // Same as the dashboard's Change match: the form starts filled in.
-              AppScope.of(context).match.draftFromActive();
-              context.push(Routes.matchSetup);
-            },
-            child: const Text('Change'),
+          PitchyPressScale(
+            child: TextButton(
+              onPressed: () {
+                // Same as the dashboard's Change match: the form starts filled in.
+                AppScope.of(context).match.draftFromActive();
+                context.push(Routes.matchSetup);
+              },
+              child: const Text('Change'),
+            ),
           ),
         ],
       ),
@@ -1003,14 +1033,16 @@ class _BotBubble extends StatelessWidget {
                 ),
                 // De-emphasised; the 48 dp target is not allowed to grow the row
                 // beyond the notice's own height by more than the button itself.
-                IconButton(
-                  tooltip: 'Copy reply',
-                  icon: Icon(Icons.copy_outlined, size: 20, color: palette.inkMuted),
-                  constraints: const BoxConstraints.tightFor(
-                    width: AppTheme.minTarget,
-                    height: AppTheme.minTarget,
+                PitchyPressScale(
+                  child: IconButton(
+                    tooltip: 'Copy reply',
+                    icon: Icon(Icons.copy_outlined, size: 20, color: palette.inkMuted),
+                    constraints: const BoxConstraints.tightFor(
+                      width: AppTheme.minTarget,
+                      height: AppTheme.minTarget,
+                    ),
+                    onPressed: () => _copy(context, view.plainText),
                   ),
-                  onPressed: () => _copy(context, view.plainText),
                 ),
               ],
             ),
@@ -1022,11 +1054,18 @@ class _BotBubble extends StatelessWidget {
 }
 
 Future<void> _copy(BuildContext context, String text) async {
-  final messenger = ScaffoldMessenger.of(context);
+  // Above the composer, not over it (S16): measured before the await.
+  final above = context.findAncestorStateOfType<_ChatState>()?.composerHeight ?? 0;
   await Clipboard.setData(ClipboardData(text: text));
-  messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(const SnackBar(content: Text('Reply copied')));
+  if (!context.mounted) return;
+  showPitchySnackBar(
+    context,
+    SnackBar(
+      content: const Text('Reply copied'),
+      behavior: SnackBarBehavior.floating,
+      margin: EdgeInsets.fromLTRB(PitchySpace.lg, 0, PitchySpace.lg, above + PitchySpace.sm),
+    ),
+  );
 }
 
 class _ReplyCard extends StatelessWidget {
@@ -1212,19 +1251,22 @@ class _Composer extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: PitchySpace.sm),
-                      IconButton.filled(
-                        tooltip: 'Send question',
-                        constraints: const BoxConstraints.tightFor(
-                          width: AppTheme.minTarget,
-                          height: AppTheme.minTarget,
+                      PitchyPressScale(
+                        enabled: ready,
+                        child: IconButton.filled(
+                          tooltip: 'Send question',
+                          constraints: const BoxConstraints.tightFor(
+                            width: AppTheme.minTarget,
+                            height: AppTheme.minTarget,
+                          ),
+                          onPressed: ready ? onSend : null,
+                          icon: chat.sending
+                              ? const SizedBox.square(
+                                  dimension: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                                )
+                              : const Icon(Icons.send),
                         ),
-                        onPressed: ready ? onSend : null,
-                        icon: chat.sending
-                            ? const SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2.5),
-                              )
-                            : const Icon(Icons.send),
                       ),
                     ],
                   );

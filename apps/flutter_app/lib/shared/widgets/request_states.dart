@@ -141,6 +141,8 @@ class ErrorState extends StatelessWidget {
               ? 'Pitchy’s server is limiting requests. Wait a few minutes, then try again.'
               : 'The server asked to wait until ${formatPhtTime(retryAt)}. That time has passed.',
           action: canRetry && onRetry != null
+              // A request-error state: ripple only, no press scale (P-29), as
+              // in the Safety tab's own retry buttons.
               ? OutlinedButton.icon(
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh),

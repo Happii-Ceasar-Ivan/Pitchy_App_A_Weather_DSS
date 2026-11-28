@@ -1,14 +1,18 @@
+import 'package:flutter/physics.dart' show SpringSimulation;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/app_scope.dart';
 import '../../../core/state/loadable.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/motion.dart';
 import '../../../core/theme/spacing.dart';
 import '../../../core/utils/pht_time.dart';
 import '../../../shared/models/weather.dart';
 import '../../../shared/widgets/data_state_badge.dart';
 import '../../../shared/widgets/link_text.dart';
+import '../../../shared/widgets/pitchy_crossfade.dart';
+import '../../../shared/widgets/press_scale.dart';
 import '../../../shared/widgets/request_states.dart';
 import '../../../shared/widgets/skeletons.dart';
 import '../../../shared/widgets/weather_icons.dart';
@@ -260,10 +264,12 @@ class _TrendCardState extends State<TrendCard> {
               _Footer(series: series, index: selected, weather: w, now: widget.now),
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _table = !_table),
-                  icon: Icon(_table ? Icons.expand_less : Icons.table_rows_outlined),
-                  label: Text(_table ? 'Hide table' : 'Show as table'),
+                child: PitchyPressScale(
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => _table = !_table),
+                    icon: Icon(_table ? Icons.expand_less : Icons.table_rows_outlined),
+                    label: Text(_table ? 'Hide table' : 'Show as table'),
+                  ),
                 ),
               ),
               if (_table) _Table(series: series, now: widget.now),
@@ -434,7 +440,7 @@ class _Readout extends StatelessWidget {
   }
 }
 
-class _Chart extends StatelessWidget {
+class _Chart extends StatefulWidget {
   const _Chart({
     required this.series,
     required this.selected,
@@ -452,7 +458,71 @@ class _Chart extends StatelessWidget {
   final ValueChanged<int> onMove;
 
   @override
+  State<_Chart> createState() => _ChartState();
+}
+
+class _ChartState extends State<_Chart> with SingleTickerProviderStateMixin {
+  /// The selected-hour line's position between hours (an index, fractional
+  /// while it glides). Only the line moves; everything else is instant.
+  late final AnimationController _glide = AnimationController.unbounded(
+    vsync: this,
+    value: (widget.selected ?? 0).toDouble(),
+  );
+
+  /// True while a finger drags across the chart: the line follows it directly.
+  bool _scrubbing = false;
+
+  /// The hour the scrub last landed on, so an edge buzzes once per arrival.
+  int? _lastScrub;
+
+  @override
+  void didUpdateWidget(_Chart old) {
+    super.didUpdateWidget(old);
+    final to = widget.selected;
+    if (to == null) return;
+    // Another value or range is a different chart: no glide across it.
+    final sameChart =
+        old.series.quantity == widget.series.quantity &&
+        old.series.start == widget.series.start &&
+        old.series.end == widget.series.end;
+    if (old.selected == to && sameChart) return;
+    final from = _glide.value;
+    if (_scrubbing || !sameChart || !PitchyMotion.of(context).spring) {
+      _glide
+        ..stop()
+        ..value = to.toDouble();
+      return;
+    }
+    _glide.animateWith(SpringSimulation(PitchyMotion.spring, from, to.toDouble(), _glide.velocity));
+  }
+
+  @override
+  void dispose() {
+    _glide.dispose();
+    super.dispose();
+  }
+
+  /// A finger moved to [hit] while dragging: the line follows at once, and
+  /// the first and last hour give one tick each time the finger arrives.
+  void _scrubTo(int hit) {
+    final last = widget.series.points.length - 1;
+    if ((hit == 0 || hit == last) && hit != _lastScrub) HapticFeedback.selectionClick();
+    _lastScrub = hit;
+  }
+
+  void _endScrub() {
+    _scrubbing = false;
+    _lastScrub = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final TrendSeries series = widget.series;
+    final int? selected = widget.selected;
+    final FocusNode focus = widget.focus;
+    final DateTime now = widget.now;
+    final ValueChanged<int> onSelect = widget.onSelect;
+    final ValueChanged<int> onMove = widget.onMove;
     final palette = context.palette;
     final text = Theme.of(context).textTheme;
     final scaler = MediaQuery.textScalerOf(context);
@@ -529,33 +599,51 @@ class _Chart extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, c) {
               final size = Size(c.maxWidth, height);
-              void pick(Offset local) {
+              void pick(Offset local, {bool scrub = false}) {
                 final hit = TrendLayout(series, size, style).indexAt(local.dx);
-                if (hit != null) onSelect(hit);
+                if (hit != null) {
+                  _scrubbing = scrub;
+                  if (scrub) _scrubTo(hit);
+                  onSelect(hit);
+                }
                 focus.requestFocus();
               }
 
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTapDown: (d) => pick(d.localPosition),
-                onHorizontalDragStart: (d) => pick(d.localPosition),
-                onHorizontalDragUpdate: (d) => pick(d.localPosition),
+                onHorizontalDragStart: (d) => pick(d.localPosition, scrub: true),
+                onHorizontalDragUpdate: (d) => pick(d.localPosition, scrub: true),
+                onHorizontalDragEnd: (_) => _endScrub(),
+                onHorizontalDragCancel: _endScrub,
                 child: SizedBox(
                   height: height,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: TrendPainter(series: series, style: style, selected: i),
-                        ),
-                      ),
-                      if (series.isEmpty)
-                        const Positioned.fill(
-                          child: Center(
-                            child: _Empty(text: 'No source has a value for this range.'),
+                  // Only the drawing crossfades when the Value changes; the
+                  // readout, semantics and range text are outside this.
+                  child: PitchyCrossfade(
+                    child: SizedBox.expand(
+                      key: ValueKey(series.quantity),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: TrendPainter(
+                                series: series,
+                                style: style,
+                                selected: i,
+                                marker: _glide,
+                              ),
+                            ),
                           ),
-                        ),
-                    ],
+                          if (series.isEmpty)
+                            const Positioned.fill(
+                              child: Center(
+                                child: _Empty(text: 'No source has a value for this range.'),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               );

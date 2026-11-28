@@ -7,10 +7,12 @@ import '../../core/errors/failure_messages.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/state/loadable.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../../shared/models/match.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import '../../shared/widgets/press_scale.dart';
 import '../../shared/widgets/retry_at.dart';
 import '../../shared/widgets/skeletons.dart';
 import 'match_controller.dart';
@@ -241,20 +243,23 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
               const SizedBox(height: PitchySpace.sm),
               RetryAtBuilder(
                 retryAt: rateLimitRetryAt(_submitError),
-                builder: (context, waiting) => FilledButton.icon(
-                  onPressed: m.submitting || waiting ? null : _submit,
-                  icon: m.submitting
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
-                      : Icon(waiting ? Icons.hourglass_top : Icons.check),
-                  label: Text(
-                    m.submitting
-                        ? 'Setting up…'
-                        : waiting
-                        ? 'Wait until ${formatPhtTime(rateLimitRetryAt(_submitError)!)}'
-                        : 'Show conditions',
+                builder: (context, waiting) => PitchyPressScale(
+                  enabled: !(m.submitting || waiting),
+                  child: FilledButton.icon(
+                    onPressed: m.submitting || waiting ? null : _submit,
+                    icon: m.submitting
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : Icon(waiting ? Icons.hourglass_top : Icons.check),
+                    label: Text(
+                      m.submitting
+                          ? 'Setting up…'
+                          : waiting
+                          ? 'Wait until ${formatPhtTime(rateLimitRetryAt(_submitError)!)}'
+                          : 'Show conditions',
+                    ),
                   ),
                 ),
               ),
@@ -290,26 +295,62 @@ class _Section extends StatelessWidget {
           Semantics(header: true, child: Text(title, style: text.titleMedium)),
           const SizedBox(height: PitchySpace.sm),
           child,
-          if (error != null) ...[
-            const SizedBox(height: PitchySpace.sm),
-            Semantics(
-              liveRegion: true,
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, size: 18, color: context.safetyColors.requestErrorInk),
-                  const SizedBox(width: PitchySpace.sm),
-                  Expanded(
-                    child: Text(
-                      error!,
-                      style: text.bodyMedium?.copyWith(color: context.safetyColors.requestErrorInk),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          _InlineError(error: error),
         ],
       ),
+    );
+  }
+}
+
+/// A field's inline error. It grows in with a short fade and shrinks away again;
+/// under reduced motion the size changes at once and only the fade stays. The
+/// icon and the words always show together, in the fixed request-error ink.
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.error});
+
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = PitchyMotion.of(context);
+    final text = Theme.of(context).textTheme;
+    final ink = context.safetyColors.requestErrorInk;
+    final message = AnimatedSwitcher(
+      duration: motion.message,
+      // Exits beat entrances; the curve is flipped because it runs backwards.
+      reverseDuration: motion.messageOut,
+      switchInCurve: PitchyMotion.enter,
+      switchOutCurve: PitchyMotion.enter.flipped,
+      layoutBuilder: (current, previous) =>
+          Stack(alignment: Alignment.topCenter, children: [...previous, ?current]),
+      child: error == null
+          ? const SizedBox(key: ValueKey('no-error'), width: double.infinity)
+          : Padding(
+              key: ValueKey(error),
+              padding: const EdgeInsets.only(top: PitchySpace.sm),
+              child: Semantics(
+                liveRegion: true,
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, size: 18, color: ink),
+                    const SizedBox(width: PitchySpace.sm),
+                    Expanded(
+                      child: Text(error!, style: text.bodyMedium?.copyWith(color: ink)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+    // Reduced motion: no size animation at all (the box simply changes size);
+    // only the short fade stays.
+    if (motion.reduced) return message;
+    return AnimatedSize(
+      duration: error == null ? motion.collapse : motion.expand,
+      reverseDuration: motion.collapse,
+      curve: PitchyMotion.enter,
+      alignment: Alignment.topCenter,
+      child: message,
     );
   }
 }
@@ -393,7 +434,10 @@ class _InlineFailure extends StatelessWidget {
                 ],
               ),
             ),
-            if (canRetry) TextButton(onPressed: onRetry, child: const Text('Try again')),
+            if (canRetry)
+              PitchyPressScale(
+                child: TextButton(onPressed: onRetry, child: const Text('Try again')),
+              ),
           ],
         ),
       ),

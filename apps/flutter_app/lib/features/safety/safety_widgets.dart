@@ -534,6 +534,9 @@ class SafetyExpander extends StatelessWidget {
         ),
       ),
       AnimatedSize(
+        // Reduced motion: a zero-length animation can't run on a kept render
+        // object, so the size is simply rebuilt (instant).
+        key: PitchyMotion.of(context).reduced ? ValueKey(expanded) : null,
         duration: PitchyMotion.of(context).expand,
         reverseDuration: PitchyMotion.of(context).collapse,
         curve: PitchyMotion.enter,

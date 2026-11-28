@@ -99,6 +99,9 @@ class _Frame extends StatelessWidget {
           header,
           row,
           AnimatedSize(
+            // Reduced motion: a zero-length animation can't run on a kept
+            // render object, so the size is simply rebuilt (instant).
+            key: PitchyMotion.of(context).reduced ? ValueKey(details != null) : null,
             duration: PitchyMotion.of(context).expand,
             reverseDuration: PitchyMotion.of(context).collapse,
             curve: PitchyMotion.enter,
@@ -377,6 +380,7 @@ class _FailedRow extends StatelessWidget {
       title: 'Couldn’t load official alerts',
       detail: m.title,
       trailing: m.canRetry && onRetry != null
+          // Inside the alerts (hazard) panel: ripple only, no press scale (P-29).
           ? TextButton(onPressed: onRetry, child: const Text('Try again'))
           : null,
     );

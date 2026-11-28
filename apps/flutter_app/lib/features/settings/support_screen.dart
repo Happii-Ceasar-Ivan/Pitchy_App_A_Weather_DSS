@@ -7,7 +7,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/config/donations.dart';
 import '../../core/theme/spacing.dart';
+import '../../shared/widgets/pitchy_snack_bar.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import '../../shared/widgets/press_scale.dart';
 
 /// What saving the QR image did.
 enum QrSaveResult {
@@ -87,9 +89,7 @@ class _SupportScreenState extends State<SupportScreen> {
         'This Android version can’t save it from Pitchy. Take a screenshot instead.',
       QrSaveResult.failed => 'Couldn’t save the QR. Take a screenshot instead.',
     };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showPitchySnackBar(context, SnackBar(content: Text(message)));
   }
 
   @override
@@ -126,10 +126,13 @@ class _SupportScreenState extends State<SupportScreen> {
               if (widget.saver != null) ...[
                 const SizedBox(height: PitchySpace.lg),
                 Center(
-                  child: FilledButton.icon(
-                    onPressed: _saving ? null : _save,
-                    icon: const Icon(Icons.download),
-                    label: Text(_saving ? 'Saving…' : 'Save QR to Photos'),
+                  child: PitchyPressScale(
+                    enabled: !_saving,
+                    child: FilledButton.icon(
+                      onPressed: _saving ? null : _save,
+                      icon: const Icon(Icons.download),
+                      label: Text(_saving ? 'Saving…' : 'Save QR to Photos'),
+                    ),
                   ),
                 ),
               ],

@@ -7,6 +7,7 @@ import '../../core/utils/pht_time.dart';
 import '../models/weather.dart';
 import 'dashed_border.dart';
 import 'data_state_badge.dart';
+import 'press_scale.dart';
 import 'skeletons.dart';
 import 'weather_icons.dart';
 
@@ -212,12 +213,18 @@ class WeatherValueCard extends StatelessWidget {
                 ),
               ),
               AnimatedSize(
+                // Reduced motion: a zero-length animation can't run on a kept
+                // render object, so the size is simply rebuilt (instant).
+                key: PitchyMotion.of(context).reduced ? ValueKey(expanded) : null,
                 duration: PitchyMotion.of(context).expand,
                 reverseDuration: PitchyMotion.of(context).collapse,
                 curve: PitchyMotion.enter,
                 alignment: Alignment.topCenter,
                 child: expanded && slot != null
-                    ? _Details(quantity: quantity, slot: slot!, used: used)
+                    ? _FadeIn(
+                        duration: PitchyMotion.of(context).fade,
+                        child: _Details(quantity: quantity, slot: slot!, used: used),
+                      )
                     : const SizedBox(width: double.infinity),
               ),
             ],
@@ -247,6 +254,24 @@ class _LineDot extends StatelessWidget {
     width: 10,
     height: 10,
     decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
+}
+
+/// Fades its child in once, when it first appears (the card's revealed
+/// detail). Opacity only; the size change is the card's own AnimatedSize.
+class _FadeIn extends StatelessWidget {
+  const _FadeIn({required this.duration, required this.child});
+
+  final Duration duration;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0, end: 1),
+    duration: duration,
+    curve: PitchyMotion.enter,
+    builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
+    child: child,
   );
 }
 
@@ -385,7 +410,12 @@ class _WeatherCardGridState extends State<WeatherCardGrid> {
 
   static const _gap = 8.0;
 
+  /// One key per metric, so a card keeps its element (and its AnimatedSize)
+  /// when it moves into the full-width row, and the reveal animates in place.
+  final _keys = <String, GlobalKey>{};
+
   Widget _card(ConsolidatedQuantity q) => WeatherValueCard(
+    key: _keys.putIfAbsent(q.quantity, () => GlobalKey(debugLabel: 'card ${q.quantity}')),
     quantity: q,
     slot: WeatherCardGrid.kickoffSlot(q, widget.kickoff),
     sources: widget.weather.sources,
@@ -442,10 +472,12 @@ class _WeatherCardGridState extends State<WeatherCardGrid> {
             if (all.length > widget.maxVisible)
               Padding(
                 padding: const EdgeInsets.only(top: PitchySpace.xs),
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _showAll = !_showAll),
-                  icon: Icon(_showAll ? Icons.expand_less : Icons.expand_more),
-                  label: Text(_showAll ? 'Show fewer' : 'Show $hidden more'),
+                child: PitchyPressScale(
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => _showAll = !_showAll),
+                    icon: Icon(_showAll ? Icons.expand_less : Icons.expand_more),
+                    label: Text(_showAll ? 'Show fewer' : 'Show $hidden more'),
+                  ),
                 ),
               ),
           ],
