@@ -52,8 +52,32 @@ def _pht(raw: object) -> datetime:
         raise SourceResponseChangedError(f"Unparseable PAGASA time {raw!r}") from None
 
 
-def parse(payload: dict, venue: Venue, model: str, init: datetime) -> SourceFetch:
-    require(isinstance(payload, dict) and payload.get("success") is True, "PAGASA success != true")
+class PagasaRunNotServedError(SourceError):
+    """PAGASA lists a run in ``nwp-runs`` but its point forecast answers an empty list.
+
+    Observed for ATMO from 2026-11-26 (run 2026-11-26T00Z listed for days, ``[]`` served). It
+    is PAGASA having no data, not a format change and not a refusal, so it is not blocking."""
+
+    code = "PAGASA_RUN_NOT_SERVED"
+
+
+def _forecast_object(payload: object, model: str, init: datetime) -> dict:
+    """Our own wording only: PAGASA's reply text never reaches the database or the API."""
+    run = f"{model.upper()} run {init.strftime('%Y-%m-%dT%H:%MZ')}"
+    if payload == []:
+        raise PagasaRunNotServedError(f"PAGASA lists {run} but serves no data for it.")
+    if isinstance(payload, dict) and payload.get("success") is True:
+        return payload
+    shape = (
+        "an object without success = true"
+        if isinstance(payload, dict)
+        else f"a {type(payload).__name__}"
+    )
+    raise SourceResponseChangedError(f"PAGASA {run}: expected a forecast object, got {shape}.")
+
+
+def parse(payload: object, venue: Venue, model: str, init: datetime) -> SourceFetch:
+    payload = _forecast_object(payload, model, init)
     require(payload.get("model") == model, f"PAGASA returned model {payload.get('model')!r}")
     rain_unit = payload.get("rain_unit")
     require(rain_unit in RAIN_UNITS, f"Unexpected PAGASA rain unit {rain_unit!r}")

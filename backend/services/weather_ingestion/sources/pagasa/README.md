@@ -50,7 +50,8 @@ A new run always starts with a new visit, so rotating tokens and new model runs 
 | Code | When |
 | --- | --- |
 | `PAGASA_LAYOUT_CHANGED` | Homepage no longer has `csrf-token` / `nwp-runs` |
-| `SOURCE_RESPONSE_CHANGED` | Forecast/alert JSON differs from the above (fields, units, times) |
+| `PAGASA_RUN_NOT_SERVED` | The run listed in `nwp-runs` answers an empty list `[]` (PAGASA has no data for it; seen for ATMO from 2026-11-26). Not blocking; no retry, no fallback to an older run |
+| `SOURCE_RESPONSE_CHANGED` | Forecast/alert JSON differs from the above (fields, units, times); the summary names the run and the reply's shape |
 | `TIMEOUT`, `NETWORK_ERROR`, `HTTP_<n>` | Site unreachable or refusing (e.g. `HTTP_419` = expired session token) |
 
 Tests and captured samples (token and cookies removed): `backend/tests/sources/pagasa/`.

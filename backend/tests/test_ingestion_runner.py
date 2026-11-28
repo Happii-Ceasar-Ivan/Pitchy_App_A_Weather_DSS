@@ -257,3 +257,29 @@ def test_groups_without_run_check_get_no_known_runs(env) -> None:
     report = run(env, [AdapterGroup("open_meteo", ("open_meteo",), lambda: adapter)],
                  {"open_meteo"})  # fmt: skip
     assert {r.status for r in report.results} == {"stored"}
+
+
+def test_atmo_run_not_served_is_stored_and_the_gap_still_holds(env, conn) -> None:
+    """PAGASA serving ``[]`` for the listed ATMO run (2026-11-26): ATMO fails with its own
+    code and our own text, ECMWF is stored, and the 4 h gap stops a second request."""
+    from tests.sources.pagasa.test_pagasa_adapter_parallel import FakePanahon, adapter_for
+
+    fake = FakePanahon()
+    fake.forecasts["atmo"] = []
+    ids = ("pagasa_atmo", "pagasa_ecmwf")
+    group = AdapterGroup("pagasa", ids, lambda: adapter_for(fake),
+                         min_interval=timedelta(hours=4), run_check=True)  # fmt: skip
+    report = run(env, [group], set(ids))
+    assert {(r.source_id, r.status) for r in report.results} == {
+        ("pagasa_atmo", "failed"), ("pagasa_ecmwf", "stored")
+    }  # fmt: skip
+    rows = conn.execute(
+        "select distinct error_code, error_summary from public.source_fetches"
+        " where source_id = 'pagasa_atmo'"
+    ).fetchall()
+    summary = "PAGASA lists ATMO run 2026-11-21T18:00Z but serves no data for it."
+    assert rows == [("PAGASA_RUN_NOT_SERVED", summary)]
+    hits = dict(fake.hits)
+    second = run(env, [group], set(ids))
+    assert fake.hits == hits  # nothing sent to PAGASA again
+    assert {r.status for r in second.results} == {"skipped_recent"}
