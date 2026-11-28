@@ -5,7 +5,9 @@
  * "Download coming soon" and cannot start a download.
  *
  * To publish a release, fill in the asset for each platform with the values
- * from its GitHub Releases page. Nothing else on the site needs to change.
+ * from its GitHub Releases page. Nothing else on the site needs to change:
+ * vite.config.ts writes the version into index.html wherever it says
+ * %PITCHY_VERSION%, and the build stops if the two platforms' versions differ.
  * Never put a guessed URL, version or size here.
  */
 
