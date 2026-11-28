@@ -53,6 +53,18 @@ Future<void> _shot(WidgetTester t, String name) async {
   }
 }
 
+/// Settles, then keeps pumping until [finder] shows (or, with [gone], until it
+/// has gone), up to 5 s. With the
+/// device's "Remove animations" on, the loading skeleton doesn't pulse, so
+/// pumpAndSettle returns before the demo API's 350 ms delay has passed.
+Future<void> _waitFor(WidgetTester t, Finder finder, {bool gone = false}) async {
+  await t.pumpAndSettle();
+  for (var i = 0; i < 50 && finder.evaluate().isEmpty != gone; i++) {
+    await t.pump(const Duration(milliseconds: 100));
+  }
+  await t.pumpAndSettle();
+}
+
 Finder _tab(String label) => find.descendant(
   of: find.byWidgetPredicate((w) => w is NavigationBar || w is NavigationRail),
   matching: find.text(label),
@@ -149,7 +161,7 @@ void main() {
     await _shot(t, 'a2-board');
 
     await t.tap(_tab('Safety'));
-    await t.pumpAndSettle();
+    await _waitFor(t, find.textContaining('Assessed'));
     expect(find.textContaining('Assessed'), findsWidgets);
     await _shot(t, 'a3-safety');
 
@@ -208,7 +220,7 @@ void main() {
       store: SavedCopyStore(device, clock: () => _now),
     );
     await t.tap(_tab('Safety'));
-    await t.pumpAndSettle();
+    await _waitFor(t, find.textContaining('Assessed')); // saved for the restart
     await t.tap(_tab('Dashboard'));
     await t.pumpAndSettle();
 
@@ -227,7 +239,7 @@ void main() {
     await _shot(t, 'c1-restart-offline-board');
 
     await t.tap(_tab('Safety'));
-    await t.pumpAndSettle();
+    await _waitFor(t, find.text('NOT CURRENT'));
     expect(find.textContaining('not live'), findsOneWidget);
     expect(find.text('NOT CURRENT'), findsWidgets);
     await _shot(t, 'c2-restart-offline-safety');
@@ -237,7 +249,7 @@ void main() {
     await t.tap(
       find.descendant(of: find.byType(NoticeBanner), matching: find.text('Try again')),
     );
-    await t.pumpAndSettle();
+    await _waitFor(t, find.textContaining('not live'), gone: true);
     expect(find.textContaining('not live'), findsNothing);
     await _shot(t, 'c3-safety-back-online');
   });

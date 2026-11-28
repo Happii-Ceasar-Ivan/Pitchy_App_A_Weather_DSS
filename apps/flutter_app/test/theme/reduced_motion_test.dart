@@ -7,8 +7,12 @@ import 'dart:ui' show AccessibilityFeatures;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pitchy/core/routing/app_router.dart';
+import 'package:pitchy/core/state/loadable.dart';
 import 'package:pitchy/core/storage/preferences.dart';
 import 'package:pitchy/core/theme/motion.dart';
+import 'package:pitchy/shared/models/alerts.dart';
+import 'package:pitchy/shared/services/mock/fixtures.dart';
+import 'package:pitchy/shared/widgets/alerts_panel.dart';
 import 'package:pitchy/shared/widgets/weather_value_card.dart';
 
 import '../app_harness.dart';
@@ -140,17 +144,30 @@ void main() {
       );
       expect(above(FadeTransition), findsWidgets);
       expect(above(SlideTransition), findsNothing);
+      expect(
+        tester
+            .widgetList<Transform>(above(Transform))
+            .where((w) => w.transform.getTranslation().y != 0),
+        isEmpty,
+        reason: 'no rise when reduced',
+      );
       await tester.pump(const Duration(milliseconds: 150));
       expect(tester.binding.transientCallbackCount, 0);
     });
 
-    testWidgets('motion on: fade and slide, 200 ms', (tester) async {
+    testWidgets('motion on: fade and a 4 px rise, 200 ms', (tester) async {
       await pumpRoutes(tester, false);
+      await tester.pump(const Duration(milliseconds: 20)); // the transition's first built frame
       final pushed = find.ancestor(
         of: find.text('pushed', skipOffstage: false),
-        matching: find.byType(SlideTransition, skipOffstage: false),
+        matching: find.byType(Transform, skipOffstage: false),
       );
-      expect(pushed, findsWidgets);
+      final rise = tester
+          .widgetList<Transform>(pushed)
+          .map((w) => w.transform.getTranslation().y)
+          .fold<double>(0, (a, b) => b > a ? b : a);
+      expect(rise, greaterThan(0));
+      expect(rise, lessThanOrEqualTo(4), reason: 'a fixed 4 px, not a share of the page');
       await tester.pump(const Duration(milliseconds: 150));
       expect(tester.binding.transientCallbackCount, greaterThan(0));
       await tester.pump(const Duration(milliseconds: 60));
@@ -182,6 +199,64 @@ void main() {
       await tester.pump(PitchyMotion.quick);
       expect(_opacity(tester, 1), 1);
       expect(_dy(tester, 1), 0);
+    });
+  });
+
+  group('other expanders under reduced motion (P-29 review)', () {
+    testWidgets('Safety "How this was worked out": open after one pump, no ticker', (
+      tester,
+    ) async {
+      _reduce(tester, true);
+      await pumpPitchyApp(
+        tester,
+        prefs: withActiveMatch(),
+        location: Routes.safety,
+        size: const Size(390, 2400),
+      );
+      await tester.tap(find.text('How this was worked out').first);
+      await tester.pump();
+      expect(find.text('Measurement times'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      final early = tester.getSize(
+        find
+            .ancestor(of: find.text('Measurement times'), matching: find.byType(AnimatedSize))
+            .first,
+      );
+      await tester.pumpAndSettle(); // the tap's ripple is the only thing still running
+      expect(
+        tester.getSize(
+          find
+              .ancestor(of: find.text('Measurement times'), matching: find.byType(AnimatedSize))
+              .first,
+        ),
+        early,
+        reason: 'already full size',
+      );
+      await tester.tap(find.text('How this was worked out').first);
+      await tester.pump();
+      expect(find.text('Measurement times'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('alert details: open after one pump, no ticker', (tester) async {
+      _reduce(tester, true);
+      await pumpThemed(
+        tester,
+        AlertsPanel(
+          alerts: Loaded(VenueAlerts.fromJson(alertsJson(now: testNow, withAlert: true))),
+        ),
+      );
+      await tester.tap(find.text('Details'));
+      await tester.pump();
+      expect(find.text('Hide'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      final early = tester.getSize(find.byType(AnimatedSize));
+      await tester.pumpAndSettle(); // the tap's ripple is the only thing still running
+      expect(tester.getSize(find.byType(AnimatedSize)), early, reason: 'already full size');
+      await tester.tap(find.text('Hide'));
+      await tester.pump();
+      expect(find.text('Details'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

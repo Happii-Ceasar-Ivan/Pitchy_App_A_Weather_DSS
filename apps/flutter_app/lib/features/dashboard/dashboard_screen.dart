@@ -13,7 +13,9 @@ import '../../shared/models/weather.dart';
 import '../../shared/widgets/alerts_panel.dart';
 import '../../shared/widgets/data_state_badge.dart';
 import '../../shared/widgets/kickoff_strip.dart';
+import '../../shared/widgets/pitchy_snack_bar.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import '../../shared/widgets/press_scale.dart';
 import '../../shared/widgets/request_states.dart';
 import '../../shared/widgets/source_rail.dart';
 import '../../shared/widgets/weather_value_card.dart';
@@ -56,10 +58,12 @@ class DashboardScreen extends StatelessWidget {
             detail:
                 'Choose a venue and kickoff time to see the weather sources and conditions for '
                 'your match.',
-            action: FilledButton.icon(
-              onPressed: () => context.push(Routes.matchSetup),
-              icon: const Icon(Icons.add),
-              label: const Text('Set up a match'),
+            action: PitchyPressScale(
+              child: FilledButton.icon(
+                onPressed: () => context.push(Routes.matchSetup),
+                icon: const Icon(Icons.add),
+                label: const Text('Set up a match'),
+              ),
             ),
           ),
         ),
@@ -157,9 +161,7 @@ class _MatchDashboardState extends State<_MatchDashboard> {
     };
     if (message == null || !mounted) return;
     _ingest.dismissOutcome();
-    ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showPitchySnackBar(context, SnackBar(content: Text(message)));
   }
 
   @override
@@ -203,10 +205,13 @@ class _MatchDashboardState extends State<_MatchDashboard> {
           sourcesPending: _controller.data is Loading,
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _controller.refreshing ? null : _controller.load,
+          PitchyPressScale(
+            enabled: !_controller.refreshing,
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: _controller.refreshing ? null : _controller.load,
+            ),
           ),
         ],
         child: RefreshIndicator(
@@ -338,6 +343,7 @@ class _SavedCopyBanner extends StatelessWidget {
         savedAt: savedAt,
         tries: tries,
         lastTriedAt: lastTriedAt,
+        // Inside a data-state banner: ripple only, no press scale (P-29).
         action: TextButton(
           style: TextButton.styleFrom(foregroundColor: fg),
           onPressed: onRetry,

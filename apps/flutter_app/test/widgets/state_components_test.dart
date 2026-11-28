@@ -182,16 +182,16 @@ void main() {
         );
         expect(find.text('Open-Meteo'), findsOneWidget);
         expect(find.text('STALE'), findsOneWidget);
-        expect(find.text('CURRENT'), findsNWidgets(2));
+        expect(find.text('CURRENT'), findsNWidgets(3));
         expect(find.byType(ValidityBar), findsNothing);
         final names = [
-          for (final n in ['Open-Meteo', 'PAGASA ATMO', 'PAGASA ECMWF'])
-            tester.getTopLeft(find.text(n)),
+          for (final n in ['Open-Meteo', 'PAGASA ATMO', 'PAGASA ECMWF', 'OpenWeather'])
+            tester.getTopLeft(find.text(n).first), // the rail label, not the credit link
         ];
         expect(names.map((o) => o.dy).toSet().length, 1, reason: 'one horizontal row');
         await tester.tap(find.byTooltip('Show source details'));
         await tester.pumpAndSettle();
-        expect(find.byType(ValidityBar), findsNWidgets(3));
+        expect(find.byType(ValidityBar), findsNWidgets(4));
         expect(find.textContaining('9 h ago'), findsOneWidget);
       },
     );
@@ -201,9 +201,12 @@ void main() {
       expect(find.text('Open-Meteo'), findsOneWidget);
       expect(find.text('PAGASA ATMO'), findsOneWidget);
       expect(find.text('STALE'), findsOneWidget);
-      expect(find.text('CURRENT'), findsNWidgets(2));
+      // The short label in the rail, and the credit's link under it (P-30).
+      expect(find.text('OpenWeather'), findsNWidgets(2));
+      expect(find.text('Weather data © '), findsOneWidget);
+      expect(find.text('CURRENT'), findsNWidgets(3));
       expect(find.textContaining('9 h ago'), findsOneWidget);
-      expect(find.textContaining('Current until 2:00 PM PHT'), findsNWidgets(2));
+      expect(find.textContaining('Current until 2:00 PM PHT'), findsNWidgets(3));
     });
 
     testWidgets('unavailable shows the backend limitation message', (tester) async {
@@ -214,9 +217,9 @@ void main() {
 
     testWidgets('missing and updating are labelled', (tester) async {
       await pumpRail(tester, status(MockScenario.missing));
-      expect(find.text('MISSING'), findsNWidgets(3));
+      expect(find.text('MISSING'), findsNWidgets(4));
       await pumpRail(tester, status(MockScenario.updating));
-      expect(find.text('UPDATING'), findsNWidgets(3));
+      expect(find.text('UPDATING'), findsNWidgets(4));
     });
   });
 

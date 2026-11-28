@@ -94,6 +94,9 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
     'pagasa_atmo': Color(0xFF5E3FB0),
     'pagasa_ecmwf': Color(0xFF2361D6),
     'dost_asti': Color(0xFF52606F),
+    // OpenWeather (P-30): plum, the one open hue far from the other lines and
+    // from the danger red (CIEDE2000 ≥ 16 to every line, ≈ 29 to danger).
+    'openweather': Color(0xFFA0308A),
   };
 
   static const _darkLines = {
@@ -101,6 +104,7 @@ class PitchyPalette extends ThemeExtension<PitchyPalette> {
     'pagasa_atmo': Color(0xFFB39CF5),
     'pagasa_ecmwf': Color(0xFF7FA8F5),
     'dost_asti': Color(0xFF9AA8B8),
+    'openweather': Color(0xFFEE8FD9),
   };
 
   /// Midnight Navy and Glacier (P-28). Glacier is 2.09:1 on white, so light

@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/pitchy_logo.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import '../../shared/widgets/press_scale.dart';
 
 /// About Pitchy: what the app is, its version, and a way to the credits.
 /// Wording comes from the project's own description (PRODUCT.md, SRS).
@@ -57,10 +58,12 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: PitchySpace.md),
           Text('All times are shown in Philippine Time (PHT).', style: text.bodyMedium),
           const SizedBox(height: PitchySpace.xl),
-          OutlinedButton.icon(
-            onPressed: () => context.push(Routes.credits),
-            icon: const Icon(Icons.attribution_outlined),
-            label: const Text('Credits'),
+          PitchyPressScale(
+            child: OutlinedButton.icon(
+              onPressed: () => context.push(Routes.credits),
+              icon: const Icon(Icons.attribution_outlined),
+              label: const Text('Credits'),
+            ),
           ),
         ],
       ),

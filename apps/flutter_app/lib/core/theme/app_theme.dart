@@ -420,6 +420,8 @@ abstract final class AppTheme {
         ),
         textStyle: text.bodySmall?.copyWith(color: isDark ? p.shell : p.onShell),
         waitDuration: const Duration(milliseconds: 500),
+        showDuration: PitchyMotion.tooltipShow,
+        exitDuration: PitchyMotion.tooltipExit,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: p.accent,

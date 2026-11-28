@@ -1,18 +1,40 @@
-// Motion tokens (plan v2 A3/A4, C3–C6). One motion language for the app.
+// Motion tokens (plan v2 A3/A4, C3–C6; P-29). One motion language for the app.
 //
 // Animate only: overlays opening/closing, expand/collapse, a newly arrived chat
-// reply, the Updating spinner and press feedback. Never: tab switches, values
-// updating, safety and data-state elements, list loading.
+// reply, the Updating spinner, press feedback on standalone buttons, step
+// changes, validation messages, the trend chart's Value switch (the drawing
+// only) and its hour marker. Never: tab
+// switches, theme switches, values updating, safety and data-state elements,
+// list loading.
 //
 // Reduced motion (Android "Remove animations", Windows "Animation effects"):
-// fewer and gentler, not zero. Movement goes; short opacity changes stay.
+// fewer and gentler, not zero. Movement goes and size changes are instant;
+// short opacity changes stay.
 // Safety banners, alerts, state pills and stale stamps never animate in.
 
 import 'package:material_ui/material_ui.dart';
 
 abstract final class PitchyMotion {
-  /// Press feedback.
+  /// Press feedback (press-down).
   static const press = Duration(milliseconds: 100);
+
+  /// A pressed button returning to rest.
+  static const release = Duration(milliseconds: 150);
+
+  /// How far a standalone button shrinks while held (P-29). Buttons only:
+  /// never cards, list rows, data chips, nav items or hazard elements.
+  static const pressScale = 0.97;
+
+  /// The one spring (P-29): critically damped, so it never overshoots. It
+  /// settles in about 270 ms. Only for something moving between two places
+  /// (the trend chart's hour marker), never for values or states.
+  static final spring = SpringDescription.withDampingRatio(mass: 1, stiffness: 600, ratio: 1);
+
+  /// Tooltips stay up this long after a long-press (Android).
+  static const tooltipShow = Duration(milliseconds: 1500);
+
+  /// Tooltips leave quickly once the pointer goes.
+  static const tooltipExit = Duration(milliseconds: 100);
 
   /// Small state changes; also the ceiling for any reduced-motion fade.
   static const quick = Duration(milliseconds: 150);
@@ -66,6 +88,31 @@ class PitchyMotionSpec {
 
   /// Distance a newly arrived element rises (logical pixels); none when reduced.
   double get rise => reduced ? 0 : 4;
+
+  /// Scale of a held standalone button; 1 (no movement) when reduced.
+  double get pressScale => reduced ? 1 : PitchyMotion.pressScale;
+
+  /// A switch between two views of the same thing (a step change, the trend
+  /// chart's Value): the incoming view's fade.
+  Duration get switchIn => reduced ? PitchyMotion.quick : PitchyMotion.standard;
+
+  /// The outgoing view's fade; faster than [switchIn].
+  Duration get switchOut => reduced ? messageOut : PitchyMotion.exit;
+
+  /// A small message appearing in place (form validation): a short fade.
+  Duration get message => PitchyMotion.quick;
+
+  /// A small message (or any reduced-motion fade) leaving: faster than it came.
+  Duration get messageOut => const Duration(milliseconds: 100);
+
+  /// Whether the spring runs; when reduced, things jump to their place.
+  bool get spring => !reduced;
+
+  /// Snackbars: Material's rise, exit faster than entrance.
+  AnimationStyle get snackBar => AnimationStyle(
+    duration: reduced ? PitchyMotion.quick : PitchyMotion.overlay,
+    reverseDuration: reduced ? messageOut : PitchyMotion.exit,
+  );
 }
 
 /// Route transitions for pushed pages (Settings, About, Match setup, …). The
@@ -83,11 +130,10 @@ class PitchyPageTransitionsBuilder extends PageTransitionsBuilder {
   Duration get reverseTransitionDuration => PitchyMotion.exit;
 
   static final _reducedFade = CurveTween(curve: const Interval(0, 0.75, curve: Curves.linear));
-  static final _fade = CurveTween(curve: PitchyMotion.enter);
-  static final _rise = Tween<Offset>(
-    begin: const Offset(0, 0.02),
-    end: Offset.zero,
-  ).chain(CurveTween(curve: PitchyMotion.enter));
+
+  /// The same small rise as everything else ([PitchyMotionSpec.rise], 4 px),
+  /// not a share of the page height.
+  static const _risePx = 4.0;
 
   @override
   Widget buildTransitions<T>(
@@ -100,9 +146,21 @@ class PitchyPageTransitionsBuilder extends PageTransitionsBuilder {
     if (PitchyMotion.of(context).reduced) {
       return FadeTransition(opacity: animation.drive(_reducedFade), child: child);
     }
+    // Ease-out both ways: the exit curve is flipped because it runs backwards,
+    // so a closing page fades fast instead of lingering (no ease-in).
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: PitchyMotion.enter,
+      reverseCurve: PitchyMotion.enter.flipped,
+    );
     return FadeTransition(
-      opacity: animation.drive(_fade),
-      child: SlideTransition(position: animation.drive(_rise), child: child),
+      opacity: curved,
+      child: AnimatedBuilder(
+        animation: curved,
+        builder: (context, child) =>
+            Transform.translate(offset: Offset(0, _risePx * (1 - curved.value)), child: child),
+        child: child,
+      ),
     );
   }
 }

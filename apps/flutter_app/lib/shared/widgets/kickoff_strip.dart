@@ -5,6 +5,7 @@ import '../../core/theme/spacing.dart';
 import '../../core/utils/pht_time.dart';
 import '../models/match.dart';
 import '../models/weather.dart';
+import 'press_scale.dart';
 import 'skeletons.dart';
 import 'source_rail.dart' show monoTimeRuns;
 
@@ -117,10 +118,12 @@ class KickoffStrip extends StatelessWidget {
               ),
             ),
             if (onChange != null)
-              TextButton(
-                onPressed: onChange,
-                style: TextButton.styleFrom(foregroundColor: p.onShell),
-                child: const Text('Change'),
+              PitchyPressScale(
+                child: TextButton(
+                  onPressed: onChange,
+                  style: TextButton.styleFrom(foregroundColor: p.onShell),
+                  child: const Text('Change'),
+                ),
               ),
           ],
         ),

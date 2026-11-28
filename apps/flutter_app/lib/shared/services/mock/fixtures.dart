@@ -100,6 +100,8 @@ const _sources = [
   ('open_meteo', 'Open-Meteo'),
   ('pagasa_atmo', 'PAGASA ATMO (panahon.gov.ph)'),
   ('pagasa_ecmwf', 'PAGASA ECMWF (panahon.gov.ph)'),
+  // P-30: a display-only third forecast, lowest priority.
+  ('openweather', 'OpenWeather One Call 3.0'),
 ];
 
 List<Json> _sourceStatuses(MockScenario s, DateTime now, DateTime kickoff) {
@@ -263,9 +265,13 @@ Json consolidatedWeatherJson({
     'coverage': {'start': _t(kickoff), 'end': _t(kickoff.add(const Duration(hours: 2)))},
     'sources': sources,
     'quantities': [
-      q('air_temperature', 'Air temperature', '°C', [
-        'open_meteo',
-      ], _slots(states: states, start, [32.1, 32.4, 31.8, 30.9])),
+      q(
+        'air_temperature',
+        'Air temperature',
+        '°C',
+        ['open_meteo', 'openweather'],
+        _slots(states: states, start, [32.1, 32.4, 31.8, 30.9], others: [('openweather', 32.6)]),
+      ),
       q(
         'heat_index',
         'Heat index (PAGASA)',
@@ -301,6 +307,13 @@ Json consolidatedWeatherJson({
         'source_id': 'open_meteo',
         'text': 'Weather data by Open-Meteo.com',
         'url': 'https://open-meteo.com/',
+      },
+      // Always listed, like Open-Meteo's (the backend lists a credit only
+      // when that source has data in the response).
+      {
+        'source_id': 'openweather',
+        'text': 'Weather data © OpenWeather',
+        'url': 'https://openweathermap.org/',
       },
     ],
   };
@@ -470,6 +483,12 @@ Json trendWeatherJson({
         'source_id': 'open_meteo',
         'text': 'Weather data by Open-Meteo.com',
         'url': 'https://open-meteo.com/',
+      },
+      // The same endpoint as the board, so the same credits (P-30).
+      {
+        'source_id': 'openweather',
+        'text': 'Weather data © OpenWeather',
+        'url': 'https://openweathermap.org/',
       },
     ],
   };

@@ -182,6 +182,8 @@ void main() {
       await tester.pump(const Duration(seconds: 11));
     }
     await tester.tap(find.text('Start chatting'));
+    // The welcome -> chat crossfade: one frame starts it, the next finishes it.
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     await tester.enterText(find.byType(TextField), 'Is it hot?');
     await tester.pump();

@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/app_scope.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/link_text.dart';
+import '../../shared/widgets/press_scale.dart';
 import 'update_check.dart';
 import 'update_installer.dart';
 
@@ -253,16 +254,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
     final canInstall = update != null && widget.installer.fileFor(update) != null;
     final busy = _phase is _Checking || _phase is _Downloading || _phase is _Installing;
 
+    Widget press(Widget button) => PitchyPressScale(child: button);
     void close() => Navigator.of(context).pop();
     void openPage() {
       close();
       if (update != null) unawaited(openExternalLink(context, update.page));
     }
 
-    final later = TextButton(onPressed: close, child: const Text('Later'));
-    final ok = TextButton(onPressed: close, child: const Text('OK'));
-    final closeButton = TextButton(onPressed: close, child: const Text('Close'));
-    final pageButton = TextButton(onPressed: openPage, child: const Text('Open download page'));
+    final later = press(TextButton(onPressed: close, child: const Text('Later')));
+    final ok = press(TextButton(onPressed: close, child: const Text('OK')));
+    final closeButton = press(TextButton(onPressed: close, child: const Text('Close')));
+    final pageButton = press(
+      TextButton(onPressed: openPage, child: const Text('Open download page')),
+    );
 
     final (String title, String message, String? note, List<Widget> actions) = switch (_phase) {
       _Checking() => ('Check for updates', 'Checking for a newer version…', null, <Widget>[]),
@@ -288,13 +292,13 @@ class _UpdateDialogState extends State<UpdateDialog> {
         'Check for updates',
         'Couldn’t check for updates. Check your connection and try again.',
         null,
-        [TextButton(onPressed: _check, child: const Text('Try again')), ok],
+        [press(TextButton(onPressed: _check, child: const Text('Try again'))), ok],
       ),
       _Offer() when canInstall => (
         'Update available',
         'There’s a new Pitchy ($version). Would you like to update?',
         _stayOnline,
-        [later, FilledButton(onPressed: _download, child: const Text('Update'))],
+        [later, press(FilledButton(onPressed: _download, child: const Text('Update')))],
       ),
       _Offer() => (
         'Update available',
@@ -302,7 +306,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
         'Pitchy can’t install it on this device itself. Get it from the download page.',
         [
           later,
-          FilledButton(onPressed: openPage, child: const Text('Open download page')),
+          press(FilledButton(onPressed: openPage, child: const Text('Open download page'))),
         ],
       ),
       _Downloading(:final received, :final total) => (
@@ -311,7 +315,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
             ? 'Downloading Pitchy $version… ${_mb(received)} of ${_mb(total)} MB'
             : 'Downloading Pitchy $version…',
         _stayOnline,
-        [TextButton(onPressed: () => _cancelled = true, child: const Text('Cancel'))],
+        [press(TextButton(onPressed: () => _cancelled = true, child: const Text('Cancel')))],
       ),
       _Installing() => (
         'Updating Pitchy',
@@ -324,7 +328,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
         'Android needs your permission before Pitchy can install updates. In the screen that '
             'opened, turn on “Allow from this source”, then come back and tap Install.',
         null,
-        [closeButton, FilledButton(onPressed: () => _install(file), child: const Text('Install'))],
+        [
+          closeButton,
+          press(FilledButton(onPressed: () => _install(file), child: const Text('Install'))),
+        ],
       ),
       _HandedOff() when widget.installer.target == UpdateTarget.windows => (
         'Updating Pitchy',
@@ -352,7 +359,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
         [
           if (page) pageButton,
           closeButton,
-          if (retry) FilledButton(onPressed: _download, child: const Text('Try again')),
+          if (retry) press(FilledButton(onPressed: _download, child: const Text('Try again'))),
         ],
       ),
     };

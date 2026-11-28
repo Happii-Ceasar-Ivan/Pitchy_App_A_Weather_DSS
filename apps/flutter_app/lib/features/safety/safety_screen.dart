@@ -12,6 +12,7 @@ import '../../shared/models/assessment.dart';
 import '../../shared/models/match.dart';
 import '../../shared/models/weather.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
+import '../../shared/widgets/press_scale.dart';
 import '../../shared/widgets/request_states.dart';
 import '../match_management/match_controller.dart';
 import 'safety_cards.dart';
@@ -44,10 +45,12 @@ class SafetyScreen extends StatelessWidget {
             icon: Icons.sports_soccer,
             title: 'No match set up',
             detail: 'Choose a venue and kickoff time to see the safety assessment for your match.',
-            action: FilledButton.icon(
-              onPressed: () => context.push(Routes.matchSetup),
-              icon: const Icon(Icons.add),
-              label: const Text('Set up a match'),
+            action: PitchyPressScale(
+              child: FilledButton.icon(
+                onPressed: () => context.push(Routes.matchSetup),
+                icon: const Icon(Icons.add),
+                label: const Text('Set up a match'),
+              ),
             ),
           ),
         ),
@@ -174,10 +177,13 @@ class _MatchSafetyState extends State<_MatchSafety> {
       listenable: c,
       builder: (context, _) => _Frame(
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: c.refreshing ? null : c.load,
+          PitchyPressScale(
+            enabled: !c.refreshing,
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: c.refreshing ? null : c.load,
+            ),
           ),
         ],
         child: RefreshIndicator(

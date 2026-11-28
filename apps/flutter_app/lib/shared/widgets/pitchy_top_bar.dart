@@ -5,6 +5,7 @@ import '../../core/routing/app_router.dart';
 import '../../core/routing/app_shell.dart';
 import '../../core/theme/spacing.dart';
 import 'pitchy_logo.dart';
+import 'press_scale.dart';
 
 /// Top app bar for every screen (P-13, P-17): on top-level screens the settings
 /// button sits top left, then the Pitchy logo, then the screen name. On pushed
@@ -28,17 +29,21 @@ class PitchyTopBar extends StatelessWidget implements PreferredSizeWidget {
       leading: canPop
           ? null
           : shell != null
-          ? IconButton(
-              icon: const Icon(Icons.settings_outlined),
-              tooltip: 'Quick settings',
-              onPressed: shell.openSettings,
+          ? PitchyPressScale(
+              child: IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: 'Quick settings',
+                onPressed: shell.openSettings,
+              ),
             )
           // Opened directly (a link or restored route): there is nothing to go
           // back to, and Windows has no system Back, so offer the way home.
-          : IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back to dashboard',
-              onPressed: () => context.go(Routes.dashboard),
+          : PitchyPressScale(
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back to dashboard',
+                onPressed: () => context.go(Routes.dashboard),
+              ),
             ),
       titleSpacing: 0,
       title: Row(
