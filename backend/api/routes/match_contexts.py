@@ -198,6 +198,12 @@ ATTRIBUTIONS = {
     "open_meteo": Attribution(
         source_id="open_meteo", text="Weather data by Open-Meteo.com", url="https://open-meteo.com/"
     ),
+    # OpenWeather licence (ODbL): visible credit wherever its values are shown (P-30).
+    "openweather": Attribution(
+        source_id="openweather",
+        text="Weather data © OpenWeather",
+        url="https://openweathermap.org/",
+    ),
 }
 
 

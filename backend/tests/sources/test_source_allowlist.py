@@ -33,6 +33,20 @@ def test_only_approved_https_hosts(url: str) -> None:
 def test_approved_hosts_pass() -> None:
     check_url("https://api.open-meteo.com/v1/forecast")
     check_url("https://www.panahon.gov.ph/")
+    check_url("https://api.openweathermap.org/data/3.0/onecall")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://api.openweathermap.org/data/3.0/onecall",  # not HTTPS
+        "https://openweathermap.org/api",  # only the API host is approved
+        "https://api.openweathermap.org.evil.example/data/3.0/onecall",
+    ],
+)
+def test_openweather_only_its_api_host_over_https(url: str) -> None:
+    with pytest.raises(HostNotAllowedError):
+        check_url(url)
 
 
 def test_redirects_are_not_followed() -> None:

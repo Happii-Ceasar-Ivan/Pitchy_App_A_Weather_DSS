@@ -64,6 +64,14 @@ class Settings(BaseSettings):
         default=120, ge=0, validation_alias="PITCHY_LIGHTNING_WINDOW_BEFORE_MINUTES"
     )  # live checks only from this long before kickoff until the coverage window ends
 
+    # OpenWeather One Call 3.0 (P-30). Sent as the ``appid`` query parameter: never log URLs.
+    openweather_api_key: SecretStr | None = Field(
+        default=None, validation_alias="OPENWEATHER_API_KEY"
+    )
+    openweather_min_interval_minutes: float = Field(
+        default=60, ge=0, validation_alias="PITCHY_OPENWEATHER_MIN_INTERVAL_MINUTES"
+    )  # per venue; keeps manual ingests far below the 1,000 calls/day cap (P-30)
+
     # Development-only demo routes (/api/v1/dev/...). Need PITCHY_ENV=development AND this flag,
     # and still answer only requests from this computer.
     enable_dev_routes: bool = Field(default=False, validation_alias="PITCHY_ENABLE_DEV_ROUTES")
@@ -80,6 +88,9 @@ class Settings(BaseSettings):
     fresh_open_meteo_hours: float = Field(
         default=7, gt=0, validation_alias="PITCHY_FRESH_OPEN_METEO_HOURS"
     )  # by retrieval time (Open-Meteo does not report its model run)
+    fresh_openweather_hours: float = Field(
+        default=7, gt=0, validation_alias="PITCHY_FRESH_OPENWEATHER_HOURS"
+    )  # P-30, user decision 2026-11-28: retrieval time, like Open-Meteo
     fresh_pagasa_atmo_hours: float = Field(
         default=12, gt=0, validation_alias="PITCHY_FRESH_PAGASA_ATMO_HOURS"
     )  # by model run (init)

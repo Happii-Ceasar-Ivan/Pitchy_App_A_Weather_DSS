@@ -61,3 +61,22 @@ def test_pagasa_gap_defaults_to_four_hours_and_is_bounded(env_file, monkeypatch)
         monkeypatch.setenv("PITCHY_PAGASA_MIN_INTERVAL_MINUTES", bad)
         with pytest.raises(ValidationError):
             Settings(_env_file=env_file)
+
+
+def test_openweather_key_is_masked_and_its_group_waits_an_hour(env_file, monkeypatch) -> None:
+    """P-30: secret key, 7 h freshness, 60 min per-venue gap, 15 min cool-down."""
+    from datetime import timedelta
+
+    from services.weather_ingestion.registry import adapter_groups
+
+    monkeypatch.delenv("OPENWEATHER_API_KEY", raising=False)
+    s = Settings(_env_file=env_file)
+    assert s.openweather_api_key is None and s.fresh_openweather_hours == 7
+    group = next(g for g in adapter_groups(s) if g.name == "openweather")
+    assert group.source_ids == ("openweather",) and not group.run_check
+    assert group.min_interval == timedelta(minutes=60)
+    assert group.failure_cooldown == timedelta(minutes=15)
+    monkeypatch.setenv("OPENWEATHER_API_KEY", "not-a-real-ow-key")
+    s = Settings(_env_file=env_file)
+    assert s.openweather_api_key.get_secret_value() == "not-a-real-ow-key"
+    assert "not-a-real-ow-key" not in repr(s)

@@ -51,12 +51,29 @@ def _om(parameter: str, unit: str, kind: Kind = "instant") -> SourceParam:
     return SourceParam("open_meteo", parameter, unit, kind)
 
 
-# P-09 priority table (team decision 2026-11-22).
+def _ow(parameter: str, unit: str, kind: Kind = "instant", **kw) -> SourceParam:
+    return SourceParam("openweather", parameter, unit, kind, **kw)
+
+
+# OpenWeather's docs don't say which part of the hour `pop` and `rain.1h` describe, so those two
+# are shown per source but kept out of the range until confirmed (no guessing).
+OW_WINDOW_NOT_STATED = "Time window not stated by OpenWeather; kept out of the range."
+
+# P-09 priority table (team decision 2026-11-22). OpenWeather (P-30, 2026-11-28) is added last:
+# lowest priority, so it is chosen only when no other source has a value.
 QUANTITIES: tuple[QuantitySpec, ...] = (
-    QuantitySpec("air_temperature", "Air temperature", "°C", (_om("temperature_2m", "°C"),)),
-    QuantitySpec("relative_humidity", "Relative humidity", "%",
-                 (_om("relative_humidity_2m", "%"),)),
-    QuantitySpec("dew_point", "Dew point", "°C", (_om("dew_point_2m", "°C"),)),
+    QuantitySpec("air_temperature", "Air temperature", "°C", (
+        _om("temperature_2m", "°C"),
+        _ow("temp", "°C", note=HEIGHT_NOT_STATED),
+    )),
+    QuantitySpec("relative_humidity", "Relative humidity", "%", (
+        _om("relative_humidity_2m", "%"),
+        _ow("humidity", "%", note=HEIGHT_NOT_STATED),
+    )),
+    QuantitySpec("dew_point", "Dew point", "°C", (
+        _om("dew_point_2m", "°C"),
+        _ow("dew_point", "°C", note=HEIGHT_NOT_STATED),
+    )),
     QuantitySpec("shortwave_radiation", "Solar radiation (GHI)", "W/m²",
                  (_om("shortwave_radiation", "W/m²", "rate"),)),
     QuantitySpec("direct_normal_irradiance", "Direct normal irradiance", "W/m²",
@@ -72,22 +89,33 @@ QUANTITIES: tuple[QuantitySpec, ...] = (
         SourceParam("pagasa_ecmwf", "accumulated_rain_1h", "mm", "amount", in_range=False,
                     note="ECMWF rain step meaning still to confirm; only 1-hour steps used."),
         _om("precipitation", "mm", "amount"),
+        _ow("rain_1h", "mm/h", "rate", in_range=False, note=OW_WINDOW_NOT_STATED),
     )),
     QuantitySpec("wind_speed", "Wind speed", "m/s", (
         _om("wind_speed_10m", "m/s"),
         SourceParam("pagasa_atmo", "wind_speed", "m/s", note=HEIGHT_NOT_STATED),
         SourceParam("pagasa_ecmwf", "wind_speed", "m/s", note=HEIGHT_NOT_STATED),
+        _ow("wind_speed", "m/s", note=HEIGHT_NOT_STATED),
     )),
     QuantitySpec("wind_direction", "Wind direction", "°", (
         _om("wind_direction_10m", "°"),
         SourceParam("pagasa_atmo", "wind_direction", "°", note=HEIGHT_NOT_STATED),
         SourceParam("pagasa_ecmwf", "wind_direction", "°", note=HEIGHT_NOT_STATED),
+        _ow("wind_deg", "°", note=HEIGHT_NOT_STATED),
     ), circular=True),
-    QuantitySpec("rain_probability", "Rain probability", "%",
-                 (_om("precipitation_probability", "%"),)),
-    QuantitySpec("cloud_cover", "Cloud cover", "%", (_om("cloud_cover", "%"),)),
+    QuantitySpec("rain_probability", "Rain probability", "%", (
+        _om("precipitation_probability", "%"),
+        _ow("pop", "%", in_range=False, note=OW_WINDOW_NOT_STATED),
+    )),
+    QuantitySpec("cloud_cover", "Cloud cover", "%", (
+        _om("cloud_cover", "%"),
+        _ow("clouds", "%"),
+    )),
     QuantitySpec("cape", "CAPE", "J/kg", (_om("cape", "J/kg"),)),
-    QuantitySpec("wind_gusts", "Wind gusts", "m/s", (_om("wind_gusts_10m", "m/s"),)),
+    QuantitySpec("wind_gusts", "Wind gusts", "m/s", (
+        _om("wind_gusts_10m", "m/s"),
+        _ow("wind_gust", "m/s", note=HEIGHT_NOT_STATED),
+    )),
 )  # fmt: skip
 
 

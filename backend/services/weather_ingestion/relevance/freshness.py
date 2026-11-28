@@ -34,6 +34,9 @@ class FreshnessRule:
 def freshness_rules(settings: Settings) -> dict[str, FreshnessRule]:
     return {
         "open_meteo": FreshnessRule(timedelta(hours=settings.fresh_open_meteo_hours), "retrieved"),
+        "openweather": FreshnessRule(
+            timedelta(hours=settings.fresh_openweather_hours), "retrieved"
+        ),
         "pagasa_atmo": FreshnessRule(timedelta(hours=settings.fresh_pagasa_atmo_hours), "issued"),
         "pagasa_ecmwf": FreshnessRule(timedelta(hours=settings.fresh_pagasa_ecmwf_hours), "issued"),
     }

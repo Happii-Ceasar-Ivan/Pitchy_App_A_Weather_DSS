@@ -483,7 +483,8 @@ def test_consolidated_rain_prefers_atmo_and_shows_the_range(client, connect) -> 
     assert [a["source_id"] for a in body["attributions"]] == ["open_meteo"]
 
     rain = _quantity(body, "rain")
-    assert rain["priority"] == ["pagasa_atmo", "pagasa_ecmwf", "open_meteo"]
+    # OpenWeather (P-30) is listed last: lowest priority.
+    assert rain["priority"] == ["pagasa_atmo", "pagasa_ecmwf", "open_meteo", "openweather"]
     first = rain["slots"][0]
     assert (first["value"], first["source_id"], first["state"]) == (1.0, "pagasa_atmo", "current")
     assert first["fallback_label"] is None
