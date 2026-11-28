@@ -49,7 +49,10 @@ void main() {
     });
     final weather = await api(client).getWeather(rizalMemorialId, hours: 6);
     expect(seen.queryParameters, {'hours': '6'});
-    expect(weather.attributions.single.text, 'Weather data by Open-Meteo.com');
+    expect(weather.attributions.map((a) => a.text), [
+      'Weather data by Open-Meteo.com',
+      'Weather data © OpenWeather',
+    ]);
   });
 
   test('trend window sends hours_before and reads kickoff_at and coverage (P-27)', () async {

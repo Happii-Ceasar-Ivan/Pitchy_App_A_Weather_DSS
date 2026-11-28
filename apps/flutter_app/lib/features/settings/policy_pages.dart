@@ -29,7 +29,8 @@ class PolicyPage {
 }
 
 /// The Privacy policy and Safety disclaimer, approved by the user on
-/// 2026-11-26 (P-25; draft in docs/frontend/drafts/). Fixed app text, never
+/// 2026-11-26 (P-25; draft in docs/frontend/drafts/); the privacy policy's
+/// source list gained OpenWeather on 2026-11-28 (user approved, P-31). Fixed app text, never
 /// downloaded. The facts were checked against the backend: the raw IP is
 /// never stored (HMAC only, `ip_rate_limits`, purged after a day idle); the
 /// session token is stored only as an HMAC (`anonymous_sessions`, purged with
@@ -38,7 +39,7 @@ class PolicyPage {
 abstract final class PolicyPages {
   static const privacy = PolicyPage(
     title: 'Privacy policy',
-    updated: 'Last updated: 26 November 2026',
+    updated: 'Last updated: 28 November 2026',
     intro:
         'Pitchy is a weather and safety app for football matches, made as a student research '
         'project. This page explains what information the app uses, where it goes, and how long '
@@ -102,8 +103,8 @@ abstract final class PolicyPages {
       PolicySection(
         'Weather sources',
         paragraphs: [
-          'The Pitchy server, not your device, fetches weather from Open-Meteo, PAGASA and Vaisala '
-              'Xweather, using the stadium’s location only.',
+          'The Pitchy server, not your device, fetches weather from Open-Meteo, OpenWeather, PAGASA '
+              'and Vaisala Xweather, using the stadium’s location only.',
         ],
       ),
       PolicySection(

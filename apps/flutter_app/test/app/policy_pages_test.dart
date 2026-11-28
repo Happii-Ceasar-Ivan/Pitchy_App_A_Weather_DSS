@@ -42,9 +42,9 @@ void main() {
       'never the address itself',
       'Don’t type names or other personal details into Ask Pitchy.',
       'Google Gemini, Groq or OpenRouter',
-      'Open-Meteo, PAGASA and Vaisala Xweather',
+      'Open-Meteo, OpenWeather, PAGASA and Vaisala Xweather',
       'Supabase (Tokyo)',
-      'Last updated: 26 November 2026',
+      'Last updated: 28 November 2026',
     ]) {
       expect(text, contains(fact), reason: fact);
     }

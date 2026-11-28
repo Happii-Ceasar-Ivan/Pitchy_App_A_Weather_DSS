@@ -13,8 +13,11 @@ import 'weather_icons.dart';
 
 /// A source name without its trailing domain, for tight spaces:
 /// "PAGASA ATMO (panahon.gov.ph)" -> "PAGASA ATMO". The full name stays in the
-/// expanded view and in screen-reader labels.
-String shortSourceName(String name) => name.replaceFirst(RegExp(r'\s*\([^)]*\)\s*$'), '');
+/// expanded view and in screen-reader labels. "OpenWeather One Call 3.0"
+/// (P-30) -> "OpenWeather": the API product name doesn't fit a rail row.
+String shortSourceName(String name) => name.startsWith('OpenWeather ')
+    ? 'OpenWeather'
+    : name.replaceFirst(RegExp(r'\s*\([^)]*\)\s*$'), '');
 
 /// The state to show for a slot. Uses the slot's own state; if the backend left
 /// it out, falls back to the used source's state. Never assumes Current.

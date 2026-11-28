@@ -707,7 +707,7 @@ const trendLegend =
 
 /// Where the selected hour came from and when, which colour in the strip is
 /// which source (named, not colour alone), the key to the marks, and the
-/// Open-Meteo credit (its data is in this reply).
+/// credits of the sources whose data is in this reply.
 class _Footer extends StatelessWidget {
   const _Footer({
     required this.series,
@@ -728,10 +728,6 @@ class _Footer extends StatelessWidget {
     final i = index;
     final p = i == null || series.points.isEmpty ? null : series.points[i];
     final (first, fetched) = _sourceLines(p, weather, now);
-    Attribution? credit;
-    for (final a in weather.attributions) {
-      if (a.sourceId == 'open_meteo') credit = a;
-    }
     final used = <String, String>{
       for (final q in series.withValues) q.sourceId!: shortSourceName(q.sourceName ?? q.sourceId!),
     };
@@ -768,7 +764,9 @@ class _Footer extends StatelessWidget {
         ),
         const SizedBox(height: PitchySpace.xs),
         Text(trendLegend, style: small),
-        if (credit != null) LinkText(credit.url, label: credit.text),
+        // Every credited source in this response (Open-Meteo, OpenWeather):
+        // their licences ask for a visible credit wherever the data is shown.
+        for (final a in weather.attributions) LinkText(a.url, label: a.text),
       ],
     );
   }
@@ -893,7 +891,8 @@ class TrendCardSkeleton extends StatelessWidget {
               const SizedBox(height: PitchySpace.xs),
               // The key is fixed text: laid out invisibly so it takes the same lines.
               Text(trendLegend, style: text.bodySmall?.copyWith(color: Colors.transparent)),
-              const SizedBox(height: AppTheme.minTarget), // credit
+              // Credits: Open-Meteo and OpenWeather (P-30), one 48 px link each.
+              const SizedBox(height: AppTheme.minTarget * 2),
               const SizedBox(height: AppTheme.minTarget), // table button
             ],
           ),

@@ -4,12 +4,18 @@ import '../../core/theme/spacing.dart';
 import '../../shared/widgets/link_text.dart';
 import '../../shared/widgets/pitchy_top_bar.dart';
 
-/// All credits live here (P-13), including the Open-Meteo attribution and link.
+/// All credits live here (P-13), including the Open-Meteo and OpenWeather
+/// (P-30) attributions and links.
 class CreditsScreen extends StatelessWidget {
   const CreditsScreen({super.key});
 
   static const credits = <(String, String, String)>[
     ('Weather data by Open-Meteo.com', 'Licensed under CC BY 4.0.', 'https://open-meteo.com/'),
+    (
+      'Weather data © OpenWeather',
+      'Forecasts from OpenWeather One Call 3.0, licensed under the Open Database License (ODbL).',
+      'https://openweathermap.org/',
+    ),
     (
       'PAGASA',
       'Forecasts and official alerts from the Philippine Atmospheric, Geophysical and '

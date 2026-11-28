@@ -37,10 +37,12 @@ colors:
   line-pagasa-atmo: "#5E3FB0"
   line-pagasa-ecmwf: "#2361D6"
   line-dost-asti: "#52606F"
+  line-openweather: "#A0308A"
   line-open-meteo-dark: "#52C7B4"
   line-pagasa-atmo-dark: "#B39CF5"
   line-pagasa-ecmwf-dark: "#7FA8F5"
   line-dost-asti-dark: "#9AA8B8"
+  line-openweather-dark: "#EE8FD9"
   state-current-fg: "#0B5C43"
   state-current-bg: "#E1F3EC"
   state-stale-fg: "#6E4300"
@@ -326,7 +328,7 @@ North Star: "The Line Board"
 Rules:
 - The Two Layers Rule. Themes change only shell, ground, surface, hairline, ink and accent.
 - The Custom Two Rule. Custom changes only the shell and the accent, and both come from the eight fixed swatches.
-- The Cool Lines Rule. Source line colours are cool hues only.
+- The Cool Lines Rule. Source line colours are cool hues only (teal through blue and violet to plum); never yellow, orange or red.
 - The Icon and Word Rule. No state is shown by colour alone.
 - The Hazard Severity Rule. One icon per level (advisory info_outline, warning warning_amber_rounded, danger warning); hazard colours are fixed, never palette.accent (P-18, P-19).
 - The Tabular Everywhere Rule. Every text style carries tabular figures; Switzer's default figures are tabular and the font has no tnum feature.

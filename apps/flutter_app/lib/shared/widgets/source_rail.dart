@@ -156,13 +156,18 @@ class _SourceRailState extends State<SourceRail> {
         ),
       ),
     );
-    final credit =
-        widget.attributions?.any((a) => a.sourceId == openMeteoId) ??
-        sources.any((s) => s.sourceId == openMeteoId);
-    if (!credit) return card;
+    // The backend lists an attribution for each credited source whose data is
+    // in this response; without that list, fall back to the sources shown.
+    bool credited(String id) =>
+        widget.attributions?.any((a) => a.sourceId == id) ?? sources.any((s) => s.sourceId == id);
+    final credits = [
+      for (final c in WeatherCredit.known)
+        if (credited(c.sourceId)) c,
+    ];
+    if (credits.isEmpty) return card;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [card, const OpenMeteoCredit()],
+      children: [card, ...credits],
     );
   }
 }
@@ -170,13 +175,52 @@ class _SourceRailState extends State<SourceRail> {
 /// The source id the backend uses for Open-Meteo.
 const openMeteoId = 'open_meteo';
 
-/// One quiet line under the source rail: the Open-Meteo credit and its link
-/// (the full credits stay on the Credits page). Always one 48 px row tall, so
-/// [SourceRailSkeleton] can reserve the same space.
-class OpenMeteoCredit extends StatelessWidget {
-  const OpenMeteoCredit({super.key});
+/// The source id the backend uses for OpenWeather (P-30).
+const openWeatherId = 'openweather';
 
-  static const url = 'https://open-meteo.com/';
+/// One quiet line under the source rail: a weather source's required credit
+/// and its link (the full credits stay on the Credits page). Always one 48 px
+/// row tall, so [SourceRailSkeleton] can reserve the same space.
+///
+/// Open-Meteo (CC BY 4.0) and OpenWeather (ODbL, P-30) both require a visible
+/// credit wherever their data is shown.
+class WeatherCredit extends StatelessWidget {
+  const WeatherCredit({
+    super.key,
+    required this.sourceId,
+    required this.prefix,
+    required this.link,
+    required this.url,
+  });
+
+  /// Open-Meteo: "Weather data by Open-Meteo.com".
+  static const openMeteo = WeatherCredit(
+    sourceId: openMeteoId,
+    prefix: 'Weather data by ',
+    link: 'Open-Meteo.com',
+    url: 'https://open-meteo.com/',
+  );
+
+  /// OpenWeather: "Weather data © OpenWeather" (the backend's wording, P-30).
+  static const openWeather = WeatherCredit(
+    sourceId: openWeatherId,
+    prefix: 'Weather data © ',
+    link: 'OpenWeather',
+    url: 'https://openweathermap.org/',
+  );
+
+  /// Every credited source, in the order the credits are shown.
+  static const known = [openMeteo, openWeather];
+
+  final String sourceId;
+
+  /// The words before the link.
+  final String prefix;
+
+  /// The linked name.
+  final String link;
+  final String url;
+
   static const _height = AppTheme.minTarget;
 
   @override
@@ -190,10 +234,10 @@ class OpenMeteoCredit extends StatelessWidget {
         child: Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('Weather data by ', style: text.bodySmall?.copyWith(color: p.inkMuted)),
+            Text(prefix, style: text.bodySmall?.copyWith(color: p.inkMuted)),
             Semantics(
               link: true,
-              label: 'Open-Meteo.com, opens in the browser',
+              label: '$link, opens in the browser',
               excludeSemantics: true,
               child: InkWell(
                 onTap: () => openExternalLink(context, Uri.parse(url)),
@@ -202,7 +246,7 @@ class OpenMeteoCredit extends StatelessWidget {
                   child: Align(
                     widthFactor: 1,
                     child: Text(
-                      'Open-Meteo.com',
+                      link,
                       style: text.bodySmall?.copyWith(
                         color: p.accent,
                         decoration: TextDecoration.underline,
@@ -772,11 +816,14 @@ class _ValidityPainter extends CustomPainter {
 /// The source rail while loading: the same card, paddings and line heights as
 /// [SourceRail], so the real rows land where the skeleton rows were (P-17).
 class SourceRailSkeleton extends StatelessWidget {
-  const SourceRailSkeleton({super.key, this.lines = 3});
+  const SourceRailSkeleton({super.key, this.lines = 4, this.credits = 2});
 
-  /// Three sources are enabled on the backend today (Open-Meteo, PAGASA ATMO,
-  /// PAGASA ECMWF).
+  /// Four sources are enabled on the backend today (Open-Meteo, PAGASA ATMO,
+  /// PAGASA ECMWF, OpenWeather).
   final int lines;
+
+  /// Credit rows under the rail: Open-Meteo and OpenWeather.
+  final int credits;
 
   @override
   Widget build(BuildContext context) {
@@ -887,8 +934,8 @@ class SourceRailSkeleton extends StatelessWidget {
               ),
             ),
           ),
-          // The Open-Meteo credit line's room, so it lands without a jump.
-          const SizedBox(height: OpenMeteoCredit._height),
+          // The credit lines' room, so they land without a jump.
+          SizedBox(height: WeatherCredit._height * credits),
         ],
       ),
     );
