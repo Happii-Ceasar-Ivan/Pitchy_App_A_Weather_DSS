@@ -19,6 +19,7 @@ APPROVED_HOSTS: dict[str, str] = {
     "api.open-meteo.com": "Open-Meteo Forecast API (DEC-01, 2026-11-22)",
     "www.panahon.gov.ph": "PAGASA panahon.gov.ph, interim fallback (DEC-02, 2026-11-21)",
     "data.api.xweather.com": "Vaisala Xweather Weather API, lightning (DEC-06, 2026-11-23)",
+    "api.openweathermap.org": "OpenWeather One Call API 3.0, forecast (P-30, 2026-11-28)",
 }
 
 DEFAULT_TIMEOUT = httpx.Timeout(20.0, connect=10.0)

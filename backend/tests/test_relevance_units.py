@@ -70,3 +70,37 @@ def test_unavailable_needs_data() -> None:
     failed = FetchAttempt("x", "failed", T, "HTTP_503", "down")
     gone = assess_source("a", FreshnessRule(H, "retrieved"), [], failed, None, T, T + H, T)
     assert gone.state == "unavailable" and gone.needs_data
+
+
+def test_openweather_is_lowest_priority_and_unconfirmed_windows_stay_out_of_range() -> None:
+    """P-30: OpenWeather is chosen only when no other source has a value; its `pop` and
+    `rain_1h` are shown per source but not counted in the range (window not stated)."""
+    from services.weather_ingestion.relevance.consolidation import (
+        QUANTITIES,
+        SourceData,
+        consolidate,
+    )
+
+    for spec in QUANTITIES:
+        ids = [p.source_id for p in spec.sources]
+        if "openweather" in ids:
+            assert ids[-1] == "openweather", spec.key
+    ow = {(q.key, p.parameter): p for q in QUANTITIES for p in q.sources
+          if p.source_id == "openweather"}  # fmt: skip
+    assert not ow[("rain", "rain_1h")].in_range and not ow[("rain_probability", "pop")].in_range
+    assert ow[("air_temperature", "temp")].in_range
+
+    def data(sid, param, unit, value):
+        return SourceData(sid, sid, "current", [StoredValue(param, value, unit, "ok", T, T + H)])
+
+    views = {v.spec.key: v for v in consolidate({
+        "open_meteo": data("open_meteo", "precipitation_probability", "%", 40.0),
+        "openweather": data("openweather", "pop", "%", 37.0),
+    }, T, T + H)}  # fmt: skip
+    slot = views["rain_probability"].slots[0]
+    assert slot.source_id == "open_meteo" and slot.value == 40.0
+    assert {v.source_id for v in slot.by_source} == {"open_meteo", "openweather"}
+    assert slot.range is None  # only one comparable source
+    temp = consolidate({"openweather": data("openweather", "temp", "°C", 31.2)}, T, T + H)
+    chosen = next(v for v in temp if v.spec.key == "air_temperature").slots[0]
+    assert chosen.source_id == "openweather" and chosen.value == 31.2

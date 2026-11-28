@@ -104,7 +104,9 @@ def fetches(limit: int = Query(20, ge=1, le=100)) -> list[dict]:
 @router.get("/venues/{scope_key}/forecast", summary="4. See stored forecast values")
 def forecast(
     scope_key: str,
-    source: str = Query("open_meteo", pattern="^(open_meteo|pagasa_atmo|pagasa_ecmwf)$"),
+    source: str = Query(
+        "open_meteo", pattern="^(open_meteo|pagasa_atmo|pagasa_ecmwf|openweather)$"
+    ),
     hours: int = Query(6, ge=1, le=48),
 ) -> dict:
     """Values from the latest successful fetch of `source`, for the next `hours` hours.

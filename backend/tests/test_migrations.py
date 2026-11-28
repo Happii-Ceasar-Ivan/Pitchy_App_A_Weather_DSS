@@ -75,7 +75,7 @@ def test_only_the_backend_role_has_policies(conn: psycopg.Connection) -> None:
 def test_backend_role_can_read_and_write_but_not_delete_or_alter(app_db_url: str, conn) -> None:
     location = _location(conn)
     with psycopg.connect(app_db_url, autocommit=True) as app:
-        assert app.execute("select count(*) from public.weather_sources").fetchone()[0] == 6
+        assert app.execute("select count(*) from public.weather_sources").fetchone()[0] == 7
         app.execute("update public.locations set name = 'renamed' where id = %s", (location,))
         with pytest.raises(errors.InsufficientPrivilege):
             app.execute("delete from public.locations where id = %s", (location,))
@@ -90,7 +90,7 @@ def test_backend_role_can_read_and_write_but_not_delete_or_alter(app_db_url: str
 def test_sources_enabled_only_with_a_tested_adapter(conn: psycopg.Connection) -> None:
     rows = conn.execute("select id, enabled from public.weather_sources order by id").fetchall()
     assert rows == [
-        ("dost_asti", False), ("open_meteo", True), ("pagasa", False),
+        ("dost_asti", False), ("open_meteo", True), ("openweather", False), ("pagasa", False),
         ("pagasa_atmo", True), ("pagasa_ecmwf", True), ("xweather_lightning", True),
     ]  # fmt: skip
 
