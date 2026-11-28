@@ -24,6 +24,7 @@ colors:
   tint: "#e6ecf4"
   src-open-meteo: "#52c7b4"
   src-pagasa: "#b39cf5"
+  src-openweather: "#ee8fd9"
   src-dost: "#9aa8b8"
   android: "#157a4a"
   android-tint: "#e3f2ea"
@@ -159,7 +160,7 @@ A night-stadium palette with one lit accent and a paper counter-world.
 - **On Dark** (`#f2f5f9`) and **On Dark Muted** (`#b4c2d3`): text on night.
 - **Mown Pitch** (`#0e3b2e`) / **Pitch Stripe** (`#114634`): tokens kept for the canvas grass family only; the Windows band now uses Night 2 / Match Navy stripes (90deg, `repeating-linear-gradient`) with 18% glacier hairlines.
 - **Programme Paper** (`#f5f7fa`), **White Panel** (`#ffffff`), **Hairline** (`#d3dae3`), **Tint** (`#e6ecf4`), **Ink Muted** (`#45556b`): the install, sheet and FAQ world.
-- **Source marks:** Open-Meteo teal (`#52c7b4`), PAGASA violet (`#b39cf5`), DOST-ASTI grey (`#9aa8b8`, drawn as a hollow ring), all mirroring the app's source lines. They are app colours, not theme colours.
+- **Source marks:** Open-Meteo teal (`#52c7b4`), PAGASA violet (`#b39cf5`), OpenWeather plum (`#ee8fd9`), DOST-ASTI grey (`#9aa8b8`, drawn as a hollow ring), all mirroring the app's source lines. They are app colours, not theme colours.
 - **Platform marks:** Android green (`#157a4a` on `#e3f2ea`) and Windows blue (`#0f5fb8` on `#e4eefa`), used only on the platform picker icons.
 
 ### Named Rules

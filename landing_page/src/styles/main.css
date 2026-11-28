@@ -621,6 +621,9 @@ figcaption,
 .src-pagasa {
   background: var(--src-pagasa);
 }
+.src-openweather {
+  background: var(--src-openweather);
+}
 .src-dost {
   background: transparent;
   border: 2px solid var(--src-dost);
